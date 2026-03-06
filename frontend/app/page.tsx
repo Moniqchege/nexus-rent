@@ -14,12 +14,8 @@ export default function Home() {
 
   return (
     <>
-      <Navbar onSignInClick={() => setShowAuth(true)} />
-      <Hero
-        showAuth={showAuth}
-        setShowAuth={setShowAuth}
-        onOAuthLogin={handleOAuthLogin}
-      />
+      <Navbar />
+      <Hero />
       <Footer />
     </>
   );

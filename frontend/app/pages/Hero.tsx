@@ -144,7 +144,6 @@ export default function Hero() {
 </div>
 
       </div>
-
       <div className="neon-divider" />
 
       {/* Property Popup opens only after search */}

@@ -58,10 +58,12 @@
     width: 500px;
     transition: border-color 0.3s;
   }
+  
   .nav-search:focus-within {
     border-color: var(--neon-blue);
     box-shadow: 0 0 20px rgba(0,240,255,0.15);
   }
+
   .nav-search input {
     background: none;
     border: none;
@@ -187,7 +189,7 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 60px;
-    padding: 80px 60px 60px;
+    padding: 40px 60px 0px;
     min-height: 420px;
     align-items: center;
     position: relative;

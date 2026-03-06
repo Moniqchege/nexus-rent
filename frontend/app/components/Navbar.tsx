@@ -10,7 +10,7 @@ export default function Navbar() {
       <div className="nav-actions">
         <button
           className="btn-primary"
-          onClick={() => router.push("/LandingView")} 
+          onClick={() => router.push("/login")} 
         >
           Sign In
         </button>

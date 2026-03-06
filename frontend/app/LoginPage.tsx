@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { FaUser, FaEye, FaEyeSlash } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import { useAuthStore } from "../store/authStore";
+import { useRouter } from "next/navigation";
+import { useAuthStore } from "./store/authStore";
 
 // ─── Landing / Auth View ──────────────────────────────────────────────────────
 export default function LandingView({
@@ -29,6 +30,7 @@ export default function LandingView({
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const navigate = useNavigate();
+  const router = useRouter();
 
   useEffect(() => {
   setUsername("");
@@ -62,7 +64,7 @@ const handleLocalLogin = async () => {
     }
     setToken(data.token, data.user, data.isFirstLogin)
     console.log("Logged in successfully!", data);
-    navigate("/dashboard");
+    router.push("/dashboard");
     setLoading(false);
   } catch (err) {
     console.error(err);
@@ -102,7 +104,7 @@ const handleRegister = async () => {
     }
     setToken(data.token, data.user, data.isFirstLogin)
     console.log("Registered successfully!", data);
-    navigate("/dashboard");
+    router.push("/dashboard");
     setLoading(false);
   } catch (err) {
     console.error(err);
