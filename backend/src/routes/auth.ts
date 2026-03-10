@@ -61,9 +61,9 @@ router.post("/register", async (req: Request, res: Response) => {
 // Login
 router.post("/login", async (req: Request, res: Response) => {
   try {
-    const { username, password } = req.body;
+    const { email, password } = req.body;
     const user = await db.user.findUnique({
-      where: { username },
+      where: { email },
       include: { sessions: true },
     });
     if (!user) return res.status(401).json({ message: "Invalid credentials" });

@@ -118,6 +118,10 @@ const handleRegister = async () => {
   }
 };
 
+const handleOAuthLogin = (provider: string) => {
+  window.location.href = `http://localhost:4000/auth/${provider}`;
+};
+
 const inputStyle = {
   flex: 1,
   padding: "11px 16px",
@@ -473,7 +477,7 @@ return (
       key={p.id}
       onMouseEnter={() => setHoveredProvider(p.id)}
       onMouseLeave={() => setHoveredProvider(null)}
-      onClick={() => onLogin(p.id)}
+      onClick={() => handleOAuthLogin(p.id)}
       style={{
         display: "flex",
         alignItems: "center",
