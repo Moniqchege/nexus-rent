@@ -7,6 +7,7 @@ import session from "express-session";
 import passport from "passport";
 import path from "path";
 import { fileURLToPath } from "url";
+import authRoutes from "./routes/auth.js";
 
 
 console.log('INDEX.TS LOADED AT:', new Date().toISOString());
@@ -19,7 +20,7 @@ const app = express();
 app.use(express.json());
 app.use(cors({
   origin:[ 
-  "http://localhost:5173",
+  "http://localhost:3000",
   "https://resume-builder-frontend-6w43zpqnp-moniqcheges-projects.vercel.app/",
   ],
   credentials: true,
@@ -38,4 +39,5 @@ app.use(
   "/uploads",
   express.static(path.join(__dirname, "../uploads"))
 );
+app.use("/auth", authRoutes);
 app.listen(process.env.PORT || 4000, () => console.log("Server running"));

@@ -877,7 +877,7 @@
   /* Footer */
   footer {
     text-align: center;
-    padding: 40px;
+    padding: 10px;
     border-top: 1px solid var(--border-glow);
     color: var(--text-secondary);
     font-size: 13px;

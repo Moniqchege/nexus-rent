@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { FaUser, FaEye, FaEyeSlash } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "../store/authStore";
+import Footer from "../components/layout/Footer";
 
 // ─── Landing / Auth View ──────────────────────────────────────────────────────
 export default function LandingView({
@@ -20,7 +21,6 @@ export default function LandingView({
     { id: "google", label: "Google", icon: "G", color: "#EA4335" },
   ];
 
-  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -28,19 +28,25 @@ export default function LandingView({
   const [isRegister, setIsRegister] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
 
   const router = useRouter();
 
   useEffect(() => {
-  setUsername("");
+  setFirstName("");
+  setLastName("");
+  setEmail("");
   setPassword("");
   setConfirmPassword("");
-}, []);
+  setError(null);
+}, [isRegister]);
 
   // ───── Login Handler ─────
 const handleLocalLogin = async () => {
   setError(null);
-  if (!username || !password) {
+  if (!email || !password) {
     setError("Please fill in both fields.");
     return;
   }
@@ -52,7 +58,7 @@ const handleLocalLogin = async () => {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ email, password }),
     });
 
     const data = await res.json();
@@ -75,10 +81,10 @@ const handleLocalLogin = async () => {
 // ───── Register Handler ─────
 const handleRegister = async () => {
   setError(null);
-  if (!username || !password || !confirmPassword) {
-    setError("Please fill in both fields.");
-    return;
-  }
+  if (!firstName || !lastName || !email || !password || !confirmPassword) {
+  setError("Please fill all fields.");
+  return;
+}
 
   if (password !== confirmPassword) {
       setError("Passwords do not match.");
@@ -92,7 +98,7 @@ const handleRegister = async () => {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ username, password, email: username }), 
+      body: JSON.stringify({ firstName, lastName, email, password }), 
     });
 
     const data = await res.json();
@@ -110,6 +116,28 @@ const handleRegister = async () => {
     setError("Server error. Try again.");
     setLoading(false);
   }
+};
+
+const inputStyle = {
+  flex: 1,
+  padding: "11px 16px",
+  borderRadius: 14,
+  border: "1px solid rgba(255,255,255,0.08)",
+  background: "rgba(15,22,41,0.8)",
+  color: "#E8EDF5",
+  fontSize: 14,
+  fontFamily: "'Syne', sans-serif",
+  outline: "none",
+};
+
+const eyeIconStyle = {
+  position: "absolute" as const,
+  right: 12,
+  top: "50%",
+  transform: "translateY(-50%)",
+  cursor: "pointer",
+  color: "#8A94A6",
+  fontSize: 16,
 };
 
 return (
@@ -149,55 +177,65 @@ return (
       flex: 1,
       flexWrap: "wrap", 
       justifyContent: "center",
-      alignItems: "center"
+      alignItems: "center",
+      padding: "0 24px", 
     }}>
       {/* Left Column */}
+      <div
+    style={{
+      flex: "1 1 400px", 
+      maxWidth: 500, 
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "flex-start",
+      justifyContent: "center",
+      gap: 20,
+    }}
+  >
     <div
         className="glow-orb"
         style={{
-          top: '-100px',
-          left: '-100px',
-          width: '400px',
-          height: '400px',
-          background: 'radial-gradient(circle, rgba(124,58,237,0.12) 0%, transparent 70%)',
+          width: 200,
+        height: 200,
+        borderRadius: "50%",
+        background: "radial-gradient(circle, rgba(124,58,237,0.12) 0%, transparent 70%)",
+        marginBottom: 20,
         }}
       />
 
       {/* Hero left: search & header */}
-      <div className="hero-left animate-in">
-        <div className="page-tag">◈ RENTAL PLATFORM</div>
-
-        <h1>
-          Find <span>Smart Rentals</span>
-          <br />
-          Near You
-        </h1>
-
-        <p>
-          Discover properties that match your needs with dynamic listings and
-          hyperlocal market insights.
-        </p>
-
-       
-      </div>
-
+    <div className="hero-left animate-in">
+      <div className="page-tag">◈ RENTAL PLATFORM</div>
+      <h1>
+        Find <span>Smart Rentals</span>
+        <br />
+        Near You
+      </h1>
+      <p>
+        Discover properties that match your needs with dynamic listings and
+        hyperlocal market insights.
+      </p>
+    </div>
+    </div>
       {/* Right Column */}
 <div
   style={{
-    flex: "1 1 300px",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: 12,
-    width: "100%",
+     flex: "1 1 400px",
+      maxWidth: 500,
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      gap: 12,
   }}
 >
   {/* ───── Local Auth Inputs ───── */}
+  {!isRegister && (
+<>
   <div style={{ position: "relative", width: "100%", maxWidth: 540 }}>
   <input
-    placeholder="Username"
-    value={username}
-    onChange={(e) => setUsername(e.target.value)}
+    placeholder="Email"
+    value={email}
+    onChange={(e) => setEmail(e.target.value)}
     style={{
       width: "100%",
       maxWidth: 540,
@@ -258,21 +296,82 @@ return (
           {showPassword ? <FaEyeSlash /> : <FaEye />}
         </div>
   </div>
+  </>
+  )}
 
-   {isRegister && (
-            <div style={{ position: "relative", width: "100%", maxWidth: 540 }}>
-              <input
-                type={showConfirmPassword ? "text" : "password"}
-                placeholder="Confirm Password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                style={{ width: "100%", padding: "11px 16px", borderRadius: 14, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(15,22,41,0.8)", color: "#E8EDF5", fontSize: 14, fontFamily: "'Syne', sans-serif", outline: "none", transition: "all 0.2s ease" }}
-              />
-              <div onClick={() => setShowConfirmPassword(!showConfirmPassword)} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", cursor: "pointer", color: "#8A94A6", fontSize: 16 }}>
-                {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
-              </div>
-            </div>
-          )}
+   {/* Firstname + Lastname */}
+{isRegister && (
+  <>
+    {/* Firstname | Lastname */}
+    <div style={{ display: "flex", gap: 12, width: "100%", maxWidth: 540 }}>
+      <input
+        placeholder="First Name"
+        value={firstName}
+        onChange={(e) => setFirstName(e.target.value)}
+        style={inputStyle}
+      />
+
+      <input
+        placeholder="Last Name"
+        value={lastName}
+        onChange={(e) => setLastName(e.target.value)}
+        style={inputStyle}
+      />
+    </div>
+
+    {/* Email */}
+    <div style={{ position: "relative", width: "100%", maxWidth: 540 }}>
+      <input
+        placeholder="Email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        style={{ ...inputStyle, width: "100%" }}
+      />
+    </div>
+
+    {/* Password | Confirm Password */}
+    <div style={{ display: "flex", gap: 12, width: "100%", maxWidth: 540 }}>
+
+      {/* Password */}
+      <div style={{ position: "relative", flex: 1 }}>
+        <input
+          type={showPassword ? "text" : "password"}
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          style={{ ...inputStyle, width: "100%" }}
+        />
+
+        <div
+          onClick={() => setShowPassword(!showPassword)}
+          style={eyeIconStyle}
+        >
+          {showPassword ? <FaEyeSlash /> : <FaEye />}
+        </div>
+      </div>
+
+      {/* Confirm Password */}
+      <div style={{ position: "relative", flex: 1 }}>
+        <input
+          type={showConfirmPassword ? "text" : "password"}
+          placeholder="Confirm Password"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          style={{ ...inputStyle, width: "100%" }}
+        />
+
+        <div
+          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+          style={eyeIconStyle}
+        >
+          {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+        </div>
+      </div>
+    </div>
+  </>
+)}
+
+
 
   {/* ───── Login/Register Button ───── */}
   <button
@@ -429,6 +528,7 @@ return (
   </div>
 </div>
     </div>
+    <Footer />
   </div>
   </>
 );
