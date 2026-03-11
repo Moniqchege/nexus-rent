@@ -775,7 +775,7 @@
     border: 1px solid var(--border-glow);
     border-radius: 20px;
     padding: 24px;
-    height: fit-content;
+    height: 100vh;
   }
 
   .sidebar-nav { display: flex; flex-direction: column; gap: 4px; }
@@ -1111,10 +1111,6 @@
 @media (max-width: 1024px) {
   .dashboard-layout {
     grid-template-columns: 1fr;
-  }
-
-  .sidebar {
-    order: 2;
   }
 
   .dash-main {
