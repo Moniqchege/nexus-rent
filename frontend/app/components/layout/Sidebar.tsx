@@ -1,22 +1,21 @@
+"use client";
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { LayoutDashboard, Sparkles, LogOut, Menu } from 'lucide-react'
 import { useAuthStore } from '@/app/store/authStore'
 import { cn } from '@/app/lib/utils'
+import { useRouter } from 'next/navigation'
 
 const NAV = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  // { to: '/resume-builder', icon: Sparkles, label: 'Resume Builder' },
-  // { to: '/ats-analyzer', icon: Target, label: 'ATS Analyzer' },
 ]
 
 export default function Sidebar() {
   const { user, logout } = useAuthStore()
-  const navigate = useNavigate()
+  const router = useRouter()
   const [isOpen, setIsOpen] = useState(false)
 
   const handleNavClick = (to: string) => {
-    navigate(to)
+    router.push(to)
     setIsOpen(false) 
   }
 

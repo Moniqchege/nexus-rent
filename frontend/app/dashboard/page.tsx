@@ -1,5 +1,6 @@
 "use client";
-import React from "react";
+import { useRouter } from "next/navigation";
+import React, { useEffect } from "react";
 
 const statsData = [
   {
@@ -49,6 +50,15 @@ const statsData = [
 ];
 
 export default function DashboardPage() {
+    const router = useRouter();
+
+    // useEffect(() => {
+    //     const token = localStorage.getItem("token");
+
+    //     if (!token) {
+    //         router.push("/");
+    //     }
+    // }, []);
   return (
     <section className="stats-section">
       <div className="stats-row">
