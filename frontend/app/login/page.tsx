@@ -5,6 +5,7 @@ import { FaUser, FaEye, FaEyeSlash } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "../store/authStore";
 import Footer from "../components/layout/Footer";
+import Navbar from "../components/layout/Navbar";
 
 // ─── Landing / Auth View ──────────────────────────────────────────────────────
 export default function LandingView({
@@ -157,21 +158,7 @@ return (
     animation: "fadeUp 0.8s ease both"
   }}>
     {/* Logo Top-Center */}
-    <div style={{ display: "flex", justifyContent: "center", marginBottom: 5 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <div style={{
-          width: 52, height: 52, borderRadius: 14,
-          background: "linear-gradient(135deg, #00D4FF 0%, #7B2FFF 100%)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 22, fontWeight: 800, color: "#fff",
-          boxShadow: "0 0 30px rgba(0,212,255,0.35)"
-        }}>N</div>
-        <div>
-          <div style={{ fontSize: 22, fontWeight: 800, color: "#E8EDF5", letterSpacing: "-0.5px" }}>NexusRent</div>
-          {/* <div style={{ fontSize: 11, color: "#00D4FF", fontFamily: "'JetBrains Mono', monospace", letterSpacing: 2 }}>ATS OPTIMIZER</div> */}
-        </div>
-      </div>
-    </div>
+    <Navbar />
 
     {/* Middle Section: Two Columns */}
     <div style={{
