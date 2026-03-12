@@ -91,56 +91,107 @@ export default function Hero() {
   ></div>
 
   <div className="building" style={{ left: '5%', width: '60px', height: '120px' }}>
-    <div className="win" style={{ top: '20px', left: '8px', width: '10px', height: '8px' }} />
-    <div className="win" style={{ top: '20px', right: '8px', width: '10px', height: '8px', animationDelay: '0.5s' }} />
-    <div className="win" style={{ top: '40px', left: '8px', width: '10px', height: '8px', animationDelay: '1s' }} />
-    <div className="win" style={{ top: '60px', left: '8px', width: '10px', height: '8px', animationDelay: '0.3s' }} />
-    <div className="win" style={{ top: '60px', right: '8px', width: '10px', height: '8px', animationDelay: '0.8s' }} />
-    <div className="win" style={{ top: '80px', left: '8px', width: '10px', height: '8px', animationDelay: '1.2s' }} />
+    <div className="win" style={{ top: '20px', left: '8px', width: '10px', height: '10px' }} />
+    <div className="win" style={{ top: '20px', right: '8px', width: '10px', height: '10px', animationDelay: '0.5s' }} />
+    <div className="win" style={{ top: '40px', left: '8px', width: '10px', height: '10px', animationDelay: '1s' }} />
+    <div className="win" style={{ top: '60px', left: '8px', width: '10px', height: '10px', animationDelay: '0.3s' }} />
+    <div className="win" style={{ top: '60px', right: '8px', width: '10px', height: '10px', animationDelay: '0.8s' }} />
+    <div className="win" style={{ top: '80px', left: '8px', width: '10px', height: '10px', animationDelay: '1.2s' }} />
   </div>
 
-  <div className="building" style={{ left: '8%', width: '45px', height: '80px' }} />
-
-  <div className="building" style={{ left: '12%', width: '70px', height: '200px' }}>
-    <div className="win" style={{ top: '15px', left: '10px', width: '12px', height: '10px' }} />
-    <div className="win" style={{ top: '15px', right: '10px', width: '12px', height: '10px', animationDelay: '0.6s' }} />
-    <div className="win" style={{ top: '40px', left: '10px', width: '12px', height: '10px', animationDelay: '0.9s' }} />
-    <div className="win" style={{ top: '40px', right: '10px', width: '12px', height: '10px', animationDelay: '0.2s' }} />
-    <div className="win" style={{ top: '65px', left: '10px', width: '12px', height: '10px', animationDelay: '1.4s' }} />
-    <div className="win" style={{ top: '65px', right: '10px', width: '12px', height: '10px', animationDelay: '0.7s' }} />
-    <div className="win" style={{ top: '90px', left: '10px', width: '12px', height: '10px', animationDelay: '1.1s' }} />
-    <div className="win" style={{ top: '115px', left: '10px', width: '12px', height: '10px', animationDelay: '0.4s' }} />
-    <div className="win" style={{ top: '115px', right: '10px', width: '12px', height: '10px', animationDelay: '1.3s' }} />
-    <div className="win" style={{ top: '140px', left: '10px', width: '12px', height: '10px', animationDelay: '0.1s' }} />
+  <div className="building" style={{ left: '10%', width: '45px', height: '80px' }}>
+    <div className="win" style={{ top: '15px', left: '5px', width: '10px', height: '10px', animationDelay: '0.7s' }} />
+    <div className="win" style={{ top: '35px', left: '5px', width: '10px', height: '10px', animationDelay: '0.7s' }} />
   </div>
 
-  <div className="building" style={{ left: '16%', width: '55px', height: '150px' }} />
-
-  <div className="building" style={{ left: '20%', width: '90px', height: '280px' }}>
-    <div className="win" style={{ top: '10px', left: '12px', width: '14px', height: '12px', background: 'rgba(124,58,237,0.3)', borderColor: 'rgba(124,58,237,0.4)' }} />
-    <div className="win" style={{ top: '10px', right: '12px', width: '14px', height: '12px', background: 'rgba(124,58,237,0.3)', borderColor: 'rgba(124,58,237,0.4)', animationDelay: '0.5s' }} />
-    <div className="win" style={{ top: '35px', left: '12px', width: '14px', height: '12px', background: 'rgba(124,58,237,0.3)', borderColor: 'rgba(124,58,237,0.4)', animationDelay: '1s' }} />
-    <div className="win" style={{ top: '60px', left: '12px', width: '14px', height: '12px', background: 'rgba(124,58,237,0.3)', borderColor: 'rgba(124,58,237,0.4)', animationDelay: '0.3s' }} />
-    <div className="win" style={{ top: '60px', left: '12px', width: '14px', height: '12px', animationDelay: '0.8s' }} />
-    <div className="win" style={{ top: '85px', left: '12px', width: '14px', height: '12px', animationDelay: '1.2s' }} />
-    <div className="win" style={{ top: '110px', left: '12px', width: '14px', height: '12px', animationDelay: '0.6s' }} />
-    <div className="win" style={{ top: '110px', left: '12px', width: '14px', height: '12px', animationDelay: '1.5s' }} />
-    <div className="win" style={{ top: '135px', left: '12px', width: '14px', height: '12px', animationDelay: '0.2s' }} />
-    <div className="win" style={{ top: '160px', left: '12px', width: '14px', height: '12px', animationDelay: '0.9s' }} />
-    <div className="win" style={{ top: '185px', left: '12px', width: '14px', height: '12px', animationDelay: '1.1s' }} />
-    <div className="win" style={{ top: '210px', left: '12px', width: '14px', height: '12px', animationDelay: '0.4s' }} />
-    <div className="win" style={{ top: '235px', left: '12px', width: '14px', height: '12px', animationDelay: '0.7s' }} />
+  <div className="building" style={{ left: '14%', width: '70px', height: '200px' }}>
+    <div className="win" style={{ top: '15px', left: '10px', width: '10px', height: '10px' }} />
+    <div className="win" style={{ top: '15px', right: '10px', width: '10px', height: '10px', animationDelay: '0.6s' }} />
+    <div className="win" style={{ top: '40px', left: '10px', width: '10px', height: '10px', animationDelay: '0.9s' }} />
+    <div className="win" style={{ top: '40px', right: '10px', width: '10px', height: '10px', animationDelay: '0.2s' }} />
+    <div className="win" style={{ top: '60px', left: '10px', width: '10px', height: '10px', animationDelay: '1.4s' }} />
+    <div className="win" style={{ top: '60px', right: '10px', width: '10px', height: '10px', animationDelay: '0.7s' }} />
+    <div className="win" style={{ top: '80px', left: '10px', width: '10px', height: '10px', animationDelay: '1.1s' }} />
+    <div className="win" style={{ top: '100px', left: '10px', width: '10px', height: '10px', animationDelay: '0.4s' }} />
+    <div className="win" style={{ top: '100px', right: '10px', width: '10px', height: '10px', animationDelay: '1.3s' }} />
+    <div className="win" style={{ top: '120px', left: '10px', width: '10px', height: '10px', animationDelay: '0.1s' }} />
+    <div className="win" style={{ top: '140px', left: '10px', width: '10px', height: '12px', animationDelay: '0.7s' }} />
+    <div className="win" style={{ top: '160px', left: '10px', width: '10px', height: '12px', animationDelay: '0.7s' }} />
   </div>
 
-  <div className="building" style={{ left: '25%', width: '65px', height: '180px' }} />
-  <div className="building" style={{ left: '30%', width: '80px', height: '230px' }}>
-    <div className="win" style={{ top: '20px', left: '10px', width: '12px', height: '10px', animationDelay: '0.3s' }} />
-    <div className="win" style={{ top: '20px', right: '10px', width: '12px', height: '10px', animationDelay: '0.8s' }} />
-    <div className="win" style={{ top: '20px', left: '30px', width: '12px', height: '10px', animationDelay: '1.2s' }} />
+  <div className="building" style={{ left: '20%', width: '55px', height: '150px' }}>
+      <div className="win" style={{ top: '15px', left: '10px', width: '10px', height: '10px', animationDelay: '0.7s' }} />
+    <div className="win" style={{ top: '35px', left: '10px', width: '10px', height: '10px', animationDelay: '0.7s' }} />
+    <div className="win" style={{ top: '60px', left: '10px', width: '10px', height: '10px', animationDelay: '0.7s' }} />
+    <div className="win" style={{ top: '85px', left: '10px', width: '10px', height: '10px', animationDelay: '0.7s' }} />
+    <div className="win" style={{ top: '110px', left: '10px', width: '10px', height: '10px', animationDelay: '0.7s' }} />
   </div>
-  <div className="building" style={{ left: '34%', width: '50px', height: '100px' }} />
-  <div className="building" style={{ left: '38%', width: '75px', height: '170px' }} />
-  <div className="building" style={{ left: '42%', width: '55px', height: '130px' }} />
+
+  <div className="building" style={{ left: '26%', width: '90px', height: '280px' }}>
+    <div className="win" style={{ top: '10px', left: '12px', width: '10px', height: '10px', background: 'rgba(124,58,237,0.3)', borderColor: 'rgba(124,58,237,0.4)' }} />
+    <div className="win" style={{ top: '10px', right: '12px', width: '10px', height: '10px', background: 'rgba(124,58,237,0.3)', borderColor: 'rgba(124,58,237,0.4)', animationDelay: '0.5s' }} />
+    <div className="win" style={{ top: '35px', left: '12px', width: '10px', height: '10px', background: 'rgba(124,58,237,0.3)', borderColor: 'rgba(124,58,237,0.4)', animationDelay: '1s' }} />
+    <div className="win" style={{ top: '50px', left: '12px', width: '10px', height: '10px', background: 'rgba(124,58,237,0.3)', borderColor: 'rgba(124,58,237,0.4)', animationDelay: '0.3s' }} />
+    <div className="win" style={{ top: '65px', left: '12px', width: '10px', height: '10px', animationDelay: '0.8s' }} />
+    <div className="win" style={{ top: '85px', left: '12px', width: '10px', height: '10px', animationDelay: '1.2s' }} />
+    <div className="win" style={{ top: '102px', left: '12px', width: '10px', height: '10px', animationDelay: '0.6s' }} />
+    <div className="win" style={{ top: '102px', left: '12px', width: '10px', height: '10px', animationDelay: '1.5s' }} />
+    <div className="win" style={{ top: '117px', left: '12px', width: '10px', height: '10px', animationDelay: '0.2s' }} />
+    <div className="win" style={{ top: '135px', left: '12px', width: '10px', height: '10px', animationDelay: '0.9s' }} />
+    <div className="win" style={{ top: '155px', left: '12px', width: '10px', height: '10px', animationDelay: '1.1s' }} />
+    <div className="win" style={{ top: '175px', left: '12px', width: '10px', height: '10px', animationDelay: '0.4s' }} />
+    <div className="win" style={{ top: '195px', left: '12px', width: '10px', height: '10px', animationDelay: '0.7s' }} />
+    <div className="win" style={{ top: '215px', left: '12px', width: '10px', height: '10px', animationDelay: '0.7s' }} />
+    <div className="win" style={{ top: '235px', left: '12px', width: '10px', height: '10px', animationDelay: '0.7s' }} />
+  </div>
+
+  <div className="building" style={{ left: '32%', width: '65px', height: '180px' }}>
+    <div className="win" style={{ top: '15px', left: '10px', width: '10px', height: '10px', animationDelay: '0.7s' }} />
+    <div className="win" style={{ top: '35px', left: '10px', width: '10px', height: '10px', animationDelay: '0.7s' }} />
+    <div className="win" style={{ top: '60px', left: '10px', width: '10px', height: '10px', animationDelay: '0.7s' }} />
+    <div className="win" style={{ top: '85px', left: '10px', width: '10px', height: '10px', animationDelay: '0.7s' }} />
+    <div className="win" style={{ top: '110px', left: '10px', width: '10px', height: '10px', animationDelay: '0.7s' }} />
+    <div className="win" style={{ top: '135px', left: '10px', width: '10px', height: '10px', animationDelay: '0.7s' }} />
+  </div>
+  <div className="building" style={{ left: '38%', width: '90px', height: '230px' }}>
+    <div className="win" style={{ top: '20px', left: '10px', width: '10px', height: '10px', animationDelay: '0.3s' }} />
+    <div className="win" style={{ top: '20px', right: '10px', width: '10px', height: '10px', animationDelay: '0.8s' }} />
+    <div className="win" style={{ top: '20px', left: '50px', width: '10px', height: '10px', animationDelay: '1.2s' }} />
+    <div className="win" style={{ top: '20px', left: '30px', width: '10px', height: '10px', animationDelay: '1.2s' }} />
+    <div className="win" style={{ top: '35px', left: '10px', width: '10px', height: '10px', animationDelay: '0.7s' }} />
+    <div className="win" style={{ top: '60px', left: '10px', width: '10px', height: '10px', animationDelay: '0.7s' }} />
+    <div className="win" style={{ top: '85px', left: '10px', width: '10px', height: '10px', animationDelay: '0.7s' }} />
+    <div className="win" style={{ top: '110px', left: '10px', width: '10px', height: '10px', animationDelay: '0.7s' }} />
+    <div className="win" style={{ top: '135px', left: '10px', width: '10px', height: '10px', animationDelay: '0.7s' }} />
+    <div className="win" style={{ top: '160px', left: '10px', width: '10px', height: '10px', animationDelay: '0.7s' }} />
+    <div className="win" style={{ top: '185px', left: '10px', width: '10px', height: '10px', animationDelay: '0.7s' }} />
+  </div>
+  <div className="building" style={{ left: '44%', width: '70px', height: '100px' }}>
+    <div className="win" style={{ top: '20px', left: '5px', width: '10px', height: '10px', animationDelay: '0.3s' }} />
+    <div className="win" style={{ top: '38px', left: '5px', width: '10px', height: '10px', animationDelay: '0.3s' }} />
+    <div className="win" style={{ top: '55px', left: '5px', width: '10px', height: '10px', animationDelay: '0.3s' }} />
+  </div>
+  <div className="building" style={{ left: '49%', width: '75px', height: '170px' }}>
+    <div className="win" style={{ top: '20px', left: '25px', width: '10px', height: '10px', animationDelay: '0.3s' }} />
+    <div className="win" style={{ top: '20px', right: '20px', width: '10px', height: '10px', animationDelay: '0.8s' }} />
+    <div className="win" style={{ top: '20px', left: '60px', width: '10px', height: '10px', animationDelay: '1.2s' }} />
+    <div className="win" style={{ top: '20px', left: '5px', width: '10px', height: '10px', animationDelay: '0.3s' }} />
+    <div className="win" style={{ top: '38px', left: '5px', width: '10px', height: '10px', animationDelay: '0.3s' }} />
+    <div className="win" style={{ top: '60px', left: '5px', width: '10px', height: '10px', animationDelay: '0.3s' }} />
+    <div className="win" style={{ top: '82px', left: '5px', width: '10px', height: '10px', animationDelay: '0.3s' }} />
+    <div className="win" style={{ top: '98px', left: '5px', width: '10px', height: '10px', animationDelay: '0.3s' }} />
+    <div className="win" style={{ top: '118px', left: '5px', width: '10px', height: '10px', animationDelay: '0.3s' }} />
+  </div>
+  <div className="building" style={{ left: '54%', width: '85px', height: '130px' }}>
+    <div className="win" style={{ top: '20px', left: '25px', width: '10px', height: '10px', animationDelay: '0.3s' }} />
+    <div className="win" style={{ top: '20px', right: '30px', width: '10px', height: '10px', animationDelay: '0.8s' }} />
+    <div className="win" style={{ top: '20px', left: '60px', width: '10px', height: '10px', animationDelay: '1.2s' }} />
+    <div className="win" style={{ top: '20px', left: '5px', width: '10px', height: '10px', animationDelay: '0.3s' }} />
+    <div className="win" style={{ top: '20px', left: '5px', width: '10px', height: '10px', animationDelay: '0.3s' }} />
+    <div className="win" style={{ top: '38px', left: '5px', width: '10px', height: '10px', animationDelay: '0.3s' }} />
+    <div className="win" style={{ top: '60px', left: '5px', width: '10px', height: '10px', animationDelay: '0.3s' }} />
+    <div className="win" style={{ top: '82px', left: '5px', width: '10px', height: '10px', animationDelay: '0.3s' }} />
+  </div>
 </div>
 
       </div>

@@ -152,7 +152,7 @@ return (
     display: "flex",
     flexDirection: "column",
     justifyContent: "space-between",
-    padding: 24,
+    padding: 0,
     position: "relative",
     zIndex: 1,
     animation: "fadeUp 0.8s ease both"
