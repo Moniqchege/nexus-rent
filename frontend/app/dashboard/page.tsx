@@ -35,18 +35,7 @@ const statsData = [
     changeColor: "var(--accent-success)",
     bgColor: "rgba(0,255,163,0.1)",
     delay: 3,
-  },
-  {
-    icon: "🤖",
-    label: "AI Growth Index",
-    value: "+14.3%",
-    change: "Predicted next 90 days",
-    topColor: "var(--accent-danger)",
-    valueColor: "var(--accent-danger)",
-    changeColor: "var(--text-secondary)",
-    bgColor: "rgba(255,59,129,0.1)",
-    delay: 4,
-  },
+  }
 ];
 
 export default function DashboardPage() {

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { useAuthStore } from "@/app/store/authStore";
+import { useUIStore } from "@/app/store/uiStore";
 
 const NAV = [
   { label: "Overview", icon: "⊞", to: "/dashboard" },
@@ -18,14 +19,37 @@ export default function Sidebar() {
   const { user, logout } = useAuthStore();
   const router = useRouter();
   const [active, setActive] = useState("/dashboard");
+  const { isSidebarOpen, closeSidebar } = useUIStore();
+  const sidebarRef = useRef<HTMLElement>(null);
 
   const handleNavClick = (to: string) => {
     router.push(to);
     setActive(to);
+    closeSidebar();
   };
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        isSidebarOpen && 
+        sidebarRef.current && 
+        !sidebarRef.current.contains(event.target as Node) &&
+        !(event.target as Element).closest('.menu-btn')
+      ) {
+        closeSidebar();
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isSidebarOpen, closeSidebar]);
+
   return (
-    <aside className="sidebar" style={{ display: 'flex', flexDirection: 'column' }}>
+    <aside 
+      ref={sidebarRef}
+      className={`sidebar ${isSidebarOpen ? 'open' : ''}`} 
+      style={{ display: 'flex', flexDirection: 'column' }}
+    >
       
       {/* User info */}
       <div style={{ textAlign: "center", marginBottom: 24, paddingBottom: 24, borderBottom: "1px solid var(--border-glow)" }}>
@@ -47,8 +71,7 @@ export default function Sidebar() {
           <button
             key={to}
             onClick={() => handleNavClick(to)}
-            className="sidebar-item"
-            style={active === to ? { background: "rgba(0,240,255,0.08)", color: "var(--neon-blue)", border: "1px solid var(--border-glow)", fontWeight: "600" } : { border: "1px solid transparent" }}
+            className={`sidebar-item ${active === to ? "active" : ""}`}
           >
             <span style={{ fontSize: 18 }}>{icon}</span>
             <span style={{ flex: 1, textAlign: "left" }}>{label}</span>
@@ -64,8 +87,7 @@ export default function Sidebar() {
       {/* Logout button at bottom */}
       <button
         onClick={() => logout()}
-        className="sidebar-item"
-        style={{ marginTop: 24, color: "var(--accent-danger)", border: "1px solid transparent" }}
+        className="sidebar-item logout"
       >
         <LogOut size={16} />
         Logout

@@ -698,15 +698,15 @@
 
   /* ========= STAT CARDS ROW ========= */
   .stats-section {
-    padding: 0 60px 60px;
+    padding: 0 0 60px;
     border-top: 1px solid var(--border-glow);
   }
 
   .stats-row {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 20px;
-    padding-top: 60px;
+    padding-top: 40px;
   }
 
   .overview-stat {
@@ -758,28 +758,71 @@
 
   /* ========= TENANT DASHBOARD ========= */
   .dashboard-section {
-    padding: 80px 60px;
-    border-top: 1px solid var(--border-glow);
+    padding: 0; 
+    border-top: none; 
     background: linear-gradient(180deg, transparent, rgba(0,240,255,0.02));
   }
 
+  .dashboard-layout main {
+    padding: 0 60px 20px 24px; 
+  }
+
   .dashboard-layout {
-    display: grid;
-    grid-template-columns: 240px 1fr;
-    gap: 24px;
-    margin-top: 40px;
+    display: block;
+    position: relative;
+    margin-top: 0; 
   }
 
   .sidebar {
-  width: 240px;
+  width: 260px;
   min-width: 240px;
   flex-shrink: 0;
+  position: fixed;
+  top: 80px;
+  left: -300px;
+  z-index: 50;
+  transition: left 0.3s ease, box-shadow 0.3s ease;
+  background: rgba(11, 15, 25, 0.85); 
+  backdrop-filter: blur(16px);
+  border-right: 1px solid var(--neon-blue);
+  border-radius: 0;
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.1);
+  padding: 20px;
+  height: calc(100vh - 80px); 
+  overflow-y: auto;
+  -ms-overflow-style: none;  
+  scrollbar-width: none;  
+}
+.sidebar::-webkit-scrollbar {
+  display: none; 
+}
 
-  background: var(--bg-card);
-  border: 1px solid var(--border-glow);
-  border-radius: 20px;
-  padding: 24px;
-  height: 100vh;
+.sidebar.open {
+  left: 0;
+  box-shadow: 0 0 35px rgba(0, 240, 255, 0.15);
+}
+
+@media (min-width: 1024px) {
+  .dashboard-layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 0; 
+    margin-top: 0; 
+  }
+
+  .sidebar {
+    position: sticky;
+    top: 80px; 
+    left: 0 !important;
+    height: calc(100vh - 80px);
+    border-radius: 0;
+    border-left: none; 
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.05);
+  }
+
+  .menu-btn {
+    display: none !important;
+  }
 }
 
   .sidebar-nav { display: flex; flex-direction: column; gap: 4px; }
@@ -789,20 +832,73 @@
     align-items: center;
     gap: 10px;
     padding: 12px 14px;
-    border-radius: 10px;
+    border-radius: 12px;
     font-size: 14px;
     color: var(--text-secondary);
     cursor: pointer;
-    transition: all 0.3s;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: transparent;
+    border: 1px solid transparent;
+    position: relative;
+    overflow: hidden;
   }
 
-  .sidebar-item:hover { background: rgba(255,255,255,0.05); color: var(--text-primary); }
+  .sidebar-item::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, rgba(0,240,255,0.1), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 0;
+  }
+
+  .sidebar-item > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .sidebar-item:hover {
+    color: var(--text-primary);
+    border-color: rgba(0, 240, 255, 0.3);
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.1);
+    transform: translateX(4px);
+  }
+
+  .sidebar-item:hover::before {
+    opacity: 1;
+  }
 
   .sidebar-item.active {
-    background: rgba(0,240,255,0.1);
+    background: rgba(0, 240, 255, 0.08);
+    border-color: var(--neon-blue);
     color: var(--neon-blue);
-    border: 1px solid rgba(0,240,255,0.2);
+    font-weight: 600;
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.2);
   }
+
+  .sidebar-item.active::before {
+    opacity: 1;
+    background: linear-gradient(90deg, rgba(0,240,255,0.2), rgba(124,58,237,0.05));
+  }
+  
+  .sidebar-item.logout {
+    margin-top: 24px;
+    color: var(--accent-danger);
+  }
+  
+  .sidebar-item.logout:hover {
+    color: var(--accent-danger);
+    border-color: rgba(255, 59, 129, 0.3);
+    box-shadow: 0 0 15px rgba(255, 59, 129, 0.15);
+    background: rgba(255, 59, 129, 0.05);
+  }
+  
+  .sidebar-item.logout::before {
+    display: none;
+  }
+
+
 
   .sidebar-icon { font-size: 16px; }
 
