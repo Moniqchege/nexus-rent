@@ -25,35 +25,35 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="flex flex-col h-screen w-[220px] bg-space-bg border-r border-space-border px-4 py-6">
+    <aside className="sidebar" style={{ display: 'flex', flexDirection: 'column' }}>
       
       {/* User info */}
-      <div className="text-center mb-6 pb-6 border-b border-space-border">
-        <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-neon-purple to-neon-blue flex items-center justify-center text-2xl mx-auto mb-3">
+      <div style={{ textAlign: "center", marginBottom: 24, paddingBottom: 24, borderBottom: "1px solid var(--border-glow)" }}>
+        <div style={{
+          width: 56, height: 56, borderRadius: "50%", background: "linear-gradient(to top right, var(--neon-purple), var(--neon-blue))",
+          display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, margin: "0 auto 12px"
+        }}>
           👤
         </div>
-        <div className="font-semibold text-sm">{user?.name ?? "Alex Kimani"}</div>
-        <div className="text-xs text-text-secondary">
-          {user?.name ?? "Tenant"} · Since Jan 2024
+        <div style={{ fontWeight: 600, fontSize: 14 }}>{user?.name ?? "Alex Kimani"}</div>
+        <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+          {user?.name ? "User" : "Tenant"} · Since Jan 2024
         </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 flex flex-col gap-2">
+      <nav className="sidebar-nav" style={{ flex: 1 }}>
         {NAV.map(({ label, icon, to, badge }) => (
           <button
             key={to}
             onClick={() => handleNavClick(to)}
-            className={`flex items-center gap-2 px-3 py-2 rounded transition-colors ${
-              active === to
-                ? "bg-space-surface/20 border border-space-border text-neon-blue font-semibold"
-                : "hover:bg-space-surface/10 text-text-secondary"
-            }`}
+            className="sidebar-item"
+            style={active === to ? { background: "rgba(0,240,255,0.08)", color: "var(--neon-blue)", border: "1px solid var(--border-glow)", fontWeight: "600" } : { border: "1px solid transparent" }}
           >
-            <span className="text-lg">{icon}</span>
-            <span className="flex-1 text-left">{label}</span>
+            <span style={{ fontSize: 18 }}>{icon}</span>
+            <span style={{ flex: 1, textAlign: "left" }}>{label}</span>
             {badge && (
-              <span className="ml-auto bg-accent-danger text-white text-[9px] px-1.5 py-[1px] rounded-full">
+              <span style={{ marginLeft: "auto", background: "var(--accent-danger)", color: "#fff", fontSize: 10, padding: "2px 6px", borderRadius: 12 }}>
                 {badge}
               </span>
             )}
@@ -64,7 +64,8 @@ export default function Sidebar() {
       {/* Logout button at bottom */}
       <button
         onClick={() => logout()}
-        className="mt-auto flex items-center gap-2 px-3 py-2 text-sm text-status-danger hover:bg-red-600/10 rounded transition-colors"
+        className="sidebar-item"
+        style={{ marginTop: 24, color: "var(--accent-danger)", border: "1px solid transparent" }}
       >
         <LogOut size={16} />
         Logout

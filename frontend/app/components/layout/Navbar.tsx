@@ -5,7 +5,7 @@ export default function Navbar() {
   const router = useRouter();
 
   return (
-    <nav>
+    <nav className="top-nav">
       <div className="logo">NEXUSRENT</div>
       <div className="nav-actions">
         <button
