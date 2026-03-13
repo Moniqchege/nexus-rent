@@ -2,17 +2,27 @@
 import { useRouter, usePathname } from "next/navigation";
 import { Menu } from "lucide-react";
 import { useUIStore } from "@/app/store/uiStore";
+import { useEffect, useState } from "react";
 
 export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
   const toggleSidebar = useUIStore((state) => state.toggleSidebar);
 
-  const isDashboardPage = pathname?.startsWith("/dashboard") || 
-                          pathname?.startsWith("/rentals") || 
-                          pathname?.startsWith("/payments") || 
-                          pathname?.startsWith("/ai-insights") || 
-                          pathname?.startsWith("/settings");
+  const [mounted, setMounted] = useState(false);
+
+useEffect(() => {
+  setMounted(true);
+}, []);
+
+const isDashboardPage =
+  pathname?.startsWith("/dashboard") ||
+  pathname?.startsWith("/rentals") ||
+  pathname?.startsWith("/payments") ||
+  pathname?.startsWith("/ai-insights") ||
+  pathname?.startsWith("/settings");
+
+const isHeroPage = mounted && pathname === "/";
 
   return (
     <nav className="top-nav">
@@ -38,12 +48,14 @@ export default function Navbar() {
         </div>
       </div>
       <div className="nav-actions">
-        <button
-          className="btn-primary"
-          onClick={() => router.push("/login")} 
-        >
-          Sign In
-        </button>
+        {isHeroPage && (
+    <button
+      className="btn-primary"
+      onClick={() => router.push("/login")}
+    >
+      Sign In
+    </button>
+  )}
         <button className="btn-purple">List Property</button>
       </div>
     </nav>

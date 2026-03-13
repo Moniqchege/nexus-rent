@@ -798,7 +798,8 @@
   border-radius: 0;
   box-shadow: 0 0 20px rgba(0, 240, 255, 0.1);
   padding: 20px;
-  height: calc(100vh - 80px); 
+  height: calc(100vh - 80px - 30px); 
+  padding-bottom: 30px;
   overflow-y: auto;
   -ms-overflow-style: none;  
   scrollbar-width: none;  
@@ -894,6 +895,7 @@
   
   .sidebar-item.logout {
     margin-top: 24px;
+    padding: 24px;
     color: var(--accent-danger);
   }
   
