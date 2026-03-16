@@ -12,7 +12,7 @@ export default function PropertiesPage() {
         <h1 style={{ fontSize: '48px', fontWeight: '800', background: 'linear-gradient(135deg, var(--neon-blue), var(--neon-purple))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: '0 0 16px 0' }}>
           Available Properties
         </h1>
-        <p style={{ fontSize: '20px', color: 'var(--text-secondary)', margin: 0 }}>AI-powered rental recommendations near you</p>
+        <p style={{ fontSize: '20px', color: 'var(--text-secondary)', margin: 0 }}>Rental recommendations for you</p>
       </div>
       <PropertyList 
         properties={sampleProperties} 

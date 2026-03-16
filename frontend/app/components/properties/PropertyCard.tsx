@@ -14,7 +14,7 @@ export interface Property {
   distance: number;
   image?: string;
   amenities: string[];
-  aiScore: number;
+  Score: number;
   status: 'available' | 'pending' | 'rented';
   rating?: number;
 }
@@ -60,7 +60,7 @@ export default function PropertyCard({ property, onSaveToggle }: PropertyCardPro
             </div>
           )}
           <div className="ai-badge">
-            🤖 AI Score {property.aiScore}%
+            🤖 Score {property.Score}%
           </div>
           <div className="status-badge" style={{ 
             position: 'absolute', 
