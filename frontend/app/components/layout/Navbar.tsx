@@ -56,7 +56,7 @@ const isHeroPage = mounted && pathname === "/";
       Sign In
     </button>
   )}
-        <button className="btn-purple">List Property</button>
+        <button className="btn-purple" onClick={() => router.push("/properties")}>List Property</button>
       </div>
     </nav>
   );
