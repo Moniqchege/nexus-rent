@@ -1,21 +1,20 @@
-# Task Progress: Dashboard Analytics & Sidebar Properties Reordering
+# Payments Page Task
 
-## Plan Breakdown & Steps (Approved) ✅ COMPLETED
+**Information Gathered:**
+- No `frontend/app/payments/page.tsx` exists
+- Sidebar has Payments nav `/payments`
+- Dashboard style: neon glassmorphism, charts, tables from Example.tsx CSS
 
-**Files Edited:**
-- `frontend/app/components/layout/Sidebar.tsx` ✅ Properties added as 2nd nav item
-- `frontend/app/dashboard/page.tsx` ✅ Analytics dashboard with stats + charts
+**Plan:**
+1. Create `frontend/app/payments/page.tsx`:
+   - Header \"💳 PAYMENTS DASHBOARD\"
+   - Upcoming bills: 3 cards (due dates, amounts KSh)
+   - Payment history table (date, amount, status, method dummy data)
+   - Add payment method form (card/M-Pesa)
+   - Payments chart (bar SVG monthly totals)
 
-**Step 1: Create/Update TODO.md** ✅
-**Step 2: Edit Sidebar.tsx** ✅
-**Step 3: Edit dashboard/page.tsx** ✅
+**Dependent Files:** None (new page)
 
-**Step 4: Test changes** 
-```
-cd frontend && npm run dev
-```
-Visit http://localhost:3000/dashboard:
-- Sidebar: Overview (1st), Properties (2nd linking to /properties), My Rentals (3rd)
-- Dashboard shows 4x analytics stat cards (Portfolio 12, Revenue KSh 143K, 92% Occupancy, +18.7% Growth) + charts
+**Followup:** Test `npm run dev` → /payments via sidebar
 
-**Step 5: Complete** ✅
+Proceed with plan?

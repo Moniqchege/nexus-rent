@@ -11,7 +11,7 @@ export default function PropertiesPage() {
       <div className="page-tag">📊 PROPERTIES DASHBOARD</div>
       <div style={{ marginBottom: '32px' }}>
         <div className="section-label">◈ MY PROPERTIES</div>
-        <div className="section-title">Rental Portfolio Overview</div>
+        {/* <div className="section-title">Rental Portfolio Overview</div> */}
       </div>
       <PropertyList properties={sampleProperties} />
     </div>
