@@ -1,20 +1,19 @@
-# Payments Page Task
+# AI Insights Page Task
+
+**Status:** ✅ In Progress
+
+**Steps:**
+- [x] Create TODO.md with plan tracking
+- [ ] Create `frontend/app/dashboard/ai-insights/page.tsx` with full UI conversion
+- [ ] Verify rendering at `/dashboard/ai-insights`
+- [ ] Test responsive design
+- [ ] ~~Update Sidebar/Navbar~~ (already references `/ai-insights`)
+- [ ] Run `cd frontend && npm run dev` to demo
 
 **Information Gathered:**
-- No `frontend/app/payments/page.tsx` exists
-- Sidebar has Payments nav `/payments`
-- Dashboard style: neon glassmorphism, charts, tables from Example.tsx CSS
+- Dashboard layout wraps pages with Sidebar/Navbar
+- globals.css has all required AI engine styles
+- Static SVG charts + hardcoded stats (no backend needed)
 
-**Plan:**
-1. Create `frontend/app/payments/page.tsx`:
-   - Header \"💳 PAYMENTS DASHBOARD\"
-   - Upcoming bills: 3 cards (due dates, amounts KSh)
-   - Payment history table (date, amount, status, method dummy data)
-   - Add payment method form (card/M-Pesa)
-   - Payments chart (bar SVG monthly totals)
+**Next:** Create page.tsx then test.
 
-**Dependent Files:** None (new page)
-
-**Followup:** Test `npm run dev` → /payments via sidebar
-
-Proceed with plan?
