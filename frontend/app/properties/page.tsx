@@ -7,17 +7,13 @@ export default function PropertiesPage() {
   const router = useRouter();
 
   return (
-    <div className="page-container" style={{ maxWidth: '1400px', margin: '0 auto', padding: '40px 20px' }}>
-      <div style={{ marginBottom: '40px', textAlign: 'center' }}>
-        <h1 style={{ fontSize: '48px', fontWeight: '800', background: 'linear-gradient(135deg, var(--neon-blue), var(--neon-purple))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: '0 0 16px 0' }}>
-          Available Properties
-        </h1>
-        <p style={{ fontSize: '20px', color: 'var(--text-secondary)', margin: 0 }}>Rental recommendations for you</p>
+    <div className="dashboard-content">
+      <div className="page-tag">📊 PROPERTIES DASHBOARD</div>
+      <div style={{ marginBottom: '32px' }}>
+        <div className="section-label">◈ MY PROPERTIES</div>
+        <div className="section-title">Rental Portfolio Overview</div>
       </div>
-      <PropertyList 
-        properties={sampleProperties} 
-        viewMode="grid"
-      />
+      <PropertyList properties={sampleProperties} />
     </div>
   );
 }

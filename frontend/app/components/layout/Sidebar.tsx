@@ -8,7 +8,8 @@ import { useUIStore } from "@/app/store/uiStore";
 
 const NAV = [
   { label: "Overview", icon: "⊞", to: "/dashboard" },
-  { label: "My Rentals", icon: "🏠", to: "/rentals" },
+  // { label: "Properties", icon: "🏢", to: "/properties" },
+  { label: "My Rentals", icon: "🏠", to: "/properties" },
   { label: "Payments", icon: "💳", to: "/payments" },
   { label: "AI Insights", icon: "🤖", to: "/ai-insights" },
   { label: "Notifications", icon: "🔔", to: "/notifications", badge: 3 },

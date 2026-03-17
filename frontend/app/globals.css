@@ -708,13 +708,13 @@
 
   /* ========= STAT CARDS ROW ========= */
   .stats-section {
-    padding: 0 0 60px;
+    padding: 0 0 0px;
     border-top: 1px solid var(--border-glow);
   }
 
   .stats-row {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 20px;
     padding-top: 20px;
   }
@@ -723,7 +723,7 @@
     background: var(--bg-card);
     border: 1px solid var(--border-glow);
     border-radius: 20px;
-    padding: 24px;
+    padding: 20px;
     position: relative;
     overflow: hidden;
     transition: all 0.3s;
@@ -748,19 +748,19 @@
     align-items: center;
     justify-content: center;
     font-size: 20px;
-    margin-bottom: 16px;
+    margin-bottom: 14px;
   }
 
-  .ov-label { font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; }
+  .ov-label { font-size: 11px; color: var(--text-secondary); margin-bottom: 8px; }
   .ov-value {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 32px;
+    font-size: 20px;
     font-weight: 600;
     line-height: 1;
     margin-bottom: 8px;
   }
   .ov-change {
-    font-size: 12px;
+    font-size: 10px;
     display: flex;
     align-items: center;
     gap: 4px;
@@ -1063,6 +1063,7 @@ footer {
     font-family: 'Orbitron', monospace;
     letter-spacing: 2px;
     margin-bottom: 16px;
+    margin-top: 16px;
   }
 
   .page-tag::before {
