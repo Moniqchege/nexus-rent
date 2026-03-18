@@ -15,6 +15,14 @@
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
+  /* RoleForm.module.css or global.css */
+input::placeholder,
+textarea::placeholder,
+button::placeholder {
+  font-size: 12px; /* smaller placeholder text */
+  color: var(--text-secondary);
+}
+
   body {
     background: var(--bg-primary);
     color: var(--text-primary);
@@ -80,7 +88,7 @@
   border: 1px solid var(--border-glow);
   border-radius: 16px;
   width: 90%;
-  max-width: 800px;
+  max-width: 1000px;
   height: 80vh;
   overflow: hidden;
   padding: 24px;

@@ -16,14 +16,50 @@ export default function NewRolePage() {
   return (
     <div className="dashboard-content">
       <div className="page-tag">🎭 ROLES & PERMISSIONS</div>
-      <div className="section-label">ACCESS CONTROL</div>
 
+      {/* Section label with back button */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        //   marginBottom: "16px"
+        }}
+      >
+        <div
+          style={{
+            fontWeight: 600,
+            fontSize: "16px",
+            color: "var(--neon-blue)"
+          }}
+        >
+          ACCESS CONTROL
+        </div>
+
+        <button
+          onClick={() => router.push("/roles")}
+          style={{
+            background: "linear-gradient(to right, var(--neon-blue), var(--neon-purple))",
+            color: "white",
+            border: "none",
+            borderRadius: "12px",
+            fontWeight: 600,
+            cursor: "pointer",
+            padding: "12px 24px",
+            fontSize: "14px"
+          }}
+        >
+          ← Back
+        </button>
+      </div>
+
+      {/* Main heading */}
       <h2
         style={{
           fontSize: "24px",
           fontWeight: 700,
           color: "var(--neon-purple)",
-          marginBottom: "32px"
+          marginBottom: "20px"
         }}
       >
         Create Role

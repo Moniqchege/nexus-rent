@@ -108,7 +108,6 @@ export default function PropertyPopup({ properties, onClose }: PropertyPopupProp
           ))}
         </div>
   </div>
-        
       </div>
     </div>
   );

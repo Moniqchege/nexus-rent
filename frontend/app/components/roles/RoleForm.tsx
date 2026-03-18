@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useAdminStore } from "../../store/adminStore";
+import { createPortal } from "react-dom";
+import { Search } from "lucide-react";
 
 interface RoleFormProps {
   onSubmit: (roleData: any) => void;
@@ -11,6 +13,7 @@ interface RoleFormProps {
 
 export default function RoleForm({ onSubmit, onCancel, editingRole }: RoleFormProps) {
   const { permissions, roles, updateRole } = useAdminStore();
+  const [showPermissionsModal, setShowPermissionsModal] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     code: "",
@@ -56,12 +59,12 @@ export default function RoleForm({ onSubmit, onCancel, editingRole }: RoleFormPr
       marginBottom: "32px"
     }}>
       <h3 style={{ 
-        fontSize: "28px", 
+        fontSize: "20px", 
         fontWeight: 700, 
         background: "linear-gradient(to right, var(--neon-blue), var(--neon-purple))",
         WebkitBackgroundClip: "text",
         WebkitTextFillColor: "transparent",
-        marginBottom: "12px"
+        marginBottom: "10px"
       }}>
         {editingRole ? "Edit Role" : "Create New Role"}
       </h3>
@@ -75,7 +78,7 @@ export default function RoleForm({ onSubmit, onCancel, editingRole }: RoleFormPr
   }}
 >
   <div>
-    <label style={{ display: "block", fontWeight: 600, marginBottom: "6px", color: "var(--neon-blue)" }}>
+    <label style={{ display: "block", fontWeight: 600, fontSize: "12px", marginBottom: "6px", color: "var(--neon-blue)" }}>
       Role Name *
     </label>
     <input
@@ -97,7 +100,7 @@ export default function RoleForm({ onSubmit, onCancel, editingRole }: RoleFormPr
   </div>
 
   <div>
-    <label style={{ display: "block", fontWeight: 600, marginBottom: "6px", color: "var(--neon-blue)" }}>
+    <label style={{ display: "block", fontWeight: 600, fontSize: "12px", marginBottom: "6px", color: "var(--neon-blue)" }}>
       Role Code
     </label>
     <input
@@ -120,7 +123,7 @@ export default function RoleForm({ onSubmit, onCancel, editingRole }: RoleFormPr
 </div>
 
         <div>
-          <label style={{ display: "block", fontWeight: 600, marginBottom: "8px", color: "var(--neon-blue)" }}>
+          <label style={{ display: "block", fontWeight: 600, fontSize: "12px", marginBottom: "8px", color: "var(--neon-blue)" }}>
             Description
           </label>
           <textarea
@@ -141,43 +144,269 @@ export default function RoleForm({ onSubmit, onCancel, editingRole }: RoleFormPr
           />
         </div>
 
-        <div>
-          <label style={{ display: "block", fontWeight: 600, marginBottom: "16px", color: "var(--neon-blue)" }}>
-            Permissions ({formData.permissions.length} selected)
-          </label>
-          
-          {Object.entries(groupedPermissions).map(([category, perms]: [string, any[]]) => (
-            <div key={category} style={{ marginBottom: "24px" }}>
-              <div style={{
-                fontWeight: 600,
-                color: "var(--neon-purple)",
-                marginBottom: "12px",
-                paddingBottom: "8px",
-                borderBottom: "1px solid var(--border-glow)"
-              }}>
-                {category} ({perms.length})
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "12px" }}>
-                {perms.map((perm) => (
-                  <label key={perm.key} style={{ display: "flex", alignItems: "center", gap: "12px", cursor: "pointer" }}>
-                    <input
-                      type="checkbox"
-                      checked={formData.permissions.includes(perm.key)}
-                      onChange={(e) => {
-                        const newPerms = e.target.checked
-                          ? [...formData.permissions, perm.key]
-                          : formData.permissions.filter(p => p !== perm.key);
-                        setFormData({ ...formData, permissions: newPerms });
+<div>
+  <label style={{ fontWeight: 600, fontSize: "12px", color: "var(--neon-blue)" }}>
+    Permissions ({formData.permissions.length} selected)
+  </label>
+
+  <div style={{ position: "relative", marginTop: "10px" }}>
+    <button
+      type="button"
+      onClick={() => setShowPermissionsModal(true)}
+      style={{
+        width: "100%",
+        background: "transparent",
+        border: "1px solid var(--border-glow)",
+        padding: "12px 40px 12px 16px", 
+        borderRadius: "10px",
+        color: "var(--text-primary)",
+        cursor: "pointer",
+        textAlign: "left",
+        whiteSpace: "nowrap",
+        overflow: "hidden",
+        textOverflow: "ellipsis"
+      }}
+    >
+      {formData.permissions.length === 0
+        ? "Select Permissions"
+        : (() => {
+            const selectedLabels = formData.permissions
+              .map(key => {
+                const perm = permissions.find(p => p.key === key);
+                return perm?.label || key;
+              })
+              .filter(Boolean);
+
+            const firstThree = selectedLabels.slice(0, 3);
+            const remainingCount = selectedLabels.length - firstThree.length;
+            return (
+              firstThree.join(", ") + (remainingCount > 0 ? ` +${remainingCount} more` : "")
+            );
+          })()}
+    </button>
+
+    {/* Search Icon */}
+    <Search
+      size={18}
+      style={{
+        position: "absolute",
+        right: "12px",
+        top: "50%",
+        transform: "translateY(-50%)",
+        color: "var(--text-secondary)",
+        pointerEvents: "none"
+      }}
+    />
+  </div>
+</div>
+
+{showPermissionsModal &&
+createPortal(
+  <div
+    className="popup-overlay"
+    onClick={() => setShowPermissionsModal(false)}
+    style={{
+      position: "fixed",
+      top: 0,
+      left: 0,
+      width: "100%",
+      height: "100%",
+      background: "radial-gradient(circle, rgba(124,58,237,0.12) 0%, transparent 70%)",
+      zIndex: 1000,
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "flex-start",
+      paddingTop: "100px"
+    }}
+  >
+    <div
+      className="popup-card"
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        position: "relative",
+        width: "900px",
+        maxHeight: "80vh",
+        display: "flex",
+        flexDirection: "column"
+      }}
+    >
+      {/* Close button */}
+      <button
+        onClick={() => setShowPermissionsModal(false)}
+        style={{
+          position: "absolute",
+          top: "12px",
+          right: "12px",
+          background: "transparent",
+          border: "none",
+          fontSize: "20px",
+          color: "var(--neon-purple)",
+          cursor: "pointer"
+        }}
+      >
+        ✕
+      </button>
+
+      {/* Header */}
+      <h2 style={{ color: "#fff", marginBottom: "12px" }}>
+        Select Permissions
+      </h2>
+
+      {/* Scrollable content */}
+      <div className="popup-scroll">
+        <div
+          style={{
+            overflowY: "auto",
+            flex: 1,
+            paddingRight: "8px"
+          }}
+        >
+          {Object.entries(groupedPermissions).map(([category, perms]) => {
+            const allSelected = perms.every(p =>
+              formData.permissions.includes(p.key)
+            );
+
+            const someSelected =
+              perms.some(p => formData.permissions.includes(p.key)) &&
+              !allSelected;
+
+            return (
+              <div
+                key={category}
+                style={{
+                  border: "1px solid var(--border-glow)",
+                  borderRadius: "12px",
+                  padding: "12px",
+                  background: "rgba(17,24,39,0.6)"
+                }}
+              >
+                {/* Parent */}
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                    fontWeight: 400,
+                    color: "var(--neon-purple)",
+                    cursor: "pointer"
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    ref={(el) => {
+                      if (el) el.indeterminate = someSelected;
+                    }}
+                    onChange={(e) => {
+                      let newPermissions = [...formData.permissions];
+
+                      if (e.target.checked) {
+                        const keys = perms.map(p => p.key);
+                        newPermissions = Array.from(
+                          new Set([...newPermissions, ...keys])
+                        );
+                      } else {
+                        const keys = perms.map(p => p.key);
+                        newPermissions = newPermissions.filter(
+                          p => !keys.includes(p)
+                        );
+                      }
+
+                      setFormData({
+                        ...formData,
+                        permissions: newPermissions
+                      });
+                    }}
+                    style={{
+                      width: "14px",
+                      height: "14px",
+                      accentColor: "var(--neon-purple)"
+                    }}
+                  />
+                  {category}
+                </label>
+
+                {/* Children */}
+                <div
+                  style={{
+                    marginTop: "10px",
+                    marginLeft: "24px",
+                    display: "grid",
+                    gap: "8px"
+                  }}
+                >
+                  {perms.map((perm) => (
+                    <label
+                      key={perm.key}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "10px",
+                        color: "#ddd",
+                        cursor: "pointer"
                       }}
-                      style={{ width: "20px", height: "20px", accentColor: "var(--neon-blue)" }}
-                    />
-                    <span style={{ fontSize: "14px" }}>{perm.label}</span>
-                  </label>
-                ))}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={formData.permissions.includes(perm.key)}
+                        onChange={(e) => {
+                          let newPermissions = [...formData.permissions];
+
+                          if (e.target.checked) {
+                            newPermissions.push(perm.key);
+                          } else {
+                            newPermissions = newPermissions.filter(
+                              p => p !== perm.key
+                            );
+                          }
+
+                          setFormData({
+                            ...formData,
+                            permissions: newPermissions
+                          });
+                        }}
+                        style={{
+                          width: "14px",
+                          height: "14px",
+                          accentColor: "var(--neon-purple)"
+                        }}
+                      />
+                      {perm.label}
+                    </label>
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
+      </div>
+
+      {/* Footer actions */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          marginTop: "16px"
+        }}
+      >
+        <button
+          onClick={() => setShowPermissionsModal(false)}
+          style={{
+            padding: "10px 20px",
+            borderRadius: "8px",
+            border: "none",
+            background: "var(--neon-purple)",
+            color: "#fff",
+            cursor: "pointer"
+          }}
+        >
+          Done
+        </button>
+      </div>
+    </div>
+  </div>,
+  document.body
+)}
 
         <div style={{ display: "flex", gap: "16px", justifyContent: "flex-end" }}>
           <button
