@@ -706,6 +706,19 @@
     color: var(--accent-danger);
   }
 
+  .tenant-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.tenant-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
   /* ========= STAT CARDS ROW ========= */
   .stats-section {
     padding: 0 0 0px;
@@ -1073,6 +1086,46 @@ footer {
     background: var(--neon-blue);
     box-shadow: 0 0 8px var(--neon-blue);
     animation: blink 1.5s infinite;
+  }
+
+  /* Tab styles for notifications */
+  .tab-btn {
+    position: relative;
+    padding: 12px 24px;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-family: 'Sora', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-bottom: 2px solid transparent;
+  }
+
+  .tab-btn:hover {
+    color: var(--text-primary);
+    border-bottom-color: var(--neon-blue);
+  }
+
+  .tab-btn.active {
+    color: var(--neon-blue);
+    border-bottom-color: var(--neon-blue);
+    background: rgba(0, 240, 255, 0.08);
+    box-shadow: 0 2px 10px rgba(0, 240, 255, 0.1);
+  }
+
+  .tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 24px;
+    height: 2px;
+    background: var(--neon-blue);
+    border-radius: 1px;
+    box-shadow: 0 0 8px var(--neon-blue);
   }
 
   @media (max-width: 640px) {

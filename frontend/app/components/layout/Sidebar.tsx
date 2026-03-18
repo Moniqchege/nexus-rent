@@ -1,20 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { useAuthStore } from "@/app/store/authStore";
 import { useUIStore } from "@/app/store/uiStore";
-
-const NAV = [
-  { label: "Overview", icon: "⊞", to: "/dashboard" },
-  // { label: "Properties", icon: "🏢", to: "/properties" },
-  { label: "My Rentals", icon: "🏠", to: "/properties" },
-  { label: "Payments", icon: "💳", to: "/payments" },
-  { label: "AI Insights", icon: "🤖", to: "/ai-insights" },
-  { label: "Notifications", icon: "🔔", to: "/notifications", badge: 3 },
-  { label: "Settings", icon: "⚙", to: "/settings" },
-];
+import api from "@/app/lib/api";
 
 export default function Sidebar() {
   const { user, logout } = useAuthStore();
@@ -22,10 +13,28 @@ export default function Sidebar() {
   const [active, setActive] = useState("/dashboard");
   const { isSidebarOpen, closeSidebar } = useUIStore();
   const sidebarRef = useRef<HTMLElement>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
+   const pathname = usePathname();
+
+  useEffect(() => {
+    if (!user) return;
+
+    api.get("/api/notifications/reviews").then(({ data }) => {
+      setUnreadCount(data.length);
+    }).catch(() => setUnreadCount(0));
+  }, [user]);
+
+  const NAV = [
+  { label: "Overview", icon: "⊞", to: "/dashboard" },
+  { label: "My Rentals", icon: "🏠", to: "/properties" },
+  { label: "Payments", icon: "💳", to: "/payments" },
+  { label: "AI Insights", icon: "🤖", to: "/ai-insights" },
+  { label: "Notifications", icon: "🔔", to: "/notifications", badge: unreadCount },
+  { label: "Settings", icon: "⚙", to: "/settings" },
+];
 
   const handleNavClick = (to: string) => {
     router.push(to);
-    setActive(to);
     closeSidebar();
   };
 
@@ -72,7 +81,7 @@ export default function Sidebar() {
           <button
             key={to}
             onClick={() => handleNavClick(to)}
-            className={`sidebar-item ${active === to ? "active" : ""}`}
+            className={`sidebar-item ${pathname === to ? "active" : ""}`}
           >
             <span style={{ fontSize: 18 }}>{icon}</span>
             <span style={{ flex: 1, textAlign: "left" }}>{label}</span>

@@ -8,6 +8,7 @@ import passport from "passport";
 import path from "path";
 import { fileURLToPath } from "url";
 import authRoutes from "./routes/auth.js";
+import notificationsRoutes from "./routes/notifications.js";
 import { setupOAuth } from "./services/oauthStrategies.js";
 
 
@@ -42,4 +43,5 @@ app.use(
   express.static(path.join(__dirname, "../uploads"))
 );
 app.use("/auth", authRoutes);
+app.use("/notifications", notificationsRoutes);
 app.listen(process.env.PORT || 4000, () => console.log("Server running"));

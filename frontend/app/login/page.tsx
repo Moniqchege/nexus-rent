@@ -68,7 +68,8 @@ const handleLocalLogin = async () => {
       setLoading(false);
       return;
     }
-    setToken(data.token, data.user, data.isFirstLogin)
+    // setToken(data.token, data.user, data.isFirstLogin)
+    sessionStorage.setItem("token", data.token);
     console.log("Logged in successfully!", data);
     router.push("/dashboard");
     setLoading(false);

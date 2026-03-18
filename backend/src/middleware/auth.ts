@@ -4,11 +4,11 @@ import { db } from "../db/prisma.js";
 import { AuthRequest } from "./auth-types";
 
 
-export async function requireAuth(
-  req: AuthRequest,
-  res: Response,
-  next: NextFunction
-) {
+export const requireAuth: RequestHandler = async (
+  req,
+  res,
+  next
+) => {
   const header = req.headers.authorization;
   if (!header?.startsWith("Bearer ")) {
     return res.status(401).json({ error: "Missing or invalid Authorization header" });
@@ -19,14 +19,15 @@ export async function requireAuth(
   try {
     const payload = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload & { sub?: string };
 
-    const userId = Number(payload.sub); 
-    if (isNaN(userId)) return res.status(401).json({ error: "Invalid token payload" });
-    if (!payload?.sub) return res.status(401).json({ error: "Invalid token payload" });
+    const userId = Number(payload.sub);
+    if (isNaN(userId) || !payload?.sub) {
+      return res.status(401).json({ error: "Invalid token payload" });
+    }
 
-    const session = await db.sessions.findUnique({
+    const session = await db.session.findUnique({
       where: { token },
       include: {
-        users: {
+        user: {
           select: { id: true, email: true, name: true, plan: true },
         },
       },
@@ -37,12 +38,14 @@ export async function requireAuth(
     if (new Date(session.expires_at) < new Date())
       return res.status(401).json({ error: "Session expired" });
 
-    req.userId = userId; 
-    req.user = {
-      id: session.users.id,
-      email: session.users.email,
-      name: session.users.name,
-      plan: session.users.plan ?? "FREE",
+    const authReq = req as AuthRequest;
+
+    authReq.userId = userId;
+    authReq.user = {
+      id: session.user.id,
+      email: session.user.email,
+      name: session.user.name,
+      plan: session.user.plan ?? "FREE",
     };
 
     next();
@@ -74,10 +77,10 @@ export async function optionalAuth(
       return next();
     }
 
-    const session = await db.sessions.findUnique({
+    const session = await db.session.findUnique({
       where: { token },
       include: {
-        users: {
+        user: {
           select: {
             id: true,
             email: true,
@@ -97,10 +100,10 @@ export async function optionalAuth(
 
     req.userId = userId;
     req.user = {
-      id: session.users.id,
-      email: session.users.email,
-      name: session.users.name,
-      plan: session.users.plan ?? "FREE", 
+      id: session.user.id,
+      email: session.user.email,
+      name: session.user.name,
+      plan: session.user.plan ?? "FREE",
     };
   } catch {
     // silently ignore invalid tokens

@@ -17,9 +17,13 @@ model User {
   provider      String?   @default("local") 
   provider_id   String?   @unique
   plan          String?   @default("FREE")
+  role          String?   @default("tenant") // landlord, tenant
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   sessions      Session[]
+  properties    Property[]
+  notifications Notification[]
+  tenants       Tenant[]
 }
 
 model Session {
@@ -29,4 +33,57 @@ model Session {
   expires_at DateTime
   created_at DateTime  @default(now())
   user       User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model Property {
+  id          Int      @id @default(autoincrement())
+  title       String
+  location    String
+  price       Float
+  beds        Int
+  baths       Int
+  sqft        Int
+  image       String?
+  status      String   @default("active")
+  landlordId  Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  landlord    User     @relation(fields: [landlordId], references: [id])
+  tenants     Tenant[]
+  reviews     Review[]
+}
+
+model Tenant {
+  id          Int      @id @default(autoincrement())
+  name        String
+  email       String   @unique
+  phone       String?
+  userId      Int?     @unique
+  propertyId  Int
+  moveInDate  DateTime
+  createdAt   DateTime @default(now())
+  property    Property @relation(fields: [propertyId], references: [id])
+  user        User?    @relation(fields: [userId], references: [id])
+  reviews     Review[]
+}
+
+model Review {
+  id         Int      @id @default(autoincrement())
+  rating     Int      // 1-5
+  comment    String?
+  propertyId Int
+  tenantId   Int
+  createdAt  DateTime @default(now())
+  property   Property @relation(fields: [propertyId], references: [id])
+  tenant     Tenant   @relation(fields: [tenantId], references: [id])
+}
+
+model Notification {
+  id          Int      @id @default(autoincrement())
+  message     String
+  landlordId  Int
+  tenantIds   Json     // array of tenant IDs as JSON
+  isRead      Boolean  @default(false)
+  sentAt      DateTime @default(now())
+  landlord    User     @relation(fields: [landlordId], references: [id])
 }
