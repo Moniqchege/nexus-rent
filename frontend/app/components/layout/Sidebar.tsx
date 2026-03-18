@@ -30,8 +30,10 @@ export default function Sidebar() {
   { label: "Payments", icon: "💳", to: "/payments" },
   { label: "AI Insights", icon: "🤖", to: "/ai-insights" },
   { label: "Notifications", icon: "🔔", to: "/notifications", badge: unreadCount },
-  { label: "Settings", icon: "⚙", to: "/settings" },
+  { label: "Roles", icon: "🎭", to: "/roles" },
+  { label: "Users", icon: "👥", to: "/users" },
 ];
+
 
   const handleNavClick = (to: string) => {
     router.push(to);
