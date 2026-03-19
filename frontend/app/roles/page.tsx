@@ -4,21 +4,42 @@ import { useEffect, useState } from "react";
 import { useAdminStore } from "../store/adminStore";
 import { useRouter } from "next/navigation";
 import SearchBar from "../components/ui/SearchBar";
+import ConfirmDialog from "../components/ui/ConfirmDialog";
 
 export default function RolesPage() {
   const { fetchRoles, roles, deleteRole, permissions } = useAdminStore();
   const router = useRouter();
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [selectedRoleId, setSelectedRoleId] = useState<number | null>(null);
 
   useEffect(() => {
     fetchRoles();
   }, []);
 
-  const handleDelete = (roleId: number) => {
-    if (confirm("Are you sure you want to delete this role?")) {
-      deleteRole(roleId);
+  const handleDeleteClick = (roleId: number) => {
+    setSelectedRoleId(roleId);
+    setDialogOpen(true);
+  };
+
+   const handleConfirmDelete = () => {
+    if (selectedRoleId !== null) {
+      deleteRole(selectedRoleId);
+      setDialogOpen(false);
+      setSelectedRoleId(null);
     }
   };
+
+  const handleCancelDelete = () => {
+    setDialogOpen(false);
+    setSelectedRoleId(null);
+  };
+
+  // const handleDelete = (roleId: number) => {
+  //   if (confirm("Are you sure you want to delete this role?")) {
+  //     deleteRole(roleId);
+  //   }
+  // };
 
   const formatPermissions = (permKeys: string[]) => {
   if (permKeys.includes("*")) return "All Permissions";
@@ -97,10 +118,10 @@ const filteredRoles = roles.filter((role) =>
         {index + 1}
       </td>
                 <td style={{ padding: "12px", fontSize: "12px", color: "var(--neon-secondary)" }}>
-                  {role.name.toUpperCase()}
+                  {role.name || "-"}
                 </td>
                 <td style={{ padding: "12px", fontSize: "12px", color: "var(--neon-secondary)" }}>
-                  {role.code.toUpperCase()}
+                  {role.code || "-"}
                 </td>
                 <td style={{ padding: "12px", fontSize: "12px", color: "var(--text-secondary)" }}>
                   {role.description || "No description"}
@@ -128,10 +149,17 @@ const filteredRoles = roles.filter((role) =>
 
   <button
     className="action-btn"
-    onClick={() => handleDelete(role.id)}
+    onClick={() => handleDeleteClick(role.id)}
   >
     Delete
   </button>
+  <ConfirmDialog
+        open={dialogOpen}
+        title="Delete Role"
+        message="Are you sure you want to delete this role? This action cannot be undone."
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+      />
 </td>
               </tr>
             ))}
