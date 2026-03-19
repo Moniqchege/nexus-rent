@@ -45,18 +45,33 @@ export default function SearchBar({
       {/* Clear Button */}
       {value && (
         <button
-          onClick={() => onChange("")}
-          style={{
-            position: "absolute",
-            right: "12px",
-            top: "50%",
-            transform: "translateY(-50%)",
-            opacity: 0.6,
-            cursor: "pointer",
-          }}
-        >
-          <X size={16} />
-        </button>
+  onClick={() => onChange("")}
+  style={{
+    position: "absolute",
+    right: "-172px",
+    top: "50%",
+    transform: "translateY(-50%)",
+    cursor: "pointer",
+    background: "none",
+    border: "none",
+    padding: 0,
+    display: "flex",
+    alignItems: "center",
+    color: "var(--neon-blue)",
+    opacity: 0.7,
+    transition: "all 0.2s ease",
+  }}
+  onMouseEnter={(e) => {
+    e.currentTarget.style.opacity = "1";
+    e.currentTarget.style.textShadow = "0 0 6px rgba(0,240,255,0.8)";
+  }}
+  onMouseLeave={(e) => {
+    e.currentTarget.style.opacity = "0.7";
+    e.currentTarget.style.textShadow = "none";
+  }}
+>
+  <X size={14} />
+</button>
       )}
     </div>
   );

@@ -40,13 +40,9 @@ export default function RoleForm({ onSubmit, onCancel, editingRole }: RoleFormPr
 
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (editingRole) {
-      updateRole({ ...editingRole, ...formData });
-    } else {
-      onSubmit(formData);
-    }
-  };
+  e.preventDefault();
+  onSubmit(formData);
+};
 
   return (
     <div style={{

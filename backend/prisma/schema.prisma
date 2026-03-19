@@ -87,3 +87,23 @@ model Notification {
   sentAt      DateTime @default(now())
   landlord    User     @relation(fields: [landlordId], references: [id])
 }
+
+model Permission {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  label     String
+  category  String
+  createdAt DateTime @default(now())
+}
+
+model Role {
+  id          Int        @id @default(autoincrement())
+  name        String     @unique
+  code        String?
+  description String?
+  permissions Json?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+

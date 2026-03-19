@@ -9,7 +9,9 @@ import path from "path";
 import { fileURLToPath } from "url";
 import authRoutes from "./routes/auth.js";
 import notificationsRoutes from "./routes/notifications.js";
+import rolesRoutes from "./routes/roles.js";
 import { setupOAuth } from "./services/oauthStrategies.js";
+
 
 
 console.log('INDEX.TS LOADED AT:', new Date().toISOString());
@@ -44,4 +46,6 @@ app.use(
 );
 app.use("/auth", authRoutes);
 app.use("/notifications", notificationsRoutes);
+app.use("/api/roles", rolesRoutes);
 app.listen(process.env.PORT || 4000, () => console.log("Server running"));
+

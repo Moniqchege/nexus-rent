@@ -81,6 +81,7 @@ const filteredRoles = roles.filter((role) =>
             <tr style={{ textAlign: "left", borderBottom: "2px solid var(--border-glow)" }}>
               <th>#</th>
               <th style={{ padding: "12px" }}>Role Name</th>
+              <th style={{ padding: "12px" }}>Role Code</th>
               <th style={{ padding: "12px" }}>Description</th>
               <th style={{ padding: "12px" }}>Permission Count</th>
               <th style={{ padding: "12px" }}>Actions</th>
@@ -97,6 +98,9 @@ const filteredRoles = roles.filter((role) =>
       </td>
                 <td style={{ padding: "12px", fontSize: "12px", color: "var(--neon-secondary)" }}>
                   {role.name.toUpperCase()}
+                </td>
+                <td style={{ padding: "12px", fontSize: "12px", color: "var(--neon-secondary)" }}>
+                  {role.code.toUpperCase()}
                 </td>
                 <td style={{ padding: "12px", fontSize: "12px", color: "var(--text-secondary)" }}>
                   {role.description || "No description"}
@@ -136,13 +140,13 @@ const filteredRoles = roles.filter((role) =>
       ) : (
         <div
           style={{
-            padding: "120px 40px",
+            padding: "80px 40px",
             textAlign: "center",
             color: "var(--text-secondary)",
           }}
         >
-          <div style={{ fontSize: "24px", marginBottom: "16px" }}>🎭 No roles defined</div>
-          <p>Create your first role to manage permissions</p>
+          <div style={{ fontSize: "20px", marginBottom: "16px" }}>🎭 No roles defined</div>
+          <p style={{ fontSize: "16px", marginBottom: "1px" }}>Create your first role to manage permissions</p>
           <button
             onClick={() => router.push("/roles/new")}
             style={{
@@ -150,11 +154,11 @@ const filteredRoles = roles.filter((role) =>
               color: "white",
               border: "none",
               borderRadius: "12px",
-              padding: "16px 32px",
+              padding: "12px 32px",
               fontWeight: 600,
               fontSize: "16px",
               cursor: "pointer",
-              marginTop: "24px",
+              marginTop: "14px",
             }}
           >
             Create First Role
