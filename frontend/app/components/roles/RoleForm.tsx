@@ -55,7 +55,7 @@ export default function RoleForm({ onSubmit, onCancel, editingRole }: RoleFormPr
       border: "1px solid var(--border-glow)",
       borderRadius: "24px",
       padding: "25px",
-      maxWidth: "800px",
+      maxWidth: "950px",
       marginBottom: "32px"
     }}>
       <h3 style={{ 
@@ -417,7 +417,7 @@ createPortal(
               color: "var(--text-secondary)",
               border: "1px solid var(--border-glow)",
               borderRadius: "12px",
-              padding: "16px 32px",
+              padding: "14px 28px",
               fontWeight: 600,
               cursor: "pointer"
             }}
@@ -431,9 +431,9 @@ createPortal(
               color: "white",
               border: "none",
               borderRadius: "12px",
-              padding: "16px 32px",
+              padding: "14px 28px",
               fontWeight: 600,
-              cursor: "pointer"
+              cursor: "pointer",
             }}
           >
             {editingRole ? "Update Role" : "Create Role"}

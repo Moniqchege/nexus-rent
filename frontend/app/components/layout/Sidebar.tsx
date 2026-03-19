@@ -28,7 +28,7 @@ export default function Sidebar() {
   { label: "Overview", icon: "⊞", to: "/dashboard" },
   { label: "My Rentals", icon: "🏠", to: "/properties" },
   { label: "Payments", icon: "💳", to: "/payments" },
-  { label: "AI Insights", icon: "🤖", to: "/ai-insights" },
+  // { label: "AI Insights", icon: "🤖", to: "/ai-insights" },
   { label: "Notifications", icon: "🔔", to: "/notifications", badge: unreadCount },
   { label: "Roles", icon: "🎭", to: "/roles" },
   { label: "Users", icon: "👥", to: "/users" },
