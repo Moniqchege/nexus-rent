@@ -28,21 +28,48 @@ interface User {
   createdAt: string;
 }
 
+interface Rental {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  createdAt: string;
+}
+
+interface Property {
+  id: number;
+  title: string;
+  location: string;
+  price: number;
+  beds: number;
+  baths: number;
+  sqft: number;
+  status: string;
+  amenities?: string;
+  image?: string;
+  createdAt: string;
+}
+
 interface AdminState {
   permissions: Permission[];
   roles: Role[];
   users: User[];
+  properties: Property[];
   loading: boolean;
   fetchUsers: (search?: string) => Promise<void>;
   fetchRoles: () => Promise<void>;
   updateUserRole: (userId: number, roleName: string) => Promise<void>;
-  createUser: (userData: any) => Promise<void>;
+  createUser: (setData: any) => Promise<void>;
   fetchUser: (userId: number) => Promise<any>;
-  updateUser: (userId: number, userData: any) => Promise<void>;
+  updateUser: (userId: number, setData: any) => Promise<void>;
   deleteUser: (userId: number) => Promise<void>;
   createRole: (role: Omit<Role, 'id'>) => Promise<void>;
   updateRole: (role: Role) => Promise<void>;
   deleteRole: (roleId: number) => Promise<void>;
+ fetchProperties: () => Promise<void>;
+  createProperty: (data: Partial<Property>) => Promise<void>;
+  updateProperty: (id: number, data: Partial<Property>) => Promise<void>;
+  deleteProperty: (id: number) => Promise<void>;
 }
 
 export const useAdminStore = create<AdminState>()(
@@ -75,6 +102,7 @@ export const useAdminStore = create<AdminState>()(
       ],
       roles: [],
       users: [],
+      properties: [],
       loading: false,
 
       fetchUsers: async (search = '') => {
@@ -200,7 +228,60 @@ export const useAdminStore = create<AdminState>()(
         } finally {
           set({ loading: false });
         }
-      }
+      },
+
+      rentals: [],
+
+ fetchProperties: async () => {
+        set({ loading: true });
+        try {
+          const res = await api.get("/api/properties");
+          set({ properties: res.data, loading: false });
+        } catch {
+          set({ loading: false });
+        }
+      },
+
+      createProperty: async (data) => {
+        set({ loading: true });
+        try {
+          const res = await api.post("/api/properties", data);
+          set((state) => ({
+            properties: [...state.properties, res.data],
+            loading: false,
+          }));
+        } catch {
+          set({ loading: false });
+        }
+      },
+
+      updateProperty: async (id, data) => {
+        set({ loading: true });
+        try {
+          const res = await api.patch(`/api/properties/${id}`, data);
+          set((state) => ({
+            properties: state.properties.map((p) =>
+              p.id === id ? res.data : p
+            ),
+            loading: false,
+          }));
+        } catch {
+          set({ loading: false });
+        }
+      },
+
+      deleteProperty: async (id) => {
+        set({ loading: true });
+        try {
+          await api.delete(`/api/properties/${id}`);
+          set((state) => ({
+            properties: state.properties.filter((p) => p.id !== id),
+            loading: false,
+          }));
+        } catch {
+          set({ loading: false });
+        }
+      },
     }),
     { name: 'nexus-rent-admin' }
   )

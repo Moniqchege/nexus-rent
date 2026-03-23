@@ -11,7 +11,9 @@ import authRoutes from "./routes/auth.js";
 import notificationsRoutes from "./routes/notifications.js";
 import rolesRoutes from "./routes/roles.js";
 import usersRoutes from "./routes/users.js";
+import propertiesRoutes from "./routes/properties.js";
 import { setupOAuth } from "./services/oauthStrategies.js";
+
 
 
 
@@ -49,5 +51,7 @@ app.use("/auth", authRoutes);
 app.use("/notifications", notificationsRoutes);
 app.use("/api/roles", rolesRoutes);
 app.use("/api/users", usersRoutes);
+app.use("/api/properties", propertiesRoutes);
 app.listen(process.env.PORT || 4000, () => console.log("Server running"));
+
 

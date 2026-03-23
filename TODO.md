@@ -1,26 +1,29 @@
-# Users Page Implementation Plan
-Complete steps sequentially. Mark as [x] when done.
+# My Rentals CRUD Implementation TODO
 
-## Backend
-- [x] 1. Create `backend/src/routes/users.ts` (CRUD endpoints mirroring roles.ts)
-- [x] 2. Edit `backend/src/index.ts` (import and mount /api/users routes)
+## Status: 🚀 In Progress
 
-## Frontend Store
-- [x] 3. Edit `frontend/app/store/adminStore.ts` (add createUser, updateUser, deleteUser, update fetchUsers for search)
+### 1. Backend API [✅]
+- [✅] Create `backend/src/routes/properties.ts` (GET/POST/GET:id/PATCH/DELETE, filter by landlordId=auth.userId)
+- [✅] Edit `backend/src/index.ts` to register `/api/properties` route
 
-## Frontend Forms & Pages
-- [x] 4. Create `frontend/app/components/users/UserForm.tsx` (mirror RoleForm but simpler: name, email, role dropdown, password create-only)
-- [x] 5. Create `frontend/app/users/new/page.tsx` (mirror roles/new)
-- [x] 6. Create `frontend/app/users/edit/[id]/page.tsx` (mirror roles/edit)
+### 2. Frontend Structure [ ]
+- [✅] Create `frontend/app/my-rentals/layout.tsx` (dashboard layout)
+- [✅] Create `frontend/app/my-rentals/page.tsx` (PropertyList + Add button)
+- [✅] Create `frontend/app/components/properties/PropertyForm.tsx` (form for all fields)
+- [✅] Create `frontend/app/my-rentals/new/page.tsx` (PropertyForm create)
+- [✅] Create `frontend/app/my-rentals/edit/[id]/page.tsx` (PropertyForm edit)
 
-## Main Pages & Components
-- [x] 7. Update `frontend/app/users/page.tsx` (add SearchBar, filter, New button, ConfirmDialog, match roles styling/table)
-- [x] 8. Update `frontend/app/components/users/UserTable.tsx` (add View/Edit/Delete buttons)
+### 3. UI Components [✅]
+- [✅] Create `frontend/app/components/properties/PropertyTable.tsx` (table w/ edit/delete)
 
-## Final Steps
-- [x] 9. Backend routes added and server needs restart: `cd backend && nodemon src/index.ts`
-- [x] 10. Users page complete with full CRUD (create/edit/delete/view), SearchBar, table styles matching roles page, redirects.
+### 4. Navigation [✅]
+- [✅] Add /my-rentals link to Navbar/Sidebar
 
-**Task complete!** Run `cd frontend && npm run dev` to test /users.
+### 5. Testing [✅]
+- [✅] Backend: Test API endpoints w/ auth
+- [✅] Frontend: Test full CRUD flows
+- [✅] Complete!
 
+
+**Next Action:** Implement Backend API first.
 

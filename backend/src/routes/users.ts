@@ -2,8 +2,13 @@ import { Router, Request, Response } from 'express';
 import { db } from "../db/prisma";
 import { requireAuth } from '../middleware/auth';
 import bcrypt from 'bcrypt';
+import crypto from 'crypto';
+import nodemailer from 'nodemailer';
 
 const router = Router();
+function generatePassword(length = 10) {
+  return crypto.randomBytes(length).toString('base64').slice(0, length);
+}
 
 interface CreateUserInput {
   name: string;
@@ -55,22 +60,30 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
 // POST /api/users - Create user
 router.post('/', requireAuth, async (req: Request, res: Response) => {
   try {
-    const { name, email, password, username, role, plan = 'FREE' } = req.body as CreateUserInput;
-    
-    if (!name || !email || !password || !role) {
-      return res.status(400).json({ error: 'Name, email, password, and role required' });
+    const { name, email, username, role, plan = 'FREE', propertyAssignments  = [] } = req.body;
+
+    if (!name || !email || !role) {
+      return res.status(400).json({ error: 'Name, email, and role are required' });
     }
 
     const existing = await db.user.findFirst({
-      where: { OR: [{ email }, { username }] },
+      where: {
+        OR: [
+          { email },
+          ...(username ? [{ username }] : []),
+        ],
+      },
     });
 
     if (existing) {
-      return res.status(409).json({ error: 'User with this email or username already exists' });
+      return res.status(409).json({ error: 'User already exists' });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 12);
+    // ✅ Generate + hash password
+    const plainPassword = generatePassword();
+    const hashedPassword = await bcrypt.hash(plainPassword, 12);
 
+    // ✅ Create user
     const user = await db.user.create({
       data: {
         name,
@@ -90,7 +103,41 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
         createdAt: true,
       },
     });
+
+    // ✅ Attach user to multiple properties
+    if (propertyAssignments.length > 0) {
+  await db.userProperty.createMany({
+    data: propertyAssignments.map((item: any) => ({
+      userId: user.id,
+      propertyId: item.propertyId,
+      roleId: item.roleId,
+    })),
+    skipDuplicates: true,
+  });
+}
+
+    // ✅ Send email
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    await transporter.sendMail({
+      to: email,
+      subject: 'Your Nexus Rent Account',
+      html: `
+        <h3>Welcome to Nexus Rent</h3>
+        <p>Email: ${email}</p>
+        <p>Password: ${plainPassword}</p>
+        <p>Please change your password after login.</p>
+      `,
+    });
+
     res.status(201).json(user);
+
   } catch (error: any) {
     console.error('Create user error:', error);
     res.status(500).json({ error: 'Failed to create user' });
