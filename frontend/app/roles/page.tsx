@@ -68,7 +68,7 @@ const filteredRoles = roles.filter((role) =>
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          marginBottom: "24px",
+          // marginBottom: "24px",
         }}
       >
         <div className="section-label">ACCESS CONTROL</div>
@@ -89,7 +89,11 @@ const filteredRoles = roles.filter((role) =>
           + New Role
         </button>
       </div>
-
+      <div style={{ marginBottom: "24px" }}>
+        <h2 style={{ fontSize: "24px", fontWeight: 700, color: "var(--neon-blue)" }}>
+          Roles ({filteredRoles.length})
+        </h2>
+      </div>
       <SearchBar
   value={search}
   onChange={setSearch}
@@ -132,7 +136,7 @@ const filteredRoles = roles.filter((role) =>
 >
   {formatPermissions(role.permissions)}
 </td>
-               <td style={{ padding: "12px", display: "flex", gap: "8px" }}>
+<td style={{ padding: "12px", display: "flex", gap: "8px" }}>
   <button
     className="action-btn"
     onClick={() => router.push(`/roles/edit/${role.id}`)}

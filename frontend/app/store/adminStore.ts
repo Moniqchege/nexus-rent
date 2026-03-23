@@ -33,9 +33,13 @@ interface AdminState {
   roles: Role[];
   users: User[];
   loading: boolean;
-  fetchUsers: () => Promise<void>;
+  fetchUsers: (search?: string) => Promise<void>;
   fetchRoles: () => Promise<void>;
-  updateUserRole: (userId: number, roleId: string) => Promise<void>;
+  updateUserRole: (userId: number, roleName: string) => Promise<void>;
+  createUser: (userData: any) => Promise<void>;
+  fetchUser: (userId: number) => Promise<any>;
+  updateUser: (userId: number, userData: any) => Promise<void>;
+  deleteUser: (userId: number) => Promise<void>;
   createRole: (role: Omit<Role, 'id'>) => Promise<void>;
   updateRole: (role: Role) => Promise<void>;
   deleteRole: (roleId: number) => Promise<void>;
@@ -73,10 +77,11 @@ export const useAdminStore = create<AdminState>()(
       users: [],
       loading: false,
 
-      fetchUsers: async () => {
+      fetchUsers: async (search = '') => {
         set({ loading: true });
         try {
-          const res = await api.get('/api/users');
+          const params = search ? { search } : {};
+          const res = await api.get('/api/users', { params });
           set({ users: res.data, loading: false });
         } catch {
           set({ loading: false });
@@ -86,7 +91,7 @@ export const useAdminStore = create<AdminState>()(
       fetchRoles: async () => {
   set({ loading: true });
   try {
-    const res = await api.get('/api/roles'); // after Option A fix
+    const res = await api.get('/api/roles'); 
     set({ roles: res.data, loading: false });
   } catch (error) {
     console.error('fetchRoles error:', error);
@@ -97,9 +102,58 @@ export const useAdminStore = create<AdminState>()(
       updateUserRole: async (userId: number, roleName: string) => {
         set({ loading: true });
         try {
-          await api.patch(`/api/users/${userId}/role`, { role: roleName });
+          await api.patch(`/api/users/${userId}`, { role: roleName });
           set(state => ({
             users: state.users.map(u => u.id === userId ? { ...u, role: roleName } : u),
+          }));
+        } catch {
+          // 
+        } finally {
+          set({ loading: false });
+        }
+      },
+
+      createUser: async (userData: any) => {
+        set({ loading: true });
+        try {
+          const res = await api.post('/api/users', userData);
+          set(state => ({ users: [...state.users, res.data] }));
+        } catch {
+          // 
+        } finally {
+          set({ loading: false });
+        }
+      },
+
+      fetchUser: async (userId: number) => {
+        try {
+          const res = await api.get(`/api/users/${userId}`);
+          return res.data;
+        } catch {
+          return null;
+        }
+      },
+
+      updateUser: async (userId: number, userData: any) => {
+        set({ loading: true });
+        try {
+          const res = await api.patch(`/api/users/${userId}`, userData);
+          set(state => ({
+            users: state.users.map(u => u.id === userId ? res.data : u),
+          }));
+        } catch {
+          // 
+        } finally {
+          set({ loading: false });
+        }
+      },
+
+      deleteUser: async (userId: number) => {
+        set({ loading: true });
+        try {
+          await api.delete(`/api/users/${userId}`);
+          set(state => ({
+            users: state.users.filter(u => u.id !== userId),
           }));
         } catch {
           // 

@@ -1,28 +1,26 @@
-# Backend API Integration for Roles - TODO
+# Users Page Implementation Plan
+Complete steps sequentially. Mark as [x] when done.
 
-## Approved Plan Steps:
+## Backend
+- [x] 1. Create `backend/src/routes/users.ts` (CRUD endpoints mirroring roles.ts)
+- [x] 2. Edit `backend/src/index.ts` (import and mount /api/users routes)
 
-### 1. [PENDING] Remove mock data from adminStore.ts
-   - Edit `frontend/app/store/adminStore.ts`:
-     - Remove `mockRoles`, `mockUsers` initial data (set `roles: []`).
-     - Enable `fetchUsers` if needed (roles focus).
-     - Keep `mockPermissions` (no backend fetch endpoint, hardcoded fine).
-   - Test: Backend must run (`cd backend && npm run dev`), auth/login.
+## Frontend Store
+- [x] 3. Edit `frontend/app/store/adminStore.ts` (add createUser, updateUser, deleteUser, update fetchUsers for search)
 
-### 2. [COMPLETE] Verify RoleForm & missing pages
-   - RoleForm ready.
-   - Created /roles/edit/[id]/page.tsx stub (uses existing RoleForm, store).
-   - RoleForm.tsx: Uses store `permissions`, `createRole`/`updateRole` → ready.
-   - No `/roles/edit` dir → add stub or ignore (page.tsx routes to it).
+## Frontend Forms & Pages
+- [x] 4. Create `frontend/app/components/users/UserForm.tsx` (mirror RoleForm but simpler: name, email, role dropdown, password create-only)
+- [x] 5. Create `frontend/app/users/new/page.tsx` (mirror roles/new)
+- [x] 6. Create `frontend/app/users/edit/[id]/page.tsx` (mirror roles/edit)
 
-### 3. [PENDING] Test full CRUD
-   - Run backend/frontend.
-   - Login → /roles → create → list → delete.
-   - Check console/DB.
+## Main Pages & Components
+- [x] 7. Update `frontend/app/users/page.tsx` (add SearchBar, filter, New button, ConfirmDialog, match roles styling/table)
+- [x] 8. Update `frontend/app/components/users/UserTable.tsx` (add View/Edit/Delete buttons)
 
-### 4. [PENDING] Optional: Users integration
-   - Enable `fetchUsers`, `updateUserRole`.
+## Final Steps
+- [x] 9. Backend routes added and server needs restart: `cd backend && nodemon src/index.ts`
+- [x] 10. Users page complete with full CRUD (create/edit/delete/view), SearchBar, table styles matching roles page, redirects.
 
-### 5. [COMPLETE] Use attempt_completion
+**Task complete!** Run `cd frontend && npm run dev` to test /users.
 
-**Status: Ready to edit adminStore.ts**
+

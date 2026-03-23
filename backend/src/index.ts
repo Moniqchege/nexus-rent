@@ -10,6 +10,7 @@ import { fileURLToPath } from "url";
 import authRoutes from "./routes/auth.js";
 import notificationsRoutes from "./routes/notifications.js";
 import rolesRoutes from "./routes/roles.js";
+import usersRoutes from "./routes/users.js";
 import { setupOAuth } from "./services/oauthStrategies.js";
 
 
@@ -47,5 +48,6 @@ app.use(
 app.use("/auth", authRoutes);
 app.use("/notifications", notificationsRoutes);
 app.use("/api/roles", rolesRoutes);
+app.use("/api/users", usersRoutes);
 app.listen(process.env.PORT || 4000, () => console.log("Server running"));
 

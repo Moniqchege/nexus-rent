@@ -1,27 +1,45 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Role, useAdminStore } from "../../store/adminStore";
-// import { Role } from "../../store/adminStore";
+import ConfirmDialog from "../ui/ConfirmDialog";
 
+interface UserTableProps {
+  users: any[];
+  onDeleteClick: (userId: number) => void;
+}
 
-interface UserTableProps {}
-
-export default function UserTable({}: UserTableProps) {
-  const { users, roles, loading, updateUserRole, fetchRoles } = useAdminStore();
+export default function UserTable({ users, onDeleteClick }: UserTableProps) {
+  const router = useRouter();
+  const { roles, updateUserRole, fetchRoles, deleteUser, loading: storeLoading } = useAdminStore();
   const [selectedRole, setSelectedRole] = useState<{[key: number]: string}>({});
+  const [selectedRoleId, setSelectedRoleId] = useState<number | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
-  // Load roles
   useEffect(() => {
     fetchRoles();
   }, []);
 
-  const handleRoleChange = (userId: number, roleName: string) => {
-    updateUserRole(userId, roleName);
-    setSelectedRole(prev => ({ ...prev, [userId]: roleName }));
+    const handleDeleteClick = (roleId: number) => {
+    setSelectedRoleId(roleId);
+    setDialogOpen(true);
   };
 
-  if (loading) {
+   const handleConfirmDelete = () => {
+    if (selectedRoleId !== null) {
+      deleteUser(selectedRoleId);
+      setDialogOpen(false);
+      setSelectedRoleId(null);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setDialogOpen(false);
+    setSelectedRoleId(null);
+  };
+
+  if (storeLoading) {
     return (
       <div style={{
         backgroundColor: "rgba(17,24,39,0.8)",
@@ -36,7 +54,7 @@ export default function UserTable({}: UserTableProps) {
   }
 
   return (
-    <div className="table-container" style={{
+    <div style={{
       backgroundColor: "rgba(17,24,39,0.8)",
       border: "1px solid var(--border-glow)",
       borderRadius: "20px",
@@ -46,64 +64,63 @@ export default function UserTable({}: UserTableProps) {
         width: "100%",
         borderCollapse: "collapse"
       }}>
-        <thead>
-          <tr style={{
-            background: "linear-gradient(to right, var(--neon-blue), var(--neon-purple))",
-            color: "white"
-          }}>
-            <th style={{ padding: "20px 24px", textAlign: "left", fontWeight: 600 }}>Name</th>
-            <th style={{ padding: "20px 24px", textAlign: "left", fontWeight: 600 }}>Email</th>
-            <th style={{ padding: "20px 24px", textAlign: "left", fontWeight: 600 }}>Role</th>
-            <th style={{ padding: "20px 24px", textAlign: "left", fontWeight: 600 }}>Created</th>
-            <th style={{ padding: "20px 24px", textAlign: "left", fontWeight: 600 }}>Actions</th>
+        <thead className="table-head">
+          <tr style={{ textAlign: "left", borderBottom: "2px solid var(--border-glow)" }}>
+            <th>#</th>
+            <th style={{ padding: "12px" }}>Name</th>
+            <th style={{ padding: "12px" }}>Email</th>
+            <th style={{ padding: "12px" }}>Role</th>
+            <th style={{ padding: "12px" }}>Created</th>
+            <th style={{ padding: "12px" }}>Actions</th>
           </tr>
         </thead>
         <tbody>
-          {users.map((user) => (
+          {users.map((user, index) => (
             <tr key={user.id} style={{
-              borderBottom: "1px solid var(--border-glow)"
+              borderBottom: "1px solid var(--border-glow)",
+              backgroundColor: "rgba(17,24,39,0.4)"
             }}>
-              <td style={{ padding: "20px 24px", fontWeight: 500 }}>
+              <td style={{ padding: "12px", color: "var(--text-secondary)" }}>
+                {index + 1}
+              </td>
+              <td style={{ padding: "12px", fontSize: "12px", color: "var(--neon-secondary)" }}>
                 {user.name}
               </td>
-              <td style={{ padding: "20px 24px", color: "var(--text-secondary)" }}>
+              <td style={{  padding: "12px", fontSize: "12px", color: "var(--neon-secondary)" }}>
                 {user.email}
               </td>
-              <td style={{ padding: "20px 24px" }}>
-                <select
-                  value={selectedRole[user.id] || user.role}
-                  onChange={(e) => handleRoleChange(user.id, e.target.value)}
-                  style={{
-                    backgroundColor: "rgba(17,24,39,0.5)",
-                    border: "1px solid var(--border-glow)",
-                    borderRadius: "12px",
-                    padding: "8px 16px",
-                    color: "var(--text-primary)",
-                    fontSize: "14px"
-                  }}
+              <td style={{  padding: "12px", fontSize: "12px", color: "var(--neon-secondary)" }}>
+                {user.role}
+              </td>
+              <td style={{  padding: "12px", fontSize: "12px", color: "var(--neon-secondary)" }}>
+                {new Date(user.createdAt).toLocaleDateString()}
+              </td>
+              <td style={{  padding: "12px", display: "flex", gap: "8px" }}>
+                <button
+                  className="action-btn"
+                  onClick={() => router.push(`/users/edit/${user.id}`)}
                 >
-                  {roles.map((role: Role) => (
-                    <option key={role.name} value={role.name}>
-                      {role.name.toUpperCase()}
-                    </option>
-                  ))}
-                </select>
-              </td>
-              <td style={{ padding: "20px 24px", color: "var(--text-secondary)" }}>
-                {user.createdAt}
-              </td>
-              <td style={{ padding: "20px 24px" }}>
-                <button style={{
-                  backgroundColor: "var(--accent-danger)",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "8px",
-                  padding: "6px 12px",
-                  fontSize: "12px",
-                  cursor: "pointer"
-                }}>
+                  View
+                </button>
+                <button
+                  className="action-btn"
+                  onClick={() => router.push(`/users/edit/${user.id}`)}
+                >
+                  Edit
+                </button>
+                <button
+                  className="action-btn"
+                  onClick={() => onDeleteClick(user.id)}
+                >
                   Delete
                 </button>
+                <ConfirmDialog
+                        open={dialogOpen}
+                        title="Delete User"
+                        message="Are you sure you want to delete this user? This action cannot be undone."
+                        onConfirm={handleConfirmDelete}
+                        onCancel={handleCancelDelete}
+                      />
               </td>
             </tr>
           ))}
@@ -112,12 +129,28 @@ export default function UserTable({}: UserTableProps) {
       
       {users.length === 0 && (
         <div style={{
-          padding: "80px 40px",
+          padding: "120px 40px",
           textAlign: "center",
           color: "var(--text-secondary)"
         }}>
-          <div style={{ fontSize: "18px", marginBottom: "12px" }}>👥 No users found</div>
-          <div>Create your first user to get started</div>
+          <div style={{ fontSize: "32px", marginBottom: "24px" }}>👥</div>
+          <div style={{ fontSize: "24px", marginBottom: "16px", color: "var(--neon-blue)" }}>No users found</div>
+          <div style={{ fontSize: "16px", marginBottom: "32px" }}>Create your first user to get started</div>
+          <button
+            onClick={() => router.push("/users/new")}
+            style={{
+              background: "linear-gradient(to right, var(--neon-blue), var(--neon-purple))",
+              color: "white",
+              border: "none",
+              borderRadius: "12px",
+              padding: "16px 32px",
+              fontWeight: 600,
+              fontSize: "16px",
+              cursor: "pointer"
+            }}
+          >
+            Create First User
+          </button>
         </div>
       )}
     </div>

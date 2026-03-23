@@ -48,7 +48,7 @@ export default function ConfirmDialog({
           padding: "24px",
           borderRadius: "16px",
           minWidth: "300px",
-          maxWidth: "400px",
+          maxWidth: "500px",
           color: "#fff",
           display: "flex",
           flexDirection: "column",
