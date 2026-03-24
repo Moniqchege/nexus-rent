@@ -1,29 +1,22 @@
-# My Rentals CRUD Implementation TODO
+# Nexus Rent - Attach Properties to Users Task
 
-## Status: 🚀 In Progress
+## Status: In Progress
 
-### 1. Backend API [✅]
-- [✅] Create `backend/src/routes/properties.ts` (GET/POST/GET:id/PATCH/DELETE, filter by landlordId=auth.userId)
-- [✅] Edit `backend/src/index.ts` to register `/api/properties` route
+### 1. [ ] Create TODO.md ✅
+### 2. [✅] Update UserForm.tsx with property-role multiselect
+   - Fetch properties/roles
+   - Add Property Assignments section (add/remove rows: Property select + Role select)
+   - Include propertyAssignments in submit
 
-### 2. Frontend Structure [ ]
-- [✅] Create `frontend/app/my-rentals/layout.tsx` (dashboard layout)
-- [✅] Create `frontend/app/my-rentals/page.tsx` (PropertyList + Add button)
-- [✅] Create `frontend/app/components/properties/PropertyForm.tsx` (form for all fields)
-- [✅] Create `frontend/app/my-rentals/new/page.tsx` (PropertyForm create)
-- [✅] Create `frontend/app/my-rentals/edit/[id]/page.tsx` (PropertyForm edit)
+### 3. [✅] Update UserTable.tsx
+   - Add "Properties" column (count)
 
-### 3. UI Components [✅]
-- [✅] Create `frontend/app/components/properties/PropertyTable.tsx` (table w/ edit/delete)
+### 4. [ ] Test create user with properties
+   - Backend: Verify User + UserProperty created
+   - Frontend: Form submits correctly
 
-### 4. Navigation [✅]
-- [✅] Add /my-rentals link to Navbar/Sidebar
+### 5. [ ] Optional: Edit user property assignments
+   - Load existing in edit mode
 
-### 5. Testing [✅]
-- [✅] Backend: Test API endpoints w/ auth
-- [✅] Frontend: Test full CRUD flows
-- [✅] Complete!
-
-
-**Next Action:** Implement Backend API first.
+### 6. [ ] Update TODO.md & attempt_completion
 
