@@ -448,7 +448,7 @@ button::placeholder {
 
   .prop-price {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 22px;
+    font-size: 20px;
     font-weight: 600;
     color: var(--neon-blue);
     margin-bottom: 6px;

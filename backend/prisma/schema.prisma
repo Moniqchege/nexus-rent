@@ -38,22 +38,25 @@ model Session {
 }
 
 model Property {
-  id         Int            @id @default(autoincrement())
+  id         Int       @id @default(autoincrement())
   landlordId Int?
-  landlord   User?          @relation("LandlordProperties", fields: [landlordId], references: [id])
+  landlord   User?     @relation("LandlordProperties", fields: [landlordId], references: [id])
   title      String
   location   String
   price      Float
   beds       Int
   baths      Int
   sqft       Int
-  status     String         @default("active")
+  status     String    @default("active")
+  amenities  Json?   
+  rating     Float?
+  score      Float?
   users      UserProperty[]
   Tenant     Tenant[]
   Review     Review[]
-  image String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  image      String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 }
 
 model Tenant {
@@ -123,4 +126,12 @@ model UserProperty {
   assignedAt DateTime @default(now())
 
   @@unique([userId, propertyId, roleId])
+}
+
+enum Amenity {
+  GYM
+  SWIMMING_POOL
+  YOGA_STUDIO
+  STEAM_ROOM
+  SAUNA
 }

@@ -30,7 +30,7 @@ export function scorePillClass(score: number) {
 }
 
 export const PROPERTY_STATUS_OPTIONS = [
-  { label: "Active", value: "ACTIVE" },
+  { label: "Available", value: "Available" },
   { label: "Pending", value: "PENDING" },
   { label: "Rented", value: "RENTED" },
 ];
