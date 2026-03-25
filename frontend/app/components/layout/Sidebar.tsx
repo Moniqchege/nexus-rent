@@ -27,7 +27,7 @@ export default function Sidebar() {
   const NAV = [
   { label: "Overview", icon: "⊞", to: "/dashboard" },
 { label: "My Rentals", icon: "🏠", to: "/my-rentals" },
-{ label: "My Properties", icon: "🏠", to: "/properties" },
+// { label: "My Properties", icon: "🏠", to: "/properties" },
   { label: "Payments", icon: "💳", to: "/payments" },
   // { label: "AI Insights", icon: "🤖", to: "/ai-insights" },
   { label: "Notifications", icon: "🔔", to: "/notifications", badge: unreadCount },

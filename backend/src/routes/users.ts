@@ -47,6 +47,23 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
         role: true,
         plan: true,
         createdAt: true,
+        userProperties: {
+          select: {
+            propertyId: true,
+            role: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+            property: {
+              select: {
+                id: true,
+                title: true,
+              },
+            },
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -104,9 +121,10 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
       },
     });
 
+    console.log("propertyAssignments:", propertyAssignments);
     // ✅ Attach user to multiple properties
     if (propertyAssignments.length > 0) {
-  await db.userProperty.createMany({
+  const result = await db.userProperty.createMany({
     data: propertyAssignments.map((item: any) => ({
       userId: user.id,
       propertyId: item.propertyId,
@@ -114,18 +132,22 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
     })),
     skipDuplicates: true,
   });
+  console.log("Inserted rows:", result.count);
 }
 
     // ✅ Send email
     const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
+  host: process.env.SMTP_HOST,
+  port: Number(process.env.SMTP_PORT),
+  secure: false, // TLS
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+});
 
     await transporter.sendMail({
+      from: `"Nexus Rent" <${process.env.SMTP_USER}>`,
       to: email,
       subject: 'Your Nexus Rent Account',
       html: `
