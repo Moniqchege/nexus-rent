@@ -66,7 +66,7 @@ interface AdminState {
   createRole: (role: Omit<Role, 'id'>) => Promise<void>;
   updateRole: (role: Role) => Promise<void>;
   deleteRole: (roleId: number) => Promise<void>;
- fetchProperties: () => Promise<void>;
+  fetchProperties: () => Promise<void>;
   createProperty: (data: Partial<Property>) => Promise<void>;
   updateProperty: (id: number, data: Partial<Property>) => Promise<void>;
   deleteProperty: (id: number) => Promise<void>;
@@ -117,15 +117,15 @@ export const useAdminStore = create<AdminState>()(
       },
 
       fetchRoles: async () => {
-  set({ loading: true });
-  try {
-    const res = await api.get('/api/roles'); 
-    set({ roles: res.data, loading: false });
-  } catch (error) {
-    console.error('fetchRoles error:', error);
-    set({ loading: false });
-  }
-},
+        set({ loading: true });
+        try {
+          const res = await api.get('/api/roles');
+          set({ roles: res.data, loading: false });
+        } catch (error) {
+          console.error('fetchRoles error:', error);
+          set({ loading: false });
+        }
+      },
 
       updateUserRole: async (userId: number, roleName: string) => {
         set({ loading: true });
@@ -232,7 +232,7 @@ export const useAdminStore = create<AdminState>()(
 
       rentals: [],
 
- fetchProperties: async () => {
+      fetchProperties: async () => {
         set({ loading: true });
         try {
           const res = await api.get("/api/properties");

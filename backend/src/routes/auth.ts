@@ -225,6 +225,7 @@ router.post("/verify-otp", async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Invalid OTP" });
     }
 
+    // Mark OTP as used
     await db.otpCode.update({
       where: { id: otpRecord.id },
       data: { used: true },
@@ -240,20 +241,36 @@ router.post("/verify-otp", async (req: Request, res: Response) => {
         image: true,
         plan: true,
         firstLogin: true,
-      }
+      },
     });
 
+    // ✅ Generate token
     const token = jwt.sign(
       { sub: user!.id.toString() },
       process.env.JWT_SECRET!,
       { expiresIn: "7d" }
     );
 
+    await db.session.deleteMany({
+      where: { user_id: user!.id },
+    });
+
+    // ✅ CREATE SESSION (THIS WAS MISSING)
+    await db.session.create({
+      data: {
+        token: token,
+        user_id: user!.id,
+        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), 
+      },
+    });
+
+    // ✅ Send response
     res.json({
       token,
       user,
       isFirstLogin: user!.firstLogin,
     });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });

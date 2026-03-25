@@ -1,7 +1,7 @@
 // @ts-ignore
 "use client";
 import { useState } from "react";
-import { FaUser, FaEye, FaEyeSlash, FaLock, FaShieldAlt } from "react-icons/fa";
+import { FaUser, FaEye, FaEyeSlash, FaLock, FaShieldAlt, FaCheckCircle } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "../store/authStore";
 import "../login/theme.css";
@@ -16,8 +16,26 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [passwordCriteria, setPasswordCriteria] = useState({
+  minLength: false,
+  uppercase: false,
+  lowercase: false,
+  number: false,
+  special: false,
+});
+
+const validatePassword = (pwd: string) => {
+  setPasswordCriteria({
+    minLength: pwd.length >= 8,
+    uppercase: /[A-Z]/.test(pwd),
+    lowercase: /[a-z]/.test(pwd),
+    number: /[0-9]/.test(pwd),
+    special: /[!@#$%^&*(),.?":{}|<>]/.test(pwd),
+  });
+};
 
   // OTP / First-login states
   const [requiresOtp, setRequiresOtp] = useState(false);
@@ -94,10 +112,11 @@ export default function LoginPage() {
         return;
       }
 
+      sessionStorage.setItem("token", data.token);
       // ✅ Pass all expected args
       setToken(
         data.token,
-        data.user, // replace "" with actual user name if available
+        data.user, 
         data.isFirstLogin
       );
 
@@ -261,19 +280,48 @@ export default function LoginPage() {
                   Set your secure password to complete first-time setup.
                 </p>
                 <div className="login-input-group">
-                  <FaShieldAlt className="login-input-icon" />
-                  <input
-                    className="login-input"
-                    type="password"
-                    placeholder="Create new password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                  />
-                </div>
+  <FaShieldAlt className="login-input-icon" />
+  <input
+    className="login-input"
+    type={showNewPassword ? "text" : "password"}  // use new toggle
+    placeholder="Create new password"
+    value={newPassword}
+    onChange={(e) => {
+      setNewPassword(e.target.value);
+      validatePassword(e.target.value);
+    }}
+  />
+  <div 
+    className="login-password-toggle"
+    onClick={() => setShowNewPassword(!showNewPassword)}
+  >
+    {showNewPassword ? <FaEyeSlash /> : <FaEye />}
+  </div>
+</div>
+                <div className="password-strength">
+  <p>Password must contain:</p>
+  <ul>
+    <li className={passwordCriteria.minLength ? "valid" : ""}>
+      <FaCheckCircle /> Minimum 8 characters
+    </li>
+    <li className={passwordCriteria.uppercase ? "valid" : ""}>
+      <FaCheckCircle /> At least one uppercase letter
+    </li>
+    <li className={passwordCriteria.lowercase ? "valid" : ""}>
+      <FaCheckCircle /> At least one lowercase letter
+    </li>
+    <li className={passwordCriteria.number ? "valid" : ""}>
+      <FaCheckCircle /> At least one number
+    </li>
+    <li className={passwordCriteria.special ? "valid" : ""}>
+      <FaCheckCircle /> At least one special character
+    </li>
+  </ul>
+</div>
                 <button 
                   className="login-btn"
                   onClick={handleFirstLoginReset}
-                  disabled={loading || newPassword.length < 6}
+                  disabled={loading || !Object.values(passwordCriteria).every(Boolean)}
                 >
                   {loading ? "Securing..." : "Set Password"}
                 </button>
