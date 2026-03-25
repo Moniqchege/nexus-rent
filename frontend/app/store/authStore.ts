@@ -16,7 +16,7 @@ interface AuthState {
   token: string | null
   isFirstLogin: boolean
   isLoading: boolean
-  login: (provider: string) => void
+
   logout: () => Promise<void>
   fetchMe: () => Promise<void>
   setToken: (token: string, user: User, isFirstLogin?: boolean) => void
@@ -30,10 +30,7 @@ export const useAuthStore = create<AuthState>()(
       isFirstLogin: false,
       isLoading: false,
 
-      login(provider: string) {
-        // Redirect to backend OAuth flow
-        window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/api/auth/${provider}`
-      },
+
 
       async logout() {
         try {

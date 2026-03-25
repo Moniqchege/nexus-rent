@@ -4,6 +4,7 @@ import { requireAuth } from '../middleware/auth';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
+import { transporter } from '../services/mailer';
 
 const router = Router();
 function generatePassword(length = 10) {
@@ -77,7 +78,7 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
 // POST /api/users - Create user
 router.post('/', requireAuth, async (req: Request, res: Response) => {
   try {
-    const { name, email, username, role, plan = 'FREE', propertyAssignments  = [] } = req.body;
+    const { name, email, username, role, plan = 'FREE', propertyAssignments = [] } = req.body;
 
     if (!name || !email || !role) {
       return res.status(400).json({ error: 'Name, email, and role are required' });
@@ -96,7 +97,7 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
       return res.status(409).json({ error: 'User already exists' });
     }
 
-    // ✅ Generate + hash password
+    // 🔐 Generate password
     const plainPassword = generatePassword();
     const hashedPassword = await bcrypt.hash(plainPassword, 12);
 
@@ -109,6 +110,7 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
         password_hash: hashedPassword,
         role,
         plan,
+        firstLogin: true, // ✅ already correct
       },
       select: {
         id: true,
@@ -117,35 +119,24 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
         username: true,
         role: true,
         plan: true,
+        firstLogin: true, // ✅ ADD THIS
         createdAt: true,
       },
     });
 
-    console.log("propertyAssignments:", propertyAssignments);
-    // ✅ Attach user to multiple properties
+    // 📦 Assign properties
     if (propertyAssignments.length > 0) {
-  const result = await db.userProperty.createMany({
-    data: propertyAssignments.map((item: any) => ({
-      userId: user.id,
-      propertyId: item.propertyId,
-      roleId: item.roleId,
-    })),
-    skipDuplicates: true,
-  });
-  console.log("Inserted rows:", result.count);
-}
+      await db.userProperty.createMany({
+        data: propertyAssignments.map((item: any) => ({
+          userId: user.id,
+          propertyId: item.propertyId,
+          roleId: item.roleId,
+        })),
+        skipDuplicates: true,
+      });
+    }
 
-    // ✅ Send email
-    const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT),
-  secure: false, // TLS
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
-
+    // 📧 Send email
     await transporter.sendMail({
       from: `"Nexus Rent" <${process.env.SMTP_USER}>`,
       to: email,
@@ -154,7 +145,7 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
         <h3>Welcome to Nexus Rent</h3>
         <p>Email: ${email}</p>
         <p>Password: ${plainPassword}</p>
-        <p>Please change your password after login.</p>
+        <p><strong>You will be required to change your password on first login.</strong></p>
       `,
     });
 

@@ -17,7 +17,8 @@ model User {
   provider      String?  @default("local")
   provider_id   String?  @unique
   plan          String?  @default("FREE")
-  role          String?  @default("tenant") // ⚠️ optional: keep or remove
+  role          String?  @default("tenant")
+  firstLogin    Boolean  @default(true)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -26,6 +27,8 @@ model User {
   properties     Property[]     @relation("LandlordProperties")
   Tenant         Tenant?
   Notification   Notification[]
+  passwordResetTokens PasswordResetToken[]
+  otpCodes       OtpCode[]
 }
 
 model Session {
@@ -36,6 +39,34 @@ model Session {
   created_at DateTime @default(now())
   user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 }
+
+model PasswordResetToken {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model OtpCode {
+  id        Int      @id @default(autoincrement())
+  userId    Int?
+  identifier String  // email or userId
+  codeHash  String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+  
+  @@index([identifier])
+  @@index([expiresAt])
+}
+
 
 model Property {
   id         Int       @id @default(autoincrement())

@@ -1,22 +1,32 @@
-# Nexus Rent - Attach Properties to Users Task
+# Dark Futuristic Login UI Update - TODO
 
-## Status: In Progress
+## Plan Breakdown & Progress Tracking
 
-### 1. [ ] Create TODO.md ✅
-### 2. [✅] Update UserForm.tsx with property-role multiselect
-   - Fetch properties/roles
-   - Add Property Assignments section (add/remove rows: Property select + Role select)
-   - Include propertyAssignments in submit
+### 1. [x] Create TODO.md with steps ✅
+   - Current step complete
 
-### 3. [✅] Update UserTable.tsx
-   - Add "Properties" column (count)
+### 2. [ ] Confirm current file contents
+   - read_file frontend/app/login/page.tsx (already done)
+   - read_file frontend/app/globals.css (already done)
 
-### 4. [ ] Test create user with properties
-   - Backend: Verify User + UserProperty created
-   - Frontend: Form submits correctly
+### 3. [x] Add login theme CSS ✅ (new frontend/app/login/theme.css)
+   - .login-container, .login-card, .login-input, .login-btn, .otp-section etc.
+   - Ensure glassmorphism, neon effects match theme
 
-### 5. [ ] Optional: Edit user property assignments
-   - Load existing in edit mode
+### 4. [x] Update login/page.tsx ✅
+   - Replaced inline styles with theme classes
+   - Hero left: .hero-left, page-tag, gradient h1
+   - Form: .login-card with neon focus
+   - Inputs/buttons: theme-styled
+   - Logic unchanged
 
-### 6. [ ] Update TODO.md & attempt_completion
+### 5. [x] Test changes ✅
+   - Ran dev server
+   - Verified dark futuristic theme: glassmorphism card, neon blue/purple gradients, glow effects, Orbitron fonts, responsive
+   - OTP/FirstLogin flows visually match theme, logic unchanged
+
+### 6. [ ] Complete task
+   - attempt_completion
+
+**Next step: Update login/page.tsx to use theme classes**
 
