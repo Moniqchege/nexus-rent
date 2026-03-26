@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { LogOut } from "lucide-react";
 import { useAuthStore } from "@/app/store/authStore";
 import { useUIStore } from "@/app/store/uiStore";
 import api from "@/app/lib/api";
@@ -25,14 +24,14 @@ export default function Sidebar() {
   }, [user]);
 
   const NAV = [
-  { label: "Overview", icon: "⊞", to: "/dashboard" },
-{ label: "My Rentals", icon: "🏠", to: "/my-rentals" },
-// { label: "My Properties", icon: "🏠", to: "/properties" },
-  { label: "Payments", icon: "💳", to: "/payments" },
+  { label: "Overview", icon: "/overview.png", to: "/dashboard", type: "image" },
+  { label: "Apartments", icon: "/apartment_icon.png", to: "/my-rentals", type: "image" },
+  { label: "Payments", icon: "/payments_icon.png", to: "/payments", type: "image" },
   // { label: "AI Insights", icon: "🤖", to: "/ai-insights" },
-  { label: "Notifications", icon: "🔔", to: "/notifications", badge: unreadCount },
-  { label: "Roles", icon: "🎭", to: "/roles" },
-  { label: "Users", icon: "👥", to: "/users" },
+  { label: "Roles", icon: "/roles_icon.png", to: "/roles", type: "image" },
+  { label: "Users", icon: "/users_icon.png", to: "/users", type: "image" },
+    { label: "Notifications", icon: "/notifications_icon.png", to: "/notifications", type: "image", badge: unreadCount,  },
+
 ];
 
 
@@ -67,10 +66,19 @@ export default function Sidebar() {
       {/* User info */}
       <div style={{ textAlign: "center", marginBottom: 24, paddingBottom: 24, borderBottom: "1px solid var(--border-glow)" }}>
         <div style={{
-          width: 56, height: 56, borderRadius: "50%", background: "linear-gradient(to top right, var(--neon-purple), var(--neon-blue))",
+          width: 56, height: 56, borderRadius: "50%",
           display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, margin: "0 auto 12px"
         }}>
-          👤
+          <img
+  src="/profile_icon.png"
+  alt="Profile"
+  style={{
+    width: 56,
+    height: 56,
+    borderRadius: "50%",
+    objectFit: "cover"
+  }}
+/>
         </div>
         <div style={{ fontWeight: 600, fontSize: 14 }}>{user?.name ?? "Alex Kimani"}</div>
         <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
@@ -80,13 +88,23 @@ export default function Sidebar() {
 
       {/* Navigation */}
       <nav className="sidebar-nav" style={{ flex: 1 }}>
-        {NAV.map(({ label, icon, to, badge }) => (
+        {NAV.map(({ label, icon, to, badge, type }) => (
           <button
             key={to}
             onClick={() => handleNavClick(to)}
             className={`sidebar-item ${pathname === to ? "active" : ""}`}
           >
-            <span style={{ fontSize: 18 }}>{icon}</span>
+            <span style={{ fontSize: 18, display: "flex", alignItems: "center" }}>
+      {type === "image" ? (
+        <img 
+          src={icon} 
+          alt={label} 
+          style={{ width: 30, height: 30, objectFit: "contain" }}
+        />
+      ) : (
+        icon
+      )}
+    </span>
             <span style={{ flex: 1, textAlign: "left" }}>{label}</span>
             {badge && (
               <span style={{ marginLeft: "auto", background: "var(--accent-danger)", color: "#fff", fontSize: 10, padding: "2px 6px", borderRadius: 12 }}>
@@ -102,7 +120,11 @@ export default function Sidebar() {
         onClick={() => logout()}
         className="sidebar-item logout"
       >
-        <LogOut size={16} />
+        <img
+  src="/logout_icon.png"
+  alt="Logout"
+  style={{ width: 30, height: 30, objectFit: "contain" }}
+/>
         Logout
       </button>
     </aside>
