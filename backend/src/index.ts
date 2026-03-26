@@ -12,6 +12,7 @@ import notificationsRoutes from "./routes/notifications.js";
 import rolesRoutes from "./routes/roles.js";
 import usersRoutes from "./routes/users.js";
 import propertiesRoutes from "./routes/properties.js";
+import adminRoutes from "./routes/admin.js";
 import { setupOAuth } from "./services/oauthStrategies.js";
 
 
@@ -26,9 +27,9 @@ const app = express();
 
 app.use(express.json());
 app.use(cors({
-  origin:[ 
-  "http://localhost:3000",
-  "https://resume-builder-frontend-6w43zpqnp-moniqcheges-projects.vercel.app/",
+  origin: [
+    "http://localhost:3000",
+    "https://resume-builder-frontend-6w43zpqnp-moniqcheges-projects.vercel.app/",
   ],
   credentials: true,
 }));
@@ -52,6 +53,7 @@ app.use("/notifications", notificationsRoutes);
 app.use("/api/roles", rolesRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/properties", propertiesRoutes);
+app.use("/api/admin", adminRoutes);
 app.listen(process.env.PORT || 4000, () => console.log("Server running"));
 
 

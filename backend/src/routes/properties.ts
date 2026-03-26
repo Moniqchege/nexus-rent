@@ -3,7 +3,10 @@ import { db } from '../db/prisma';
 import { requireAuth } from '../middleware/auth';
 import { AuthRequest } from '../middleware/auth-types';
 
+import { STANDARD_AMENITIES } from '../services/seedData';
+
 const router = Router();
+
 
 interface CreatePropertyInput {
   title: string;
@@ -151,6 +154,26 @@ router.post('/', requireAuth, async (req, res) => {
   } catch (error: any) {
     console.error('Create property error:', error);
     res.status(500).json({ error: 'Failed to create property' });
+  }
+});
+
+// Fetch amenities
+router.get('/amenities', requireAuth, async (req, res) => {
+  try {
+    const amenities = await db.amenity.findMany({
+      orderBy: { key: 'asc' }, 
+      select: {
+        id: true,
+        key: true,
+        label: true,
+        category: true,
+        createdAt: true
+      }
+    });
+    res.json(amenities);
+  } catch (error) {
+    console.error('Failed to fetch amenities:', error);
+    res.status(500).json({ error: 'Failed to fetch amenities' });
   }
 });
 

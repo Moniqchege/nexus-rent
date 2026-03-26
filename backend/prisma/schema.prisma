@@ -159,10 +159,10 @@ model UserProperty {
   @@unique([userId, propertyId, roleId])
 }
 
-enum Amenity {
-  GYM
-  SWIMMING_POOL
-  YOGA_STUDIO
-  STEAM_ROOM
-  SAUNA
+model Amenity {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  label     String
+  category  String
+  createdAt DateTime @default(now())
 }

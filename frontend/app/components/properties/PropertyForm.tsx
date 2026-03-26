@@ -1,6 +1,7 @@
 "use client";
 
 import { AMENITY_OPTIONS, PROPERTY_STATUS_OPTIONS } from "@/app/lib/utils";
+import { useAdminStore } from "@/app/store/adminStore";
 import React, { useEffect, useRef, useState } from "react";
 
 interface Option {
@@ -42,10 +43,25 @@ function AmenitiesDropdown({
   onChange,
 }: AmenitiesDropdownProps) {
   const [open, setOpen] = useState(false);
-  const [dropUp, setDropUp] = useState(false); 
+  const [dropUp, setDropUp] = useState(false);
+  const [search, setSearch] = useState("");
   const ref = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // Filtered options for autocomplete
+  const filteredOptions = options.filter(opt =>
+    opt.label.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const toggleOption = (val: string) => {
+    if (value.includes(val)) {
+      onChange(value.filter((v) => v !== val));
+    } else {
+      onChange([...value, val]);
+    }
+  };
+
+  // Close dropdown if clicked outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) {
@@ -56,13 +72,13 @@ function AmenitiesDropdown({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Calculate whether to open upwards
+  // Calculate whether dropdown should open up or down
   useEffect(() => {
     if (open && ref.current && dropdownRef.current) {
       const rect = ref.current.getBoundingClientRect();
+      const dropdownHeight = dropdownRef.current.offsetHeight;
       const spaceBelow = window.innerHeight - rect.bottom;
       const spaceAbove = rect.top;
-      const dropdownHeight = dropdownRef.current.offsetHeight;
 
       if (dropdownHeight > spaceBelow && spaceAbove > spaceBelow) {
         setDropUp(true);
@@ -70,19 +86,7 @@ function AmenitiesDropdown({
         setDropUp(false);
       }
     }
-  }, [open]);
-
-  const toggleOption = (val: string) => {
-    if (value.includes(val)) {
-      onChange(value.filter((v) => v !== val));
-    } else {
-      onChange([...value, val]);
-    }
-  };
-
-  const selectedLabels = options
-    .filter((opt) => value.includes(opt.value))
-    .map((opt) => opt.label);
+  }, [open, filteredOptions]); // recalc whenever filteredOptions changes
 
   return (
     <div ref={ref} style={{ position: "relative", width: "100%" }}>
@@ -90,40 +94,42 @@ function AmenitiesDropdown({
       <div
         onClick={() => setOpen((prev) => !prev)}
         style={{
-           width: "100%",
-    backgroundColor: "rgba(17,24,39,0.5)",
-    border: "1px solid var(--border-glow)",
-    borderRadius: "12px",
-    padding: "14px 20px",
-    cursor: "pointer",
-    color: value.length ? "var(--text-primary)" : "var(--text-secondary)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    fontSize: "14px",
+          width: "100%",
+          backgroundColor: "rgba(17,24,39,0.5)",
+          border: "1px solid var(--border-glow)",
+          borderRadius: "12px",
+          padding: "14px 20px",
+          cursor: "pointer",
+          color: value.length ? "var(--text-primary)" : "var(--text-secondary)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          fontSize: "14px",
         }}
       >
-       <span>{selectedLabels.length > 0 ? selectedLabels.join(", ") : "Select amenities"}</span> 
+        <span>
+          {value.length > 0
+            ? options
+                .filter((opt) => value.includes(opt.value))
+                .map((opt) => opt.label)
+                .join(", ")
+            : "Select amenities"}
+        </span>
         <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="16"
-    height="16"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-    style={{
-      transition: "transform 0.2s ease",
-      transform: open ? "rotate(180deg)" : "rotate(0deg)",
-      color: "var(--text-primary)",
-    }}
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M19 9l-7 7-7-7"
-    />
-  </svg>
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          style={{
+            transition: "transform 0.2s ease",
+            transform: open ? "rotate(180deg)" : "rotate(0deg)",
+            color: "var(--text-primary)",
+          }}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
       </div>
 
       {/* Dropdown */}
@@ -146,7 +152,23 @@ function AmenitiesDropdown({
             bottom: dropUp ? "calc(100% + 4px)" : "auto",
           }}
         >
-          {options.map((option) => (
+          {/* Search Input */}
+          <input
+            type="text"
+            placeholder="Search..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{
+              width: "100%",
+              padding: "8px 10px",
+              marginBottom: "8px",
+              borderRadius: "8px",
+              border: "1px solid var(--border-glow)",
+              backgroundColor: "#1f2937",
+              color: "white",
+            }}
+          />
+          {filteredOptions.map((option) => (
             <label
               key={option.value}
               style={{
@@ -167,6 +189,7 @@ function AmenitiesDropdown({
               {option.label}
             </label>
           ))}
+          {filteredOptions.length === 0 && <p style={{ color: "#888", padding: "6px" }}>No results</p>}
         </div>
       )}
     </div>
@@ -187,6 +210,23 @@ export default function PropertyForm({
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const { amenities, fetchAmenities } = useAdminStore();
+
+    useEffect(() => {
+  fetchAmenities();
+}, []);
+
+const formatLabel = (label: string) =>
+  label
+    .toLowerCase()
+    .split(" ")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+
+const amenityOptions: Option[] = amenities.map(a => ({
+  label: formatLabel(a.label),
+  value: a.key,
+}));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -420,11 +460,11 @@ export default function PropertyForm({
   >
     Amenities *
   </label>
-  <AmenitiesDropdown
-    options={AMENITY_OPTIONS}
-    value={data.amenities || []}
-    onChange={(val) => setData({ ...data, amenities: val })}
-  />
+ <AmenitiesDropdown
+  options={amenityOptions}
+  value={data.amenities || []}
+  onChange={(val) => setData({ ...data, amenities: val })}
+/>
 </div>
  </div>
 

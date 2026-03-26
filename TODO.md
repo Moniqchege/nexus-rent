@@ -1,20 +1,16 @@
-## Property Access for Attached Users - TODO
+# Amenities & Permissions DB Loading Task
 
-**Status: 6/7 steps completed ✓**
+## Progress Tracker
+- [ ] 1. Create backend/src/services/seedData.ts (amenities & permissions lists)
+✅ 2. Create backend/src/routes/admin.ts (seed endpoint, /api/admin/seed)
+- [ ] 3. Update backend/src/routes/properties.ts (GET /api/amenities, DB validation)
+- [ ] 4. Update backend/src/routes/roles.ts (GET /api/permissions, seed Permissions)
+- [ ] 5. Update frontend/app/store/adminStore.ts (fetch from APIs)
+- [ ] 6. Create prisma/seed.ts (run seed data)
+✅ 7. Update backend/src/index.ts (mount admin routes)
+- [ ] 8. Add npm run seed script
+- [ ] 9. Run prisma migrate & seed
+- [ ] 10. Test endpoints & frontend
 
-### Approved Plan Summary
-✅ Backend: `/api/properties` now fetches properties where user is landlord **OR** attached via UserProperty (with role data)
-✅ Frontend: Both `/properties/` (grid view) & `/my-rentals/` (list+actions) dynamic via adminStore
-✅ Access: Single property ops (get/update/delete) check landlord OR attachment
-
-### Step-by-Step Implementation
-
-- [x] **Steps 1-4**: Backend properties.ts updated ✓
-- [x] **Step 5**: /properties/page.tsx dynamic ✓
-- [x] **Step 6**: /my-rentals/page.tsx → adminStore + search/filter ✓
-
-### Final Verification
-- [x] **Step 7**: Ready for testing
-
-**Next**: Complete task
-
+## Current Status
+Approved plan - starting implementation.

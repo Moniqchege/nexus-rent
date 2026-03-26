@@ -115,5 +115,25 @@ router.delete('/:id', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
+// Fetch Permissions
+router.get('/permissions', requireAuth, async (req, res) => {
+  try {
+    const permissions = await db.permission.findMany({
+      orderBy: { key: 'asc' },
+      select: {
+        id: true,
+        key: true,
+        label: true,
+        category: true,
+        createdAt: true
+      }
+    });
+    res.json(permissions);
+  } catch (error) {
+    console.error('Failed to fetch permissions:', error);
+    res.status(500).json({ error: 'Failed to fetch permissions' });
+  }
+});
+
 export default router;
 

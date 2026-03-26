@@ -28,7 +28,8 @@ export const requireAuth: RequestHandler = async (
       where: { token },
       include: {
         user: {
-          select: { id: true, email: true, name: true, plan: true },
+          select: { id: true, email: true, name: true, plan: true, role: true },
+
         },
       },
     });
@@ -53,6 +54,20 @@ export const requireAuth: RequestHandler = async (
     return res.status(401).json({ error: "Invalid or expired token" });
   }
 }
+
+export const isAdmin: RequestHandler = (req, res, next) => {
+  const authReq = req as AuthRequest;
+
+  if (!authReq.user) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  if (authReq.user.role !== "ADMIN") {
+    return res.status(403).json({ error: "Forbidden: Admins only" });
+  }
+
+  next();
+};
 
 export async function optionalAuth(
   req: AuthRequest,
