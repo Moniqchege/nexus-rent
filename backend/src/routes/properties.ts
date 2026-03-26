@@ -14,7 +14,7 @@ interface CreatePropertyInput {
   sqft: number;
   status?: string;
   image?: string;
-  amenities?: string[]; 
+  amenities?: string[];
 }
 
 interface UpdatePropertyInput {
@@ -26,7 +26,7 @@ interface UpdatePropertyInput {
   sqft?: number;
   status?: string;
   image?: string;
-  amenities?: string[]; 
+  amenities?: string[];
 }
 
 // GET /api/properties - List user's properties
@@ -36,7 +36,18 @@ router.get('/', requireAuth, async (req, res) => {
     const userId = authReq.userId;
 
     const properties = await db.property.findMany({
-      where: { landlordId: userId },
+      where: {
+        OR: [
+          { landlordId: userId },
+          {
+            users: {
+              some: {
+                userId: userId
+              }
+            }
+          }
+        ]
+      },
       select: {
         id: true,
         title: true,
@@ -49,6 +60,28 @@ router.get('/', requireAuth, async (req, res) => {
         image: true,
         amenities: true,
         createdAt: true,
+        users: {
+          where: {
+            userId
+          },
+          select: {
+            id: true,
+            assignedAt: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+              }
+            },
+            role: {
+              select: {
+                id: true,
+                name: true,
+                permissions: true,
+              }
+            }
+          }
+        }
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -83,7 +116,7 @@ router.post('/', requireAuth, async (req, res) => {
     }
 
     // Validate amenities against enum
-    const validAmenities = ["GYM","SWIMMING_POOL","YOGA_STUDIO","STEAM_ROOM","SAUNA"];
+    const validAmenities = ["GYM", "SWIMMING_POOL", "YOGA_STUDIO", "STEAM_ROOM", "SAUNA"];
     const sanitizedAmenities = amenities.filter(a => validAmenities.includes(a));
 
     const property = await db.property.create({
@@ -127,10 +160,22 @@ router.get('/:id', requireAuth, async (req, res) => {
     const authReq = req as AuthRequest;
     const userId = authReq.userId;
     const idParam = req.params.id;
-const propertyId = parseInt(Array.isArray(idParam) ? idParam[0] : idParam, 10);
+    const propertyId = parseInt(Array.isArray(idParam) ? idParam[0] : idParam, 10);
 
     const property = await db.property.findFirst({
-      where: { id: propertyId, landlordId: userId },
+      where: {
+        id: propertyId,
+        OR: [
+          { landlordId: userId },
+          {
+            users: {
+              some: {
+                userId: userId
+              }
+            }
+          }
+        ]
+      },
       select: {
         id: true,
         title: true,
@@ -142,6 +187,18 @@ const propertyId = parseInt(Array.isArray(idParam) ? idParam[0] : idParam, 10);
         status: true,
         image: true,
         createdAt: true,
+        users: {
+          where: { userId },
+          select: {
+            role: {
+              select: {
+                id: true,
+                name: true,
+                permissions: true,
+              }
+            }
+          }
+        }
       },
     });
 
@@ -164,18 +221,32 @@ router.patch('/:id', requireAuth, async (req, res) => {
 
     const { amenities, ...rest } = req.body as UpdatePropertyInput;
 
-    const existing = await db.property.findFirst({ where: { id: propertyId, landlordId: userId } });
+    const existing = await db.property.findFirst({
+      where: {
+        id: propertyId,
+        OR: [
+          { landlordId: userId },
+          {
+            users: {
+              some: {
+                userId: userId
+              }
+            }
+          }
+        ]
+      }
+    });
     if (!existing) return res.status(404).json({ error: 'Property not found or access denied' });
 
     let updateData: any = { ...rest };
     if (amenities) {
       const VALID_AMENITIES = [
-  "GYM","SWIMMING_POOL","YOGA_STUDIO","STEAM_ROOM","SAUNA",
-  "CLUBHOUSE","ROOFTOP_LOUNGE","PLAY_AREA","ELEVATOR",
-  "BACKUP_GENERATOR","LAUNDRY","BOREHOLE","INTERNET"
-];
+        "GYM", "SWIMMING_POOL", "YOGA_STUDIO", "STEAM_ROOM", "SAUNA",
+        "CLUBHOUSE", "ROOFTOP_LOUNGE", "PLAY_AREA", "ELEVATOR",
+        "BACKUP_GENERATOR", "LAUNDRY", "BOREHOLE", "INTERNET"
+      ];
 
-const sanitizedAmenities = (amenities || []).filter(a => VALID_AMENITIES.includes(a));
+      const sanitizedAmenities = (amenities || []).filter(a => VALID_AMENITIES.includes(a));
     }
 
     const property = await db.property.update({
@@ -209,10 +280,24 @@ router.delete('/:id', requireAuth, async (req, res) => {
     const authReq = req as AuthRequest;
     const userId = authReq.userId;
     const idParam = req.params.id;
-const propertyId = parseInt(Array.isArray(idParam) ? idParam[0] : idParam, 10);
+    const propertyId = parseInt(Array.isArray(idParam) ? idParam[0] : idParam, 10);
 
-    // Ensure property belongs to user first
-    const existing = await db.property.findFirst({ where: { id: propertyId, landlordId: userId } });
+    // Ensure property belongs to user first (landlord OR attached)
+    const existing = await db.property.findFirst({
+      where: {
+        id: propertyId,
+        OR: [
+          { landlordId: userId },
+          {
+            users: {
+              some: {
+                userId: userId
+              }
+            }
+          }
+        ]
+      }
+    });
     if (!existing) return res.status(404).json({ error: 'Property not found or access denied' });
 
     await db.property.delete({ where: { id: propertyId } });

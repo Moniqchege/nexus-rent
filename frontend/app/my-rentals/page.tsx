@@ -1,48 +1,27 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
-import api from "@/app/lib/api";
+import { useAdminStore } from "@/app/store/adminStore";
 import PropertyTable from "@/app/components/properties/PropertyTable";
 import SearchBar from "../components/ui/SearchBar";
 
-interface PropertyApi {
-  id: number;
-  title: string;
-  location: string;
-  price: number;
-  beds: number;
-  baths: number;
-  sqft: number;
-  status: string;
-  image?: string;
-  createdAt: string;
-}
-
 export default function MyRentalsPage() {
-  const [properties, setProperties] = useState<PropertyApi[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const { properties, fetchProperties, loading } = useAdminStore();
   const [search, setSearch] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchProperties();
-  }, []);
+    fetchProperties().catch((err) => {
+      setError(err instanceof Error ? err.message : "Failed to fetch properties");
+    });
+  }, [fetchProperties]);
 
-  const fetchProperties = async () => {
-    try {
-      setLoading(true);
-      const response = await api.get("/api/properties");
-      setProperties(response.data);
-      setError(null);
-    } catch (err: any) {
-      setError(err.response?.data?.error || "Failed to fetch properties");
-    } finally {
-      setLoading(false);
-    }
+  const handleRefresh = () => {
+    fetchProperties().catch((err) => {
+      setError(err instanceof Error ? err.message : "Failed to fetch properties");
+    });
   };
-
 
   if (loading) {
     return (
@@ -53,6 +32,11 @@ export default function MyRentalsPage() {
       </div>
     );
   }
+
+  const filteredProperties = properties.filter(p =>
+    p.title.toLowerCase().includes(search.toLowerCase()) ||
+    p.location.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <div className="dashboard-content">
@@ -101,7 +85,7 @@ export default function MyRentalsPage() {
           Error: {error}
         </div>
       )}
-      <PropertyTable properties={properties} onRefresh={fetchProperties} />
+      <PropertyTable properties={filteredProperties} onRefresh={handleRefresh} />
 
     </div>
   );

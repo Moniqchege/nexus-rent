@@ -45,9 +45,10 @@ interface Property {
   baths: number;
   sqft: number;
   status: string;
-  amenities?: string;
+  amenities?: string[];
   image?: string;
   createdAt: string;
+  userProperties?: any[]; // Added from API
 }
 
 interface AdminState {
