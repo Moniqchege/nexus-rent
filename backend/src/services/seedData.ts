@@ -21,62 +21,42 @@ export interface PermissionData {
     key: string;
     label: string;
     category: string;
+    group: string;
 }
 
 export const STANDARD_PERMISSIONS: PermissionData[] = [
     // Property Management
-    { key: "property:create", label: "Create Property", category: "CONFIG" },
-    { key: "property:edit", label: "Edit Property", category: "CONFIG" },
-    { key: "property:view", label: "View Property", category: "CONFIG" },
-    { key: "property:delete", label: "Delete Property", category: "CONFIG" },
-    { key: "property:approve", label: "Approve Property", category: "CONFIG" },
-
-    // Landlord Management
-    { key: "landlord:create", label: "Create Landlord", category: "CONFIG" },
-    { key: "landlord:view", label: "View Landlords", category: "CONFIG" },
-    { key: "landlord:update", label: "Update Landlord", category: "CONFIG" },
-
-    { key: "property:view", label: "View Properties", category: "CONFIG" },
-    { key: "property:update", label: "Update Property", category: "CONFIG" },
-    { key: "property:delete", label: "Delete Property", category: "CONFIG" },
-    { key: "property:approve", label: "Approve Property", category: "CONFIG" },
+    { key: "property:create", label: "Create Property", category: "CONFIG", group: "Property Management" },
+    { key: "property:edit", label: "Edit Property", category: "CONFIG", group: "Property Management" },
+    { key: "property:view", label: "View Property", category: "CONFIG", group: "Property Management" },
+    { key: "property:delete", label: "Delete Property", category: "CONFIG", group: "Property Management" },
+    { key: "property:approve", label: "Approve Property", category: "CONFIG", group: "Property Management" },
 
     // User Management
-    { key: "user:create", label: "Create User", category: "CONFIG" },
-    { key: "user:view", label: "View User", category: "CONFIG" },
-    { key: "user:update", label: "Update User", category: "CONFIG" },
-    { key: "user:delete", label: "Delete User", category: "CONFIG" },
-    { key: "user:lock_account", label: "Lock User Account", category: "CONFIG" },
-    { key: "user:reset_password", label: "Reset User Password", category: "CONFIG" },
-    { key: "user:kill_session", label: "Kill User Session", category: "CONFIG" },
+    { key: "user:create", label: "Create User", category: "CONFIG", group: "User Management" },
+    { key: "user:view", label: "View User", category: "CONFIG", group: "User Management" },
+    { key: "user:update", label: "Update User", category: "CONFIG", group: "User Management" },
+    { key: "user:delete", label: "Delete User", category: "CONFIG", group: "User Management" },
+    { key: "user:update_role", label: "Update User Role", category: "CONFIG", group: "User Management" },
+    { key: "user:lock_account", label: "Lock User Account", category: "CONFIG", group: "User Management" },
+    { key: "user:reset_password", label: "Reset User Password", category: "CONFIG", group: "User Management" },
+    { key: "user:kill_session", label: "Kill User Session", category: "CONFIG", group: "User Management" },
 
     // Role Management
-    { key: "role:create", label: "Create Role", category: "CONFIG" },
-    { key: "role:view", label: "View Role", category: "CONFIG" },
-    { key: "role:update", label: "Update Role", category: "CONFIG" },
-    { key: "role:delete", label: "Delete Role", category: "CONFIG" },
-
-    // Tenant Management
-    { key: "tenant:create", label: "Create Tenant", category: "CONFIG" },
-    { key: "tenant:assign", label: "Assign Tenant", category: "CONFIG" },
-    { key: "tenant:view", label: "View Tenants", category: "CONFIG" },
-    { key: "tenant:update", label: "Update Tenant", category: "CONFIG" },
+    { key: "role:create", label: "Create Role", category: "CONFIG", group: "Role Management" },
+    { key: "role:view", label: "View Role", category: "CONFIG", group: "Role Management" },
+    { key: "role:update", label: "Update Role", category: "CONFIG", group: "Role Management" },
+    { key: "role:delete", label: "Delete Role", category: "CONFIG", group: "Role Management" },
 
     // Payment Management
-    { key: "payment:view", label: "View Payments", category: "MODULE" },
-    { key: "payment:process", label: "Process Payments", category: "MODULE" },
+    { key: "payment:view", label: "View Payments", category: "MODULE", group: "Payment Management" },
+    { key: "payment:process", label: "Process Payments", category: "MODULE", group: "Payment Management" },
 
     // Notification
-    { key: "notification:send", label: "Send Notifications", category: "MODULE" },
+    { key: "notification:send", label: "Send Notifications", category: "MODULE", group: "Notifications" },
 
     // Reports & Audit
-    { key: "report:generate", label: "Generate Reports", category: "MODULE" },
-    { key: "audit:view", label: "View Audit Trail", category: "MODULE" },
-
-    // Admin & System
-    { key: "system:health", label: "View System Health", category: "ADMIN" },
-    { key: "admin:*", label: "Full Admin Access", category: "ADMIN" },
-    { key: "*", label: "Wildcard All Permissions", category: "ADMIN" }
+    { key: "report:generate", label: "Generate Reports", category: "MODULE", group: "Reports & Audit" }
 ];
 
 export const getAmenitiesList = () => STANDARD_AMENITIES;

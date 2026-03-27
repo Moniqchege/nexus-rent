@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAdminStore } from "../../store/adminStore";
+import { Permission, useAdminStore } from "../../store/adminStore";
 import { createPortal } from "react-dom";
 import { Search } from "lucide-react";
 
@@ -9,10 +9,11 @@ interface RoleFormProps {
   onSubmit: (roleData: any) => void;
   onCancel: () => void;
   editingRole?: any;
+  loading?: boolean;
 }
 
 export default function RoleForm({ onSubmit, onCancel, editingRole }: RoleFormProps) {
-  const { permissions, roles, updateRole } = useAdminStore();
+  const { permissions, fetchPermissionsFromDb, roles, updateRole, loading  } = useAdminStore();
   const [showPermissionsModal, setShowPermissionsModal] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -32,11 +33,18 @@ export default function RoleForm({ onSubmit, onCancel, editingRole }: RoleFormPr
     }
   }, [editingRole]);
 
-  const groupedPermissions = permissions.reduce((acc: Record<string, any[]>, perm) => {
-    if (!acc[perm.category]) acc[perm.category] = [];
-    acc[perm.category].push(perm);
+  useEffect(() => {
+    fetchPermissionsFromDb();
+  }, []);
+
+const groupedPermissions = permissions.reduce(
+  (acc: Record<string, Permission[]>, perm) => {
+    if (!acc[perm.group]) acc[perm.group] = [];
+    acc[perm.group].push(perm);
     return acc;
-  }, {} as Record<string, any[]>);
+  },
+  {}
+);
 
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -139,7 +147,6 @@ export default function RoleForm({ onSubmit, onCancel, editingRole }: RoleFormPr
             placeholder="Brief description of this role's purpose..."
           />
         </div>
-
 <div>
   <label style={{ fontWeight: 600, fontSize: "12px", color: "var(--neon-blue)" }}>
     Permissions ({formData.permissions.length} selected)
@@ -163,22 +170,17 @@ export default function RoleForm({ onSubmit, onCancel, editingRole }: RoleFormPr
         textOverflow: "ellipsis"
       }}
     >
-      {formData.permissions.length === 0
-        ? "Select Permissions"
-        : (() => {
-            const selectedLabels = formData.permissions
-              .map(key => {
-                const perm = permissions.find(p => p.key === key);
-                return perm?.label || key;
-              })
-              .filter(Boolean);
+       {loading ? "Loading..." : formData.permissions.length === 0
+    ? "Select Permissions"
+    : (() => {
+        const selectedLabels = formData.permissions
+          .map(key => permissions.find(p => p.key === key)?.label || key)
+          .filter(Boolean);
 
-            const firstThree = selectedLabels.slice(0, 3);
-            const remainingCount = selectedLabels.length - firstThree.length;
-            return (
-              firstThree.join(", ") + (remainingCount > 0 ? ` +${remainingCount} more` : "")
-            );
-          })()}
+        const firstThree = selectedLabels.slice(0, 3);
+        const remainingCount = selectedLabels.length - firstThree.length;
+        return firstThree.join(", ") + (remainingCount > 0 ? ` +${remainingCount} more` : "");
+      })()}
     </button>
 
     {/* Search Icon */}
@@ -422,6 +424,7 @@ createPortal(
           </button>
           <button
             type="submit"
+            disabled={loading}
             style={{
               background: "linear-gradient(to right, var(--neon-blue), var(--neon-purple))",
               color: "white",

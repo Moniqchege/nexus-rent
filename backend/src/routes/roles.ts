@@ -63,6 +63,27 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
+// Fetch Permissions
+router.get('/permissions', requireAuth, async (req, res) => {
+  try {
+    const permissions = await db.permission.findMany({
+      orderBy: { key: 'asc' },
+      select: {
+        id: true,
+        key: true,
+        label: true,
+        category: true,
+        group: true,
+        createdAt: true
+      }
+    });
+    res.json(permissions);
+  } catch (error) {
+    console.error('Failed to fetch permissions:', error);
+    res.status(500).json({ error: 'Failed to fetch permissions' });
+  }
+});
+
 // GET /api/roles/:id - Get single role
 router.get('/:id', requireAuth, async (req: Request, res: Response) => {
   try {
@@ -112,26 +133,6 @@ router.delete('/:id', requireAuth, async (req: Request, res: Response) => {
     } else {
       res.status(500).json({ error: 'Failed to delete role' });
     }
-  }
-});
-
-// Fetch Permissions
-router.get('/permissions', requireAuth, async (req, res) => {
-  try {
-    const permissions = await db.permission.findMany({
-      orderBy: { key: 'asc' },
-      select: {
-        id: true,
-        key: true,
-        label: true,
-        category: true,
-        createdAt: true
-      }
-    });
-    res.json(permissions);
-  } catch (error) {
-    console.error('Failed to fetch permissions:', error);
-    res.status(500).json({ error: 'Failed to fetch permissions' });
   }
 });
 

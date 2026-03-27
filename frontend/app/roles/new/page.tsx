@@ -3,14 +3,23 @@
 import { useRouter } from "next/navigation";
 import { useAdminStore } from "../../store/adminStore";
 import RoleForm from "../../components/roles/RoleForm";
+import { useState } from "react";
 
 export default function NewRolePage() {
   const router = useRouter();
   const { createRole } = useAdminStore();
+  const [loading, setLoading] = useState(false);
 
   const handleCreateRole = async (roleData: any) => {
-    await createRole(roleData);
-    router.push("/roles"); 
+    setLoading(true);
+    try {
+      await createRole(roleData);
+      router.push("/roles");
+    } catch (error) {
+      console.error("Error creating role:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -23,7 +32,6 @@ export default function NewRolePage() {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-        //   marginBottom: "16px"
         }}
       >
         <div
@@ -68,6 +76,7 @@ export default function NewRolePage() {
       <RoleForm
         onSubmit={handleCreateRole}
         onCancel={() => router.push("/roles")}
+        loading={loading}
       />
     </div>
   );

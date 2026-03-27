@@ -5,10 +5,11 @@ import { persist } from 'zustand/middleware';
 import api from '../lib/api';
 
 
-interface Permission {
+export interface Permission {
   key: string;
   label: string;
   category: string;
+  group: string;
 }
 
 export interface Role {
@@ -211,6 +212,17 @@ export const useAdminStore = create<AdminState>()(
         }
       },
 
+      fetchPermissionsFromDb: async () => {
+        set({ loading: true });
+        try {
+          const res = await api.get('/api/roles/permissions');
+          set({ permissions: res.data, loading: false });
+        } catch (error) {
+          console.error('fetchPermissionsFromDb error:', error);
+          set({ loading: false });
+        }
+      },
+
       rentals: [],
 
       fetchProperties: async () => {
@@ -271,17 +283,6 @@ export const useAdminStore = create<AdminState>()(
           set({ amenities: res.data, loading: false });
         } catch (error) {
           console.error('fetchAmenities error:', error);
-          set({ loading: false });
-        }
-      },
-
-      fetchPermissionsFromDb: async () => {
-        set({ loading: true });
-        try {
-          const res = await api.get('/api/meta/permissions');
-          set({ permissions: res.data, loading: false });
-        } catch (error) {
-          console.error('fetchPermissionsFromDb error:', error);
           set({ loading: false });
         }
       },

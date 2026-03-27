@@ -18,7 +18,8 @@ router.post('/seed', requireAuth, isAdmin, async (req: Request, res: Response) =
             STANDARD_PERMISSIONS.map(p => ({
                 key: p.key,
                 label: p.label,
-                category: p.category
+                category: p.category,
+                group: p.group
             }));
 
         await db.permission.createMany({

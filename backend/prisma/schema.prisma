@@ -130,6 +130,7 @@ model Permission {
   key       String   @unique
   label     String
   category  String
+  group     String   @default("UNCATEGORIZED")      
   createdAt DateTime @default(now())
 }
 
