@@ -228,6 +228,20 @@ const amenityOptions: Option[] = amenities.map(a => ({
   value: a.key,
 }));
 
+useEffect(() => {
+  if (initialData.amenities && amenities.length > 0) {
+    setData(prev => {
+      // Don't overwrite if already set
+      if (prev.amenities && prev.amenities.length > 0) return prev;
+
+      const normalizedAmenities = initialData.amenities!.map(a =>
+        amenities.find(opt => opt.key.toLowerCase() === a.toLowerCase())?.key || a
+      );
+      return { ...prev, amenities: normalizedAmenities };
+    });
+  }
+}, [initialData, amenities]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!onSuccess) return;

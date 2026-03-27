@@ -47,6 +47,13 @@ export default function PropertyGrid({ properties, onRefresh, onSaveToggle }: Pr
     }
   };
 
+  function formatAmenity(label: string) {
+  return label
+    .toLowerCase()               
+    .replace(/_/g, " ")          
+    .replace(/\b\w/g, (l) => l.toUpperCase()); 
+}
+
   
 
   const confirmDelete = (propertyId: number) => {
@@ -55,7 +62,7 @@ export default function PropertyGrid({ properties, onRefresh, onSaveToggle }: Pr
 
  const getStatusBadge = (status: string) => {
   switch (status) {
-    case 'ACTIVE':
+    case 'Available':
       return { text: 'Available', color: 'var(--accent-success)' };
     case 'PENDING':
       return { text: 'Pending', color: '#FFB84D' };
@@ -188,8 +195,7 @@ export default function PropertyGrid({ properties, onRefresh, onSaveToggle }: Pr
             fontSize: '10px',
             color: 'var(--text-secondary)'
   }}>
-    {amenities.slice(0, 3).join(', ')}
-    {amenities.length > 3 && '...'}
+    {amenities.map(formatAmenity).join(', ')}
   </div>
 )}
 

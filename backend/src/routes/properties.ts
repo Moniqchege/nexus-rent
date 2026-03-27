@@ -161,7 +161,7 @@ router.post('/', requireAuth, async (req, res) => {
 router.get('/amenities', requireAuth, async (req, res) => {
   try {
     const amenities = await db.amenity.findMany({
-      orderBy: { key: 'asc' }, 
+      orderBy: { key: 'asc' },
       select: {
         id: true,
         key: true,
@@ -209,6 +209,7 @@ router.get('/:id', requireAuth, async (req, res) => {
         sqft: true,
         status: true,
         image: true,
+        amenities: true,
         createdAt: true,
         users: {
           where: { userId },
@@ -244,32 +245,36 @@ router.patch('/:id', requireAuth, async (req, res) => {
 
     const { amenities, ...rest } = req.body as UpdatePropertyInput;
 
+    // Fetch existing property to ensure ownership
     const existing = await db.property.findFirst({
       where: {
         id: propertyId,
         OR: [
           { landlordId: userId },
-          {
-            users: {
-              some: {
-                userId: userId
-              }
-            }
-          }
+          { users: { some: { userId } } }
         ]
       }
     });
+
     if (!existing) return res.status(404).json({ error: 'Property not found or access denied' });
 
-    let updateData: any = { ...rest };
-    if (amenities) {
-      const VALID_AMENITIES = [
-        "GYM", "SWIMMING_POOL", "YOGA_STUDIO", "STEAM_ROOM", "SAUNA",
-        "CLUBHOUSE", "ROOFTOP_LOUNGE", "PLAY_AREA", "ELEVATOR",
-        "BACKUP_GENERATOR", "LAUNDRY", "BOREHOLE", "INTERNET"
-      ];
+    // Only allow editable fields
+    const editableFields: (keyof UpdatePropertyInput)[] = [
+      'title', 'location', 'price', 'beds', 'baths', 'sqft', 'status', 'image'
+    ];
+    let updateData: Partial<UpdatePropertyInput> = {};
+    const restAny = rest as Record<string, any>;
+    for (const key of editableFields) {
+      if (restAny[key] !== undefined) updateData[key] = restAny[key];
+    }
 
-      const sanitizedAmenities = (amenities || []).filter(a => VALID_AMENITIES.includes(a));
+    // Handle amenities if provided
+    if (amenities) {
+      // Fetch all valid amenities from DB
+      const validAmenities = await db.amenity.findMany({ select: { key: true } });
+      const validKeys = validAmenities.map(a => a.key);
+
+      updateData.amenities = (amenities || []).filter(a => validKeys.includes(a));
     }
 
     const property = await db.property.update({
