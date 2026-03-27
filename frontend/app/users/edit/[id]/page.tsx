@@ -11,22 +11,16 @@ export default function EditUserPage() {
   const userId = parseInt(params.id as string);
   const [editingUser, setEditingUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const { users, fetchUsers, updateUser } = useAdminStore();
+  const { users, fetchUser, updateUser } = useAdminStore();
 
-  useEffect(() => {
-    fetchUsers().finally(() => setLoading(false));
-  }, []);
+ useEffect(() => {
+  if (!userId) return;
 
-  useEffect(() => {
-    if (users.length > 0) {
-      const user = users.find((u: any) => u.id === userId);
-      if (user) {
-        setEditingUser(user);
-      } else {
-        router.push("/users");
-      }
-    }
-  }, [users, userId]);
+  fetchUser(userId)
+    .then((user) => setEditingUser(user))
+    .catch(() => router.push("/users"))
+    .finally(() => setLoading(false));
+}, [userId]);
 
   const handleUpdate = async (userData: any) => {
     await updateUser(userId, userData);

@@ -10,14 +10,15 @@ datasource db {
 model User {
   id            Int      @id @default(autoincrement())
   email         String   @unique
-  username      String   @unique
+  username      String?   @unique
+  phone         String?   @unique
   password_hash String
   name          String
   image         String?
+  role          String?
   provider      String?  @default("local")
   provider_id   String?  @unique
   plan          String?  @default("FREE")
-  role          String?  @default("tenant")
   firstLogin    Boolean  @default(true)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -119,7 +120,7 @@ model Notification {
   id         Int      @id @default(autoincrement())
   message    String
   landlordId Int?
-  tenantIds  Json // array of tenant IDs as JSON
+  tenantIds  Json 
   isRead     Boolean  @default(false)
   sentAt     DateTime @default(now())
   landlord   User?    @relation(fields: [landlordId], references: [id])

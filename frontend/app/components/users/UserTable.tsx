@@ -69,7 +69,7 @@ export default function UserTable({ users, onDeleteClick }: UserTableProps) {
             <th>#</th>
             <th style={{ padding: "12px" }}>Name</th>
             <th style={{ padding: "12px" }}>Email</th>
-            <th style={{ padding: "12px" }}>Role</th>
+            <th style={{ padding: "12px" }}>Phone Number</th>
             {/* <th style={{ padding: "12px" }}>Properties</th> */}
             <th style={{ padding: "12px" }}>Created At</th>
             <th style={{ padding: "12px" }}>Actions</th>
@@ -91,7 +91,7 @@ export default function UserTable({ users, onDeleteClick }: UserTableProps) {
                 {user.email}
               </td>
               <td style={{  padding: "12px", fontSize: "12px", color: "var(--neon-secondary)" }}>
-                {user.role}
+                {user.phone}
               </td>
               <td style={{  padding: "12px", fontSize: "12px", color: "var(--neon-secondary)" }}>
                 {new Date(user.createdAt).toLocaleDateString()}

@@ -24,7 +24,7 @@ export default function UserForm({ onSubmit, onCancel, editingUser, isEdit = fal
     name: "",
     email: "",
     password: "",
-    role: "",
+    phone: "",
     plan: "FREE",
     username: "",
   });
@@ -42,18 +42,25 @@ export default function UserForm({ onSubmit, onCancel, editingUser, isEdit = fal
         name: editingUser.name || "",
         email: editingUser.email || "",
         password: "",
-        role: editingUser.role || "",
+        phone: editingUser.phone || "",
         
         plan: editingUser.plan || "FREE",
         username: editingUser.username || "",
       });
-      // TODO: Load existing propertyAssignments for edit
+      const assignments = (editingUser.userProperties || []).map((up: any) => ({
+      propertyId: up.propertyId,
+      roleId: up.role?.id,
+      propertyName: up.property?.title,
+      roleName: up.role?.name,
+    }));
+
+    setPropertyAssignments(assignments);
     } else {
       setFormData({
         name: "",
         email: "",
         password: "",
-        role: "",
+        phone: "",
         plan: "FREE",
         username: "",
       });
@@ -61,11 +68,23 @@ export default function UserForm({ onSubmit, onCancel, editingUser, isEdit = fal
     }
   }, [editingUser]);
 
+      useEffect(() => {
+  if (editingUser && roles.length && properties.length) {
+    const assignments = (editingUser.userProperties || []).map((up: any) => ({
+      propertyId: up.propertyId,
+      roleId: up.role?.id,
+      propertyName: up.property?.title,
+      roleName: up.role?.name,
+    }));
+    setPropertyAssignments(assignments);
+  }
+}, [editingUser, roles, properties]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const submitData = {
       ... (isEdit && !formData.password 
-        ? { name: formData.name, role: formData.role, plan: formData.plan, username: formData.username }
+        ? { name: formData.name, phone: formData.phone, plan: formData.plan, username: formData.username }
         : formData),
       propertyAssignments,
     };
@@ -187,31 +206,32 @@ export default function UserForm({ onSubmit, onCancel, editingUser, isEdit = fal
         </div>
 
         <div>
-          <label style={{ display: "block", fontWeight: 600, fontSize: "14px", marginBottom: "8px", color: "var(--neon-blue)" }}>
-            Role *
-          </label>
-          <select
-            value={formData.role}
-            onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-            style={{
-              width: "100%",
-              backgroundColor: "rgba(17,24,39,0.5)",
-              border: "1px solid var(--border-glow)",
-              borderRadius: "12px",
-              padding: "14px 20px",
-              fontSize: "16px",
-              color: "var(--text-primary)"
-            }}
-            required
-          >
-            <option value="">Select Role</option>
-            {roles.map((role: Role) => (
-              <option key={role.id} value={role.name}>
-                {role.name}
-              </option>
-            ))}
-          </select>
-        </div>
+  <label style={{ 
+    display: "block", 
+    fontWeight: 600, 
+    fontSize: "14px", 
+    marginBottom: "8px", 
+    color: "var(--neon-blue)" 
+  }}>
+    Phone Number *
+  </label>
+  <input
+    type="tel"
+    value={formData.phone || ""}
+    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+    placeholder="e.g. 254712345678"
+    required
+    style={{
+      width: "100%",
+      backgroundColor: "rgba(17,24,39,0.5)",
+      border: "1px solid var(--border-glow)",
+      borderRadius: "12px",
+      padding: "14px 20px",
+      fontSize: "16px",
+      color: "var(--text-primary)"
+    }}
+  />
+</div>
         </div>     
 
         {/* New Property Assignments Section */}

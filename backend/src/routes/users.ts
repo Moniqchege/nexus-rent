@@ -17,6 +17,7 @@ interface CreateUserInput {
   password?: string;
   username?: string;
   role: string;
+  phone: string;
   plan?: string;
 }
 
@@ -24,6 +25,7 @@ interface UpdateUserInput {
   name?: string;
   email?: string;
   role?: string;
+  phone?: string;
   plan?: string;
 }
 
@@ -31,13 +33,13 @@ interface UpdateUserInput {
 router.get('/', requireAuth, async (req: Request, res: Response) => {
   try {
     const { search } = req.query as { search?: string };
-    const where = search ? { 
+    const where = search ? {
       OR: [
         { name: { contains: search, mode: 'insensitive' } },
         { email: { contains: search, mode: 'insensitive' } }
       ]
     } : {};
-    
+
     const users = await db.user.findMany({
       where,
       select: {
@@ -45,7 +47,8 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
         name: true,
         email: true,
         username: true,
-        role: true,
+        // role: true,
+        phone: true,
         plan: true,
         createdAt: true,
         userProperties: {
@@ -78,10 +81,10 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
 // POST /api/users - Create user
 router.post('/', requireAuth, async (req: Request, res: Response) => {
   try {
-    const { name, email, username, role, plan = 'FREE', propertyAssignments = [] } = req.body;
+    const { name, email, username, phone, plan = 'FREE', propertyAssignments = [] } = req.body;
 
-    if (!name || !email || !role) {
-      return res.status(400).json({ error: 'Name, email, and role are required' });
+    if (!name || !email || !phone) {
+      return res.status(400).json({ error: 'Name, email, and phone number are required' });
     }
 
     const existing = await db.user.findFirst({
@@ -108,18 +111,20 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
         email,
         username: username || email.split('@')[0],
         password_hash: hashedPassword,
-        role,
+        // role,
+        phone,
         plan,
-        firstLogin: true, // ✅ already correct
+        firstLogin: true,
       },
       select: {
         id: true,
         name: true,
         email: true,
         username: true,
-        role: true,
+        // role: true,
+        phone: true,
         plan: true,
-        firstLogin: true, // ✅ ADD THIS
+        firstLogin: true,
         createdAt: true,
       },
     });
@@ -169,9 +174,27 @@ router.get('/:id', requireAuth, async (req: Request, res: Response) => {
         name: true,
         email: true,
         username: true,
-        role: true,
+        // role: true,
+        phone: true,
         plan: true,
         createdAt: true,
+        userProperties: {
+          select: {
+            propertyId: true,
+            role: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+            property: {
+              select: {
+                id: true,
+                title: true,
+              },
+            },
+          },
+        },
       },
     });
     if (!user) {
@@ -188,13 +211,12 @@ router.patch('/:id', requireAuth, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const userId = parseInt(Array.isArray(id) ? id[0] : id, 10);
-    const data = req.body as UpdateUserInput;
+    const { propertyAssignments, ...data } = req.body as any; 
 
     // Block email change if set
-    if (data.email) {
-      delete data.email;
-    }
+    if (data.email) delete data.email;
 
+    // 1️⃣ Update user basic info
     const user = await db.user.update({
       where: { id: userId },
       data,
@@ -203,13 +225,31 @@ router.patch('/:id', requireAuth, async (req: Request, res: Response) => {
         name: true,
         email: true,
         username: true,
-        role: true,
+        phone: true,
         plan: true,
         createdAt: true,
       },
     });
+
+    // 2️⃣ Update property assignments
+    if (propertyAssignments && Array.isArray(propertyAssignments)) {
+      // Remove old assignments first
+      await db.userProperty.deleteMany({ where: { userId } });
+
+      // Add new ones
+      await db.userProperty.createMany({
+        data: propertyAssignments.map((pa: any) => ({
+          userId,
+          propertyId: pa.propertyId,
+          roleId: pa.roleId,
+        })),
+        skipDuplicates: true,
+      });
+    }
+
     res.json(user);
   } catch (error: any) {
+    console.error('Update user error:', error); // log full error for debugging
     if (error.code === 'P2025') {
       res.status(404).json({ error: 'User not found' });
     } else {
@@ -235,4 +275,3 @@ router.delete('/:id', requireAuth, async (req: Request, res: Response) => {
 });
 
 export default router;
-
