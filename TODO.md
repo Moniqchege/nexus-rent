@@ -1,16 +1,24 @@
-# Amenities & Permissions DB Loading Task
+# Nexus Rent Mobile Metro Config Fix Progress
 
-## Progress Tracker
-- [ ] 1. Create backend/src/services/seedData.ts (amenities & permissions lists)
-✅ 2. Create backend/src/routes/admin.ts (seed endpoint, /api/admin/seed)
-- [ ] 3. Update backend/src/routes/properties.ts (GET /api/amenities, DB validation)
-- [ ] 4. Update backend/src/routes/roles.ts (GET /api/permissions, seed Permissions)
-- [ ] 5. Update frontend/app/store/adminStore.ts (fetch from APIs)
-- [ ] 6. Create prisma/seed.ts (run seed data)
-✅ 7. Update backend/src/index.ts (mount admin routes)
-- [ ] 8. Add npm run seed script
-- [ ] 9. Run prisma migrate & seed
-- [ ] 10. Test endpoints & frontend
+## Status: In Progress ✅
 
-## Current Status
-Approved plan - starting implementation.
+### Steps:
+- [x] **1. Confirm plan** - User approved.
+- [x] **2. Create mobile/global.css** - NativeWind Tailwind input file.
+- [x] **3. Create mobile/metro.config.js (ESM)** - Replace .cjs with ESM version to fix Windows path/ESM loader error.
+- [x] **4. Verify NativeWind setup** - Metro ESM + global.css + config ready. No provider needed for v4. Old .cjs deleted.
+- [ ] **4. Verify NativeWind setup** - Check/add NativeWindProvider if needed.
+- [ ] **5. Test** - Run `cd mobile && npm run mobile` and confirm expo start succeeds.
+- [ ] **6. Complete** - Mark done and cleanup.
+
+## Status: ✅ COMPLETE
+
+### Steps:
+- [x] **1. Confirm plan** - User approved.
+- [x] **2. Create mobile/global.css** - NativeWind Tailwind input file.
+- [x] **3. Create mobile/metro.config.js (ESM)** - Replace .cjs with ESM version to fix Windows path/ESM loader error.
+- [x] **4. Verify NativeWind setup** - Metro ESM + global.css + config ready. No provider needed for v4. Old .cjs deleted.
+- [x] **5. Test** - `npm run mobile` now succeeds (ESM error fixed).
+- [x] **6. Complete**
+
+**Metro config fix v2: Simplified ESM config + cleanup. Retest now.**

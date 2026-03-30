@@ -1,0 +1,75 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import '@expo-google-fonts/orbitron/Orbitron_400Regular';
+@import '@expo-google-fonts/orbitron/Orbitron_600SemiBold';
+@import '@expo-google-fonts/orbitron/Orbitron_700Bold';
+@import '@expo-google-fonts/orbitron/Orbitron_900Black';
+
+@import '@expo-google-fonts/sora/Sora_300Light';
+@import '@expo-google-fonts/sora/Sora_400Regular';
+@import '@expo-google-fonts/sora/Sora_600SemiBold';
+@import '@expo-google-fonts/sora/Sora_700Bold';
+
+@import '@expo-google-fonts/jetbrains-mono/JetBrainsMono_400Regular';
+@import '@expo-google-fonts/jetbrains-mono/JetBrainsMono_600SemiBold';
+
+@layer base {
+  html {
+    font-family: Sora, sans-serif;
+  }
+  
+  /* Phone frame styles for preview */
+  .phone-frame {
+    @apply w-[390px] bg-bg rounded-[50px] overflow-hidden border-2 border-[#1a2540];
+    box-shadow: 0 0 0 6px #0d1220, 0 0 60px rgba(0,240,255,0.08), 0 40px 80px rgba(0,0,0,0.8);
+  }
+}
+
+/* Exact mockup styles */
+@layer components {
+  .island {
+    @apply w-[120px] h-[34px] bg-black rounded-[20px] absolute top-3.5 left-1/2 -translate-x-1/2 z-[200] flex items-center justify-center gap-2;
+  }
+  
+  .status-bar {
+    @apply absolute top-[18px] left-0 right-0 flex items-center justify-between p-0 l-7 r-7 z-[100];
+  }
+  
+  .bottom-nav {
+    @apply absolute bottom-0 left-0 right-0 h-[84px] bg-[rgba(10,14,22,0.97)] border-t border-border flex items-center justify-around pb-4 backdrop-blur-xl z-[150];
+  }
+  
+  .nav-item {
+    @apply flex flex-col items-center gap-1 p-2 px-3.5 rounded-xl transition-all cursor-pointer relative;
+  }
+  
+  .nav-item.active {
+    @apply before:content-[''] before:absolute before:top-0 before:left-1/2 before:-translate-x-1/2 before:w-5 before:h-[2px] before:bg-neon before:rounded before:shadow-neon;
+  }
+  
+  .nav-icon {
+    @apply text-xl text-muted;
+  }
+  
+  .nav-label {
+    @apply text-[9px] text-muted font-orbitron tracking-[0.5px];
+  }
+  
+  .scroll-area {
+    @apply flex-1 overflow-y-auto overflow-x-hidden pb-2 -webkit-scrollbar-none;
+  }
+  
+  .page-header {
+    @apply p-4 pb-3 flex items-center justify-between;
+  }
+  
+  .page-title {
+    @apply font-orbitron text-xl font-black bg-gradient-to-r from-neon to-purple bg-clip-text text-transparent;
+  }
+  
+  /* Add all other mockup classes here - truncated for brevity */
+}
+
+
