@@ -1,42 +1,506 @@
-import { View, Text, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+} from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import MaskedView from "@react-native-masked-view/masked-view";
+
+function GradientTitle({ text }: { text: string }) {
+  return (
+    <MaskedView
+      maskElement={
+        <Text style={[styles.pageTitle, { backgroundColor: "transparent" }]}>
+          {text}
+        </Text>
+      }
+    >
+      <LinearGradient
+        colors={["#00FFFF", "#7C3AED"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+      >
+        <Text style={[styles.pageTitle, { opacity: 0 }]}>{text}</Text>
+      </LinearGradient>
+    </MaskedView>
+  );
+}
 
 export default function Profile() {
   return (
-    <View className="flex-1 bg-[#060A14] p-5 pt-[60px] pb-[90px]">
-      <Text className="text-white font-sora text-lg mb-6">Profile</Text>
-      
-      {/* User avatar & info stub */}
-      <View className="items-center mb-8">
-        <View className="w-24 h-24 bg-gradient-to-br from-[#00F0FF] to-[#7C3AED] rounded-3xl items-center justify-center mb-4">
-          <Text className="text-[#060A14] font-bold text-3xl">QN</Text>
+    <View style={styles.container}>
+      {/* Ambient */}
+      <View style={styles.ambient} />
+
+      <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.pageGreeting}>ACCOUNT</Text>
+            <GradientTitle text="Profile" />
+          </View>
+
+          <View style={styles.settingsBtn}>
+            <Text>⚙</Text>
+          </View>
         </View>
-        <Text className="text-white text-xl font-jetbrains font-semibold mb-1">Qui Chege</Text>
-        <Text className="text-muted text-sm">quichege@example.com</Text>
-      </View>
 
-      {/* Profile sections */}
-      <View className="space-y-4">
-        <TouchableOpacity className="bg-[#1F2937] rounded-2xl p-6">
-          <Text className="text-white font-semibold mb-1">My Rentals</Text>
-          <Text className="text-muted text-sm">Current lease details</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity className="bg-[#1F2937] rounded-2xl p-6">
-          <Text className="text-white font-semibold mb-1">Settings</Text>
-          <Text className="text-muted text-sm">Notifications, payments</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity className="bg-[#1F2937] rounded-2xl p-6">
-          <Text className="text-white font-semibold mb-1">Help & Support</Text>
-          <Text className="text-muted text-sm">Contact maintenance</Text>
-        </TouchableOpacity>
-      </View>
+        {/* Profile Hero */}
+        <View style={styles.profileCard}>
+          <LinearGradient
+  colors={["#7C3AED", "#00F0FF"]}
+  start={{ x: 0, y: 0 }}
+  end={{ x: 1, y: 1 }}
+  style={styles.avatar}
+>
+  {/* avatar content here */}
+   <View style={styles.avatar}>
+            <Text style={{ fontSize: 28 }}>👤</Text>
+          </View>
+</LinearGradient>
+         
 
-      {/* Lease info */}
-      <View className="bg-gradient-to-br from-[rgba(0,240,255,0.08)] to-[rgba(124,58,237,0.12)] border border-[rgba(0,240,255,0.2)] rounded-2xl p-6 mt-6">
-        <Text className="text-xs font-orbitron uppercase tracking-wider text-muted mb-2">LEASE END</Text>
-        <Text className="text-xl font-jetbrains text-neon font-semibold">Dec 31, 2024</Text>
+          <Text style={styles.name}>Alex Kimani</Text>
+          <Text style={styles.email}>alex.kimani@email.com</Text>
+
+          <View style={styles.verifiedTag}>
+            <Text style={styles.icon}>◈</Text>
+            <View style={{ width: 6 }} />
+            <Text style={styles.verifiedText}>  VERIFIED TENANT</Text>
+          </View>
+
+          {/* Stats */}
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <Text style={[styles.statValue, { color: "#00FFFF" }]}>
+                3 yrs
+              </Text>
+              <Text style={styles.statLabel}>Tenancy</Text>
+            </View>
+
+             <View style={styles.statDivider} />
+
+            <View style={styles.statItem}>
+              <Text style={[styles.statValue, { color: "#00FFA3" }]}>
+                98.4%
+              </Text>
+              <Text style={styles.statLabel}>On-Time</Text>
+            </View>
+
+             <View style={styles.statDivider} />
+
+            <View style={styles.statItem}>
+              <Text style={[styles.statValue, { color: "#7C3AED" }]}>
+                94
+              </Text>
+              <Text style={styles.statLabel}>Score</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* MY PROPERTY */}
+       <Text style={styles.sectionTitle}>MY PROPERTY</Text>
+
+       <View style={styles.propertyCard}>
+  {/* Image Strip */}
+  <LinearGradient
+    colors={["#0f2027", "#203a43", "#2c5364"]}
+    start={{ x: 0, y: 0 }}
+    end={{ x: 1, y: 1 }}
+    style={styles.propertyImageStrip}
+  >
+    <Text style={styles.propertyEmoji}>🏙</Text>
+
+    {/* Bottom overlay with badges */}
+    <View style={styles.propertyOverlay}>
+      <View style={styles.badgeRow}>
+        <View style={styles.activeBadge}>
+          <Text style={styles.activeBadgeText}>● ACTIVE LEASE</Text>
+        </View>
+        <View style={styles.badge}>
+          <Text style={styles.badgeText}>AI 94%</Text>
+        </View>
       </View>
+    </View>
+  </LinearGradient>
+
+  {/* Body */}
+  <View style={styles.propertyBody}>
+    <View style={styles.propertyTopRow}>
+      <Text style={styles.propertyName}>Sky Vista Penthouse</Text>
+      <Text style={styles.propertyPrice}>$2,400/mo</Text>
+    </View>
+
+    <Text style={styles.propertyLocation}>📍 Westlands, Nairobi · Floor 18</Text>
+
+    <View style={styles.specRow}>
+      {[
+        { icon: "⊞", label: "3 Beds" },
+        { icon: "◎", label: "2 Baths" },
+        { icon: "▣", label: "1,400 sqft" },
+        { icon: "📅", label: "Jul 15" },
+      ].map((s, i) => (
+        <View key={i} style={styles.spec}>
+          <Text style={styles.specIcon}>{s.icon}</Text>
+          <Text style={styles.specText}>{s.label}</Text>
+        </View>
+      ))}
+    </View>
+  </View>
+</View>
+
+        {/* SETTINGS */}
+        <Text style={styles.sectionTitle}>ACCOUNT SETTINGS</Text>
+
+        <View style={styles.group}>
+          <Text style={styles.groupTitle}>Preferences</Text>
+
+          {[
+            { icon: "🔔", name: "AI Rent Alerts" },
+            { icon: "📊", name: "Market Reports" },
+            { icon: "💳", name: "Auto-Pay" },
+          ].map((item, i) => (
+            <View key={i} style={styles.row}>
+              <View style={styles.rowIcon}>
+                <Text>{item.icon}</Text>
+              </View>
+
+              <View style={{ flex: 1 }}>
+                <Text style={styles.rowTitle}>{item.name}</Text>
+                <Text style={styles.rowDesc}>
+                  Manage this preference
+                </Text>
+              </View>
+
+              <View style={styles.toggle} />
+            </View>
+          ))}
+        </View>
+
+        <View style={styles.group}>
+          <Text style={styles.groupTitle}>Account</Text>
+
+          {[
+            "Edit Profile",
+            "Security & Password",
+            "My Documents",
+          ].map((item, i) => (
+            <View key={i} style={styles.row}>
+              <View style={styles.rowIcon}>
+                <Text>•</Text>
+              </View>
+
+              <Text style={styles.rowTitle}>{item}</Text>
+
+              <Text style={styles.arrow}>›</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Logout */}
+        <View style={styles.group}>
+          <View style={styles.row}>
+            <View style={styles.rowIcon}>
+              <Text>⎋</Text>
+            </View>
+
+            <Text style={[styles.rowTitle, { color: "#FF3B81" }]}>
+              Sign Out
+            </Text>
+
+            <Text style={[styles.arrow, { color: "#FF3B81" }]}>›</Text>
+          </View>
+        </View>
+
+        {/* Footer */}
+        <View style={styles.footer}>
+          <GradientTitle text="NEXUS RENT" />
+          <Text style={styles.version}>
+            v2.4.1 · AI Rental Platform
+          </Text>
+        </View>
+      </ScrollView>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#060A14" },
+
+  ambient: {
+    position: "absolute",
+    top: 60,
+    left: "50%",
+    marginLeft: -150,
+    width: 300,
+    height: 200,
+    borderRadius: 150,
+  },
+
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    marginTop: 20
+  },
+
+  pageGreeting: { fontSize: 12, color: "#888" },
+  pageTitle: { fontSize: 24, fontFamily: "Orbitron" },
+
+  settingsBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#222",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  profileCard: {
+    alignItems: "center",
+    padding: 20,
+  },
+
+ avatar: {
+  width: 80,
+  height: 80,
+  borderRadius: 40,
+  alignItems: "center",
+  justifyContent: "center",
+  marginBottom: 10,
+},
+
+  name: { color: "#fff", fontSize: 30, fontWeight: "600" },
+  email: { color: "#888", fontSize: 15, marginBottom: 8 },
+
+verifiedTag: {
+  flexDirection: 'row',
+   alignItems: 'center',
+  backgroundColor: "rgba(0,255,255,0.15)",
+  borderWidth: 1,
+  borderColor: "rgba(0,255,255,0.3)",
+  paddingHorizontal: 25,
+  paddingVertical: 4,
+  borderRadius: 14,
+  marginBottom: 12,
+},
+
+icon: {
+  fontSize: 14,
+  color: "#00FFFF",
+  textAlign: 'center',
+  fontWeight: 'bold',
+},
+
+  verifiedText: {
+    fontSize: 12,
+    color: "#00FFFF",
+    fontFamily: "Orbitron",
+  },
+
+  statsRow: {
+  flexDirection: "row",
+  width: "100%",
+  backgroundColor: "#111827",
+  borderWidth: 1,
+  borderColor: "#1F2937",
+  borderRadius: 18,
+  overflow: "hidden",
+  padding: 20,
+},
+  statItem: { flex: 1, alignItems: "center" },
+  statDivider: { width: 1, backgroundColor: "#1F2937", marginVertical: 4 },
+
+  statValue: { fontSize: 14, fontWeight: "700" },
+  statLabel: { fontSize: 10, color: "#888" },
+
+  sectionTitle: {
+    marginTop: 10,
+    marginBottom: 10,
+    marginHorizontal: 20,
+    fontSize: 10,
+    color: "#888",
+    fontFamily: "Orbitron",
+  },
+
+ propertyCard: {
+  marginHorizontal: 20,
+  marginBottom: 24,
+  backgroundColor: "#111827",
+  borderWidth: 1,
+  borderColor: "rgba(0,240,255,0.2)",
+  borderRadius: 20,
+  overflow: "hidden",
+},
+
+propertyImageStrip: {
+  height: 160,
+  alignItems: "center",
+  justifyContent: "center",
+},
+
+propertyEmoji: {
+  fontSize: 60,
+  opacity: 0.15,
+},
+  propertyImage: {
+    height: 120,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  propertyOverlay: {
+  position: "absolute",
+  bottom: 12,
+  left: 14,
+  right: 14,
+},
+
+ badgeRow: {
+  flexDirection: "row",
+  gap: 6,
+},
+
+activeBadge: {
+  backgroundColor: "rgba(0,255,163,0.15)",
+  borderWidth: 1,
+  borderColor: "rgba(0,255,163,0.3)",
+  paddingHorizontal: 8,
+  paddingVertical: 3,
+  borderRadius: 8,
+},
+
+  badge: {
+    backgroundColor: "rgba(0, 240, 255, 0.15)",
+    borderWidth: 0.3,
+    borderColor: "rgba(0, 240, 255, 0.5)",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+
+  activeBadgeText: {
+  fontSize: 9,
+  fontFamily: "Orbitron",
+  color: "#00FFA3",
+  letterSpacing: 1,
+},
+
+badgeText: {
+  fontSize: 9,
+  fontFamily: "Orbitron",
+  color: "#00F0FF",
+  letterSpacing: 1,
+},
+
+propertyBody: {
+  padding: 16,
+},
+
+propertyTopRow: {
+  flexDirection: "row",
+  justifyContent: "space-between",
+  alignItems: "flex-start",
+  marginBottom: 4,
+},
+
+propertyName: {
+  fontSize: 16,
+  fontWeight: "700",
+  color: "#fff",
+},
+
+  propertyPrice: {
+  fontSize: 15,
+  fontFamily: "JetBrains Mono",
+  fontWeight: "600",
+  color: "#00F0FF",
+},
+
+propertyLocation: {
+  fontSize: 12,
+  color: "#888",
+  marginBottom: 14,
+},
+
+specRow: {
+  flexDirection: "row",
+  gap: 10,
+  paddingTop: 12,
+  borderTopWidth: 1,
+  borderTopColor: "#1F2937",
+},
+
+spec: {
+  flexDirection: "row",
+  alignItems: "center",
+  gap: 4,
+},
+
+specIcon: {
+  fontSize: 13,
+  color: "#7C3AED",
+},
+
+  specText: {
+  fontSize: 11,
+  color: "#888",
+},
+
+  group: {
+    marginHorizontal: 20,
+    marginTop: 12,
+    backgroundColor: "#111",
+    borderRadius: 16,
+    padding: 10,
+  },
+
+  groupTitle: {
+    color: "#888",
+    fontSize: 10,
+    marginBottom: 6,
+  },
+
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10,
+  },
+
+  rowIcon: {
+    width: 32,
+    height: 32,
+    backgroundColor: "#1a1a1a",
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
+  },
+
+  rowTitle: { color: "#fff", fontSize: 12 },
+  rowDesc: { fontSize: 10, color: "#888" },
+
+  arrow: { color: "#888", marginLeft: "auto" },
+
+  toggle: {
+    width: 36,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: "#222",
+  },
+
+  footer: {
+    alignItems: "center",
+    marginTop: 20,
+  },
+
+  version: {
+    fontSize: 10,
+    color: "#888",
+    marginTop: 4,
+  },
+});

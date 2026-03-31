@@ -9,7 +9,7 @@ const colorMap: Record<ColorKey, { text: string; bg: string }> = {
   neon: { text: "#00FFFF", bg: "rgba(0,255,255,0.08)" },
   purple: { text: "#7C3AED", bg: "rgba(124,58,237,0.08)" },
   success: { text: "#16A34A", bg: "rgba(0,255,163,0.08)" },
-  danger: { text: "#DC2626", bg: "rgba(255,59,129,0.08)" },
+  danger: { text: "#FF3B81", bg: "rgba(255,59,129,0.08)" },
   warn: { text: "#F59E0B", bg: "rgba(245,158,11,0.08)" },
 };
 
@@ -105,9 +105,9 @@ export default function Explore() {
       <ScrollView contentContainerStyle={{ paddingTop: 20, paddingBottom: 120 }}>
         <View style={{ paddingHorizontal: 20, paddingTop: 20 }}>
   {/* Page Header */}
-  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+  <View style={styles.header}>
     <View>
-      <Text style={{ fontSize: 12, color: "#888" }}>FIND YOUR NEXT APARTMENT</Text>
+      <Text style={styles.pageGreeting}>FIND YOUR NEXT APARTMENT</Text>
       <MaskedView
   style={{ flexDirection: "row" }}  
   maskElement={
@@ -271,7 +271,7 @@ const styles = StyleSheet.create({
     borderRadius: 120,
     backgroundColor: "rgba(0,240,255,0.08)",
   },
-  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, paddingBottom: 16 },
+  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, marginBottom: 16 },
   pageGreeting: { fontSize: 12, color: "#888" },
   pageTitle: { fontSize: 24, fontFamily: "Orbitron", color: "#fff" },
   headerIcons: { flexDirection: "row", gap: 8 },
