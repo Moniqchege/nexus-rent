@@ -43,7 +43,7 @@ export default function Profile() {
           </View>
 
           <View style={styles.settingsBtn}>
-            <Text>⚙</Text>
+            <Text style={{ color: "#fff" }}>⚙</Text>
           </View>
         </View>
 
@@ -60,7 +60,6 @@ export default function Profile() {
             <Text style={{ fontSize: 28 }}>👤</Text>
           </View>
 </LinearGradient>
-         
 
           <Text style={styles.name}>Alex Kimani</Text>
           <Text style={styles.email}>alex.kimani@email.com</Text>
@@ -156,54 +155,65 @@ export default function Profile() {
 
         <View style={styles.group}>
           <Text style={styles.groupTitle}>Preferences</Text>
+          <View style={styles.preferencesDivider} />
 
-          {[
-            { icon: "🔔", name: "AI Rent Alerts" },
-            { icon: "📊", name: "Market Reports" },
-            { icon: "💳", name: "Auto-Pay" },
-          ].map((item, i) => (
-            <View key={i} style={styles.row}>
-              <View style={styles.rowIcon}>
-                <Text>{item.icon}</Text>
-              </View>
+        {[
+  { icon: "🔔", name: "Rent Alerts", color: "#00F0FF", bg: "rgba(0,240,255,0.1)", border: "rgba(0,240,255,0.25)", on: true },
+  { icon: "📊", name: "Market Reports", color: "#7C3AED", bg: "rgba(124,58,237,0.1)", border: "rgba(124,58,237,0.25)", on: true },
+  { icon: "💳", name: "Auto-Pay", color: "#00FFA3", bg: "rgba(0,255,163,0.1)", border: "rgba(0,255,163,0.25)", on: false },
+].map((item, i, arr) => (
+  <View key={i}>
+    <View style={styles.row}>
+      <View style={[styles.rowIcon, { backgroundColor: item.bg, borderWidth: 1, borderColor: item.border }]}>
+        <Text>{item.icon}</Text>
+      </View>
 
-              <View style={{ flex: 1 }}>
-                <Text style={styles.rowTitle}>{item.name}</Text>
-                <Text style={styles.rowDesc}>
-                  Manage this preference
-                </Text>
-              </View>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.rowTitle}>{item.name}</Text>
+        <Text style={styles.rowDesc}>Manage this preference</Text>
+      </View>
 
-              <View style={styles.toggle} />
-            </View>
-          ))}
+      {/* Toggle */}
+      <View style={[styles.toggleTrack, item.on && styles.toggleTrackOn]}>
+        <View style={[styles.toggleThumb, item.on && styles.toggleThumbOn]} />
+      </View>
+    </View>
+
+    {i < arr.length - 1 && <View style={styles.rowDivider} />}
+  </View>
+))}
         </View>
 
         <View style={styles.group}>
-          <Text style={styles.groupTitle}>Account</Text>
+  <Text style={styles.groupTitle}>Account</Text>
+  <View style={styles.preferencesDivider} />
 
-          {[
-            "Edit Profile",
-            "Security & Password",
-            "My Documents",
-          ].map((item, i) => (
-            <View key={i} style={styles.row}>
-              <View style={styles.rowIcon}>
-                <Text>•</Text>
-              </View>
-
-              <Text style={styles.rowTitle}>{item}</Text>
-
-              <Text style={styles.arrow}>›</Text>
-            </View>
-          ))}
+  {[
+    { icon: "✏️", name: "Edit Profile", color: "#00F0FF", bg: "rgba(0,240,255,0.1)", border: "rgba(0,240,255,0.25)" },
+    { icon: "🔐", name: "Security & Password", color: "#7C3AED", bg: "rgba(124,58,237,0.1)", border: "rgba(124,58,237,0.25)" },
+    { icon: "📁", name: "My Documents", color: "#F59E0B", bg: "rgba(245,158,11,0.1)", border: "rgba(245,158,11,0.25)" },
+  ].map((item, i, arr) => (
+    <View key={i}>
+      <View style={styles.row}>
+        <View style={[styles.rowIcon, { backgroundColor: item.bg, borderWidth: 1, borderColor: item.border }]}>
+          <Text>{item.icon}</Text>
         </View>
+
+        <Text style={styles.rowTitle}>{item.name}</Text>
+
+        <Text style={styles.arrow}>›</Text>
+      </View>
+
+      {i < arr.length - 1 && <View style={styles.rowDivider} />}
+    </View>
+  ))}
+</View>
 
         {/* Logout */}
         <View style={styles.group}>
           <View style={styles.row}>
             <View style={styles.rowIcon}>
-              <Text>⎋</Text>
+              <Text style={{ color: "#FF3B81" }}>⎋</Text>
             </View>
 
             <Text style={[styles.rowTitle, { color: "#FF3B81" }]}>
@@ -218,7 +228,7 @@ export default function Profile() {
         <View style={styles.footer}>
           <GradientTitle text="NEXUS RENT" />
           <Text style={styles.version}>
-            v2.4.1 · AI Rental Platform
+            v2.4.1 · Rental Platform
           </Text>
         </View>
       </ScrollView>
@@ -454,14 +464,14 @@ specIcon: {
   group: {
     marginHorizontal: 20,
     marginTop: 12,
-    backgroundColor: "#111",
+    backgroundColor: "#111827",
     borderRadius: 16,
     padding: 10,
   },
 
   groupTitle: {
     color: "#888",
-    fontSize: 10,
+    fontSize: 12,
     marginBottom: 6,
   },
 
@@ -474,7 +484,7 @@ specIcon: {
   rowIcon: {
     width: 32,
     height: 32,
-    backgroundColor: "#1a1a1a",
+    backgroundColor: "rgba(255, 59, 129, 0.15)",
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
@@ -483,6 +493,46 @@ specIcon: {
 
   rowTitle: { color: "#fff", fontSize: 12 },
   rowDesc: { fontSize: 10, color: "#888" },
+
+  rowDivider: {
+  height: 1,
+  backgroundColor: "#1F2937",
+},
+
+toggleTrack: {
+  width: 40,
+  height: 22,
+  borderRadius: 11,
+  backgroundColor: "#1F2937",
+  borderWidth: 1,
+  borderColor: "#2D3748",
+  justifyContent: "center",
+  paddingHorizontal: 2,
+},
+toggleTrackOn: {
+  backgroundColor: "rgba(0,255,163,0.15)",
+  borderColor: "rgba(0,255,163,0.4)",
+},
+toggleThumb: {
+  width: 16,
+  height: 16,
+  borderRadius: 8,
+  backgroundColor: "#444",
+  alignSelf: "flex-start",
+},
+toggleThumbOn: {
+  backgroundColor: "#00FFA3",
+  alignSelf: "flex-end",
+  shadowColor: "#00FFA3",
+  shadowOffset: { width: 0, height: 0 },
+  shadowOpacity: 0.6,
+  shadowRadius: 6,
+},
+
+preferencesDivider: {
+  height: 1,
+  backgroundColor: "#1F2937",
+},
 
   arrow: { color: "#888", marginLeft: "auto" },
 

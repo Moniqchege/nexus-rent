@@ -42,10 +42,9 @@ const quickActions: { icon: string; label: string; color: ColorKey }[] = [
 ];
 
 // Stats
-const stats: { icon: string; label: string; value: string; color: ColorKey }[] = [
-  { icon: "🏢", label: "OCCUPANCY", value: "3 yrs", color: "neon" },
-  { icon: "✅", label: "ON-TIME RATE", value: "98.4%", color: "purple" },
-  { icon: "📊", label: "AI SCORE", value: "94", color: "success" },
+const stats: {  label: string; value: string; color: ColorKey; change: string }[] = [
+  {  label: "OCCUPANCY",    value: "3 yrs",  color: "neon",    change: "↑ Loyal" },
+  { label: "ON-TIME PAYMENT RATE", value: "98.4%",  color: "purple",  change: "↑ Great" },
 ];
 
 // Forecast
@@ -63,7 +62,7 @@ function GradientTitle({ text }: { text: string }) {
           style={{
             fontSize: 32,
             fontFamily: "Orbitron",
-            color: "black", // Must be non-transparent for MaskedView to work
+            color: "black", 
             textAlign: "left",
           }}
         >
@@ -125,9 +124,17 @@ export default function Home() {
                     </LinearGradient>
                   </MaskedView>
           </View>
-          <View style={styles.profileCircle}>
-            <Text>👤</Text>
-          </View>
+           <LinearGradient
+            colors={["#7C3AED", "#00F0FF"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.avatar}
+          >
+            {/* avatar content here */}
+             <View style={styles.avatar}>
+                      <Text style={{ fontSize: 17 }}>👤</Text>
+                    </View>
+          </LinearGradient>
         </View>
 
         {/* Hero Card */}
@@ -138,7 +145,6 @@ export default function Home() {
 
           <View style={{ flexDirection: "row", gap: 8 }}>
             {[
-              { label: "LEASE LEFT", value: "147 days", color: "neon" as ColorKey },
               { label: "STATUS", value: "✓ Paid", color: "success" as ColorKey },
               { label: "NEXT DUE", value: "Mar 1", color: "warn" as ColorKey },
             ].map((item, i) => (
@@ -163,21 +169,36 @@ export default function Home() {
           ))}
         </View>
 
-        {/* Stats */}
-        <View style={styles.stats}>
-          {stats.map((item, i) => (
-            <View key={i} style={styles.statBox}>
-              <View style={[{ height: 2, marginBottom: 4 }, colorMap[item.color].bar]} />
-              <Text>{item.icon}</Text>
-              <Text style={styles.textTiny}>{item.label}</Text>
-              <Text style={[{ fontFamily: "monospace", fontSize: 18 }, colorMap[item.color].text]}>{item.value}</Text>
-            </View>
-          ))}
-        </View>
+       {/* Stats */}
+<View style={styles.statsRow}>
+  {stats.map((item, i) => (
+    <View key={i} style={styles.statBox}>
+
+      {/* Glowing top bar */}
+      <View style={[styles.statTopBar, colorMap[item.color].bar,
+        { shadowColor: colorMap[item.color].text.color, shadowOpacity: 0.8, shadowRadius: 6, elevation: 4 }
+      ]} />
+
+      {/* Label */}
+      <Text style={styles.statLabel}>{item.label}</Text>
+
+      {/* Value */}
+      <Text style={[styles.statValue, colorMap[item.color].text]}>
+        {item.value}
+      </Text>
+
+      {/* Change pill */}
+      <View style={[styles.statChangePill, colorMap[item.color].box]}>
+        <Text style={[styles.statChangeText, colorMap[item.color].text]}>
+          {item.change}
+        </Text>
+      </View>
+
+    </View>
+  ))}
+</View>
 
         {/* recent activity */}
-        // After the Stats section, add:
-
 <Text style={styles.sectionTitle}>RECENT ACTIVITY</Text>
 <View style={styles.timeline}>
   {[
@@ -203,7 +224,7 @@ export default function Home() {
       title: "AC Maintenance Request",
       subtitle: "Jan 8, 2025 · Resolved in 48h",
       amount: "Closed",
-      amountColor: "muted" as any, // fallback for muted text
+      amountColor: "muted" as any, 
     },
   ].map((item, i) => (
     <View key={i} style={styles.timelineItem}>
@@ -240,20 +261,19 @@ const styles = StyleSheet.create({
   statusText: { fontSize: 13, fontFamily: "monospace", color: "#fff" },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 },
   textMuted: { fontSize: 12, color: "#888" },
-  textMutedSmall: { fontSize: 10, color: "#888" },
+  textMutedSmall: { fontSize: 12, marginBottom: 5, color: "#888" },
   headerName: { fontSize: 24, fontFamily: "Orbitron", color: "#fff" },
-  profileCircle: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", backgroundColor: "purple" },
+  profileCircle: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
   aiBanner: { flexDirection: "row", alignItems: "center", gap: 12, padding: 16, borderRadius: 24, borderWidth: 1, borderColor: "rgba(220,38,38,0.3)", backgroundColor: "rgba(220,38,38,0.1)", marginHorizontal: 20, marginBottom: 20 },
   aiIcon: { width: 40, height: 40, borderRadius: 16, alignItems: "center", justifyContent: "center" },
   heroCard: { marginHorizontal: 20, marginBottom: 20, padding: 24, borderRadius: 24, borderWidth: 1, borderColor: "rgba(0,255,255,0.3)" },
-  heroLabel: { fontSize: 10, fontFamily: "Orbitron", color: "#888", letterSpacing: 2, marginBottom: 8 },
+  heroLabel: { fontSize: 10, fontFamily: "Orbitron", color: "#888", letterSpacing: 2, marginBottom: 4 },
   heroValue: { fontSize: 32, fontFamily: "monospace" },
   heroStatBox: { flex: 1, backgroundColor: "rgba(0,0,0,0.3)", borderWidth: 1, borderColor: "rgba(255,255,255,0.1)", borderRadius: 16, padding: 10 },
   sectionTitle: { paddingHorizontal: 20, marginBottom: 8, fontSize: 10, fontFamily: "Orbitron", color: "#888", letterSpacing: 2 },
-  quickActions: { flexDirection: "row", flexWrap: "wrap", gap: 12, paddingHorizontal: 20, marginBottom: 24 },
+  quickActions: { flexDirection: "row", flexWrap: "wrap", gap: 25, paddingHorizontal: 20, marginBottom: 24 },
   textTiny: { fontSize: 10, color: "#888", marginTop: 4 },
   stats: { flexDirection: "row", gap: 12, paddingHorizontal: 20, marginBottom: 24 },
-  statBox: { flex: 1, backgroundColor: "#111", borderWidth: 1, borderColor: "#222", borderRadius: 16, padding: 16 },
   timeline: {
   marginHorizontal: 20,
   marginBottom: 24,
@@ -289,5 +309,62 @@ tlAmount: {
   fontSize: 12,
   fontFamily: "monospace",
   marginLeft: 8,
+},
+ avatar: {
+  width: 40,
+  height: 40,
+  borderRadius: 43,
+  alignItems: "center",
+  justifyContent: "center",
+},
+statsRow: {
+  flexDirection: "row",
+  gap: 10,
+  paddingHorizontal: 20,
+  marginBottom: 24,
+},
+statBox: {
+  flex: 1,
+  backgroundColor: "#111827",       
+  borderWidth: 1,
+  borderColor: "#1F2937",           
+  borderRadius: 18,
+  padding: 14,
+  overflow: "hidden",
+  position: "relative",
+},
+statTopBar: {
+  height: 2,
+  borderRadius: 2,
+  marginBottom: 12,
+  width: "100%",
+},
+statIcon: {
+  fontSize: 18,
+  marginBottom: 8,
+},
+statLabel: {
+  fontSize: 9,
+  color: "#9CA3AF",
+  fontFamily: "Orbitron",
+  letterSpacing: 1,
+  marginBottom: 4,
+},
+statValue: {
+  fontFamily: "JetBrainsMono",
+  fontSize: 18,
+  fontWeight: "600",
+  marginBottom: 6,
+},
+statChangePill: {
+  alignSelf: "flex-start",
+  paddingHorizontal: 6,
+  paddingVertical: 2,
+  borderRadius: 6,
+  borderWidth: 1,
+},
+statChangeText: {
+  fontSize: 9,
+  fontFamily: "Sora",
 },
 });

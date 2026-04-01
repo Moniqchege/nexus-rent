@@ -35,6 +35,7 @@ const listings = [
     baths: "4 Baths",
     size: "3.6K sqft",
     color: "danger",
+    gradientColors: ["#450a0a", "#12001a"], 
   },
   {
     icon: "🌊",
@@ -46,6 +47,7 @@ const listings = [
     baths: "2 Baths",
     size: "1.6K sqft",
     color: "neon",
+    gradientColors: ["#0f2027", "#203a43"],
   },
   {
     icon: "🏗",
@@ -57,6 +59,7 @@ const listings = [
     baths: "1 Bath",
     size: "550 sqft",
     color: "neon",
+    gradientColors: ["#1e293b", "#0f172a"],
   },
 ];
 
@@ -103,7 +106,6 @@ export default function Explore() {
       <View style={styles.ambientGlow} />
 
       <ScrollView contentContainerStyle={{ paddingTop: 20, paddingBottom: 120 }}>
-        <View style={{ paddingHorizontal: 20, paddingTop: 20 }}>
   {/* Page Header */}
   <View style={styles.header}>
     <View>
@@ -130,12 +132,13 @@ export default function Explore() {
         </LinearGradient>
       </MaskedView>
     </View>
-    <View style={{ width: 42, height: 42, borderRadius: 12, borderWidth: 0.3, borderColor: "#00FFFF", alignItems: "center", justifyContent: "center" }}>
-      <Text style={{ fontSize: 18, color: "#888" }}>🗺</Text>
+    <View style={{ width: 42, height: 42, borderRadius: 12, borderWidth: 0.2, borderColor: "#00FFFF", alignItems: "center", justifyContent: "center" }}>
+      <Text style={{ fontSize: 20, color: "#888" }}>⏲</Text>
     </View>
   </View>
 
   {/* Search Bar */}
+  <View style={{ paddingHorizontal: 13 }}>
   <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: "#1F2937", borderRadius: 10, padding: 8, paddingHorizontal: 12, marginBottom: 12, borderWidth: 0.3, borderColor: "#00f0ff" }}>
     <Text style={{ fontSize: 16, color: "#00FFFF", marginRight: 8 }}>⌕</Text>
     <TextInput style={{ flex: 1, color: "#fff", paddingVertical: 8 }} placeholder="Westlands, Nairobi..." placeholderTextColor="#9CA3AF" />
@@ -143,9 +146,10 @@ export default function Explore() {
       <Text style={{ color: "#fff", fontSize: 12 }}>⊞ Filter</Text>
     </TouchableOpacity>
   </View>
+  </View>
 
   {/* Chips */}
-  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexDirection: "row", marginVertical: 12 }}>
+  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexDirection: "row", marginVertical: 12 }} contentContainerStyle={{ paddingHorizontal: 13 }}>
   {areas.map((area, i) => (
     <View key={i} style={{ 
       paddingHorizontal: 12, 
@@ -160,7 +164,6 @@ export default function Explore() {
     </View>
   ))}
 </ScrollView>
-</View>
 
         {/* Available header */}
         <View style={styles.availableHeader}>
@@ -215,16 +218,14 @@ export default function Explore() {
         <View style={{ paddingHorizontal: 20, paddingBottom: 20 }}>
           {listings.map((item, i) => (
             <View key={i} style={styles.listCard}>
-              <LinearGradient
-                colors={
-                  item.color === "purple"
-                    ? ["#1a0a2e", "#16213e"]
-                    : ["#0a1628", "#0d2137"]
-                }
-                style={styles.listImg}
-              >
-                <Text style={{ fontSize: 44 }}>{item.icon}</Text>
-              </LinearGradient>
+             <LinearGradient
+ colors={item.gradientColors as [string, string]}
+  start={{ x: 0, y: 0 }}
+  end={{ x: 1, y: 0 }}
+  style={styles.listImg}
+>
+  <Text style={{ fontSize: 44 }}>{item.icon}</Text>
+</LinearGradient>
               <View style={styles.listBody}>
                 <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
   <Text style={[styles.listPrice, { color: colorMap[item.color as ColorKey]?.text || "#DC2626" }]}>
@@ -235,7 +236,7 @@ export default function Explore() {
     borderColor: "rgba(0,240,255,0.2)",
     position: "absolute",  
     right: 0,    
-    top: 0,         
+    top: 0, 
   }]}>
     <Text style={[styles.aiText, { color: colorMap[item.color as ColorKey]?.text || "#DC2626" }]}>
       Score {item.ai}%
@@ -288,7 +289,7 @@ const styles = StyleSheet.create({
   availableHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, marginBottom: 8 },
   availableText: { fontSize: 10, fontFamily: "Orbitron", color: "#888" },
   mapLink: { fontSize: 10, fontFamily: "Orbitron", color: "#00FFFF" },
-  featuredCard: { width: 200, borderWidth: 1, borderRadius: 18, overflow: "hidden", marginRight: 12 },
+  featuredCard: { width: 200, borderWidth: 1, borderRadius: 18, overflow: "hidden", marginRight: 12, backgroundColor: "#111827" },
   featuredImage: { height: 110, alignItems: "center", justifyContent: "center", position: "relative" },
   aiBadge: { position: "absolute", top: 8, left: 8, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, borderWidth: 1 },
   featuredBadge: { position: "absolute", top: 8, left: 8 },
@@ -297,13 +298,13 @@ const styles = StyleSheet.create({
   featuredBody: { padding: 12 },
   featuredPrice: { fontSize: 15, fontFamily: "JetBrains Mono", fontWeight: "600" },
   priceSuffix: { fontSize: 10, color: "#888", fontFamily: "Sora" },
-  featuredName: { fontSize: 12, fontWeight: "600", marginBottom: 2 },
+  featuredName: { fontSize: 12, fontWeight: "600", marginBottom: 2, color: "#888" },
   featuredLoc: { fontSize: 10, color: "#888" },
-  listCard: { flexDirection: "row", marginBottom: 12, backgroundColor: "#111", borderRadius: 18, overflow: "hidden" },
-  listImg: { width: 90, height: 90, alignItems: "center", justifyContent: "center" },
+  listCard: { flexDirection: "row", marginBottom: 12, backgroundColor: "#111827", borderRadius: 18, overflow: "hidden" },
+  listImg: { width: 90, alignSelf: "stretch", alignItems: "center", justifyContent: "center" },
   listBody: { flex: 1, padding: 12 },
   listPrice: { fontSize: 15, fontFamily: "JetBrains Mono", fontWeight: "600" },
-  listName: { fontSize: 12, fontWeight: "600", marginBottom: 2 },
+  listName: { fontSize: 12, fontWeight: "600", marginBottom: 2, color: "#888" },
   listLoc: { fontSize: 10, color: "#888", marginBottom: 4 },
   tagsWrap: { flexDirection: "row", gap: 6 },
   tag: { backgroundColor: "rgba(255,255,255,0.04)", borderWidth: 1, borderColor: "#222", borderRadius: 12, paddingHorizontal: 6, paddingVertical: 2 },
