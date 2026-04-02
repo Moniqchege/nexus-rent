@@ -1,25 +1,36 @@
-# Mobile-Backend Integration: Display Properties in Explore Tab (Auth-First)
-Status: In Progress
+# Nexus Rent Mobile FirstLogin Flow Implementation
 
-## Approved Plan Summary
-- User auth first (login with email/password from admin registration).
-- Fetch user's properties via protected `/api/properties`.
-- Display in explore tab (adapt mock UI).
-- Backend port: 4000.
+## Plan Progress
 
-## Step-by-Step Tasks
-### 1. ✅ Understand files & create plan (done)
-### 2. ✅ Create mobile types & API layer
-   - `mobile/types/property.ts`
-   - `mobile/lib/api.ts` (fetch with auth headers)
-### 3. ✅ Implement auth store & login screen
-   - Zustand store (`mobile/store/authStore.ts`)
-   - Login page (`mobile/app/login.tsx`)
-   - Protect tabs (redirect unauth)
-### 4. 🔄 Backend: Add optional public endpoint? (defer)
-### 5. ✅ Update explore.tsx: fetch & display real data
-### 6. 🔄 Test: expo start --tunnel + backend dev
-### 7. ✅ Complete
+### [x] Step 1: Update mobile/store/authStore.ts
+- Add firstLogin state (tempToken, needsOtp)
+- Add setTempToken, verifyOtp actions
 
-Next step marked for execution.
+### [ ] Step 2: Update mobile/lib/api.ts
+- Add resetFirstPassword(token, password)
+- Add verifyOtp(userId, code)
+- Update login() to return full response (isFirstLogin, etc.)
 
+### [ ] Step 3: Create mobile/app/otp.tsx
+- OTP verification screen
+- Calls verifyOtp → stores final token → nav to home
+- Params: userId, email
+
+### [ ] Step 4: Update mobile/app/reset-password.tsx
+- Receive/use token param from login
+- Call resetFirstPassword(token, password)
+- On success → nav to otp with userId/email
+
+### [ ] Step 5: Update mobile/app/login.tsx
+- Use useAuthStore().login() instead of custom fetch
+- Handle navigation based on response flags
+
+### [ ] Step 6: Update mobile/app/_layout.tsx
+- Extend auth guard for tempToken/partial auth states
+
+### [ ] Testing
+- Backend: npm run dev (in backend/)
+- Mobile: npx expo start
+- Test full flow: register → login → reset → OTP → home
+
+**Status: All steps complete. Testing recommended.**

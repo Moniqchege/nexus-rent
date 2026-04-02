@@ -1,45 +1,15 @@
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import MaskedView from "@react-native-masked-view/masked-view";
-import { useEffect, useState } from "react";
-import { useNavigation } from "expo-router";
+import { useState } from "react";
+import { useNavigation, useLocalSearchParams } from "expo-router";
+import api from "../lib/api";
 import { useAuthStore } from "../store/authStore";
 
-type ColorKey = "neon" | "purple" | "success" | "danger" | "warn";
-
-const colorMap: Record<ColorKey, { box: any; text: any; bar: any }> = {
-  neon: {
-    box: { backgroundColor: "rgba(0,240,255,0.1)", borderColor: "rgba(0,240,255,0.3)", borderWidth: 1 },
-    text: { color: "#00F0FF" },
-    bar: { backgroundColor: "#00F0FF" },
-  },
-  purple: {
-    box: { backgroundColor: "rgba(124,58,237,0.1)", borderColor: "rgba(124,58,237,0.3)", borderWidth: 1 },
-    text: { color: "#7C3AED" },
-    bar: { backgroundColor: "#7C3AED" },
-  },
-  success: {
-    box: { backgroundColor: "rgba(0,255,163,0.1)", borderColor: "rgba(0,255,163,0.3)", borderWidth: 1 },
-    text: { color: "#00FFA3" },
-    bar: { backgroundColor: "#00FFA3" },
-  },
-  danger: {
-    box: { backgroundColor: "rgba(255,59,129,0.1)", borderColor: "rgba(255,59,129,0.3)", borderWidth: 1 },
-    text: { color: "#FF3B81" },
-    bar: { backgroundColor: "#FF3B81" },
-  },
-  warn: {
-    box: { backgroundColor: "rgba(255,184,77,0.1)", borderColor: "rgba(255,184,77,0.3)", borderWidth: 1 },
-    text: { color: "#FFB84D" },
-    bar: { backgroundColor: "#FFB84D" },
-  },
-};
-
-function Icon({ type, size = 18 }: { type: "email" | "lock" | "eye-open" | "eye-closed"; size?: number }) {
+function Icon({ type, size = 18 }: { type: "email" | "lock" | "key" | "eye-open" | "eye-closed"; size?: number }) {
   const icons = {
     "email": (
       <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
-        {/* Envelope shape using nested Views */}
         <View style={{
           width: size, height: size * 0.72,
           borderWidth: 1.5, borderColor: "#2DD4BF",
@@ -47,7 +17,6 @@ function Icon({ type, size = 18 }: { type: "email" | "lock" | "eye-open" | "eye-
           alignItems: "center", justifyContent: "flex-start",
           overflow: "hidden",
         }}>
-          {/* V-flap */}
           <View style={{
             width: 0, height: 0,
             borderLeftWidth: size / 2, borderRightWidth: size / 2,
@@ -60,7 +29,6 @@ function Icon({ type, size = 18 }: { type: "email" | "lock" | "eye-open" | "eye-
     ),
     "lock": (
       <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
-        {/* Lock shackle */}
         <View style={{
           width: size * 0.5, height: size * 0.4,
           borderWidth: 1.5, borderColor: "#A78BFA",
@@ -68,7 +36,6 @@ function Icon({ type, size = 18 }: { type: "email" | "lock" | "eye-open" | "eye-
           borderTopLeftRadius: size * 0.25, borderTopRightRadius: size * 0.25,
           marginBottom: -1,
         }} />
-        {/* Lock body */}
         <View style={{
           width: size * 0.78, height: size * 0.5,
           backgroundColor: "rgba(167,139,250,0.15)",
@@ -84,16 +51,32 @@ function Icon({ type, size = 18 }: { type: "email" | "lock" | "eye-open" | "eye-
         </View>
       </View>
     ),
+    "key": (
+      <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
+        {/* Key head */}
+        <View style={{
+          width: size * 0.45, height: size * 0.45,
+          backgroundColor: "rgba(255,184,77,0.3)",
+          borderWidth: 1.5, borderColor: "#FFB84D",
+          borderRadius: size * 0.225,
+          marginBottom: 2,
+        }} />
+        {/* Key shaft */}
+        <View style={{
+          width: 2.5, height: size * 0.55,
+          backgroundColor: "#FFB84D",
+          borderRadius: 1.25,
+        }} />
+      </View>
+    ),
     "eye-open": (
       <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
-        {/* Eye outline */}
         <View style={{
           width: size, height: size * 0.55,
           borderWidth: 1.5, borderColor: "#67E8F9",
           borderRadius: size * 0.3,
           alignItems: "center", justifyContent: "center",
         }}>
-          {/* Pupil */}
           <View style={{
             width: size * 0.35, height: size * 0.35,
             borderRadius: size * 0.175,
@@ -104,14 +87,12 @@ function Icon({ type, size = 18 }: { type: "email" | "lock" | "eye-open" | "eye-
     ),
     "eye-closed": (
       <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
-        {/* Closed eye — just a curved line using border trick */}
         <View style={{
           width: size, height: size * 0.55,
           borderBottomWidth: 1.5, borderColor: "#67E8F9",
           borderBottomLeftRadius: size * 0.3,
           borderBottomRightRadius: size * 0.3,
         }} />
-        {/* Strike-through line */}
         <View style={{
           position: "absolute",
           width: 1.5, height: size * 0.85,
@@ -141,57 +122,102 @@ function GradientText({ text, fontSize = 24 }: { text: string; fontSize?: number
   );
 }
 
-export default function Login() {
-  const [email, setEmail] = useState("");
+export default function ResetPassword() {
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordVisible, setPasswordVisible] = useState(false);
-  const [focused, setFocused] = useState<"email" | "password" | null>(null);
-  const auth = useAuthStore();
+  const [confirmVisible, setConfirmVisible] = useState(false);
+  const [focused, setFocused] = useState<"token" | "password" | "confirm" | null>(null);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-const [loading, setLoading] = useState(false);
-
+  const [success, setSuccess] = useState(false);
   const navigation = useNavigation<any>();
+  const auth = useAuthStore();
 
-  const handleLogin = async () => {
-    if (!email.trim() || !password.trim()) {
-      auth.setError("Please enter your email and password.");
+   const isStrongPassword = (pw: string) => {
+    const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{6,}$/;
+    return regex.test(pw);
+  };
+
+  const handleResetPassword = async () => {
+    if (!password || !confirmPassword) {
+      setError("Password and confirm password are required.");
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+    if (!isStrongPassword(password)) {
+      setError(
+        "Password must be at least 6 characters and include uppercase, lowercase, number, and special character."
+      );
       return;
     }
 
+    setError(null);
+    setLoading(true);
+
     try {
-      await auth.login(email, password);
-    } catch (err) {
-      // Error handled in store/useEffect
+      if (auth.isFirstLogin && auth.tempToken && auth.user) {
+        await api.resetFirstPassword(auth.tempToken, password);
+        navigation.navigate("otp", { 
+          userId: auth.user.id.toString(), 
+          email: auth.user.email 
+        });
+      } else {
+        await api.resetPassword(password);
+        setSuccess(true);
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to reset password.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  useEffect(() => {
-    if (auth.error) {
-      setError(auth.error);
-    }
-    if (auth.isLoading) {
-      setLoading(true);
-    } else {
-      setLoading(false);
-    }
-    if (auth.isFirstLogin) {
-      navigation.navigate("reset-password");
-    } else if (auth.needsOtp) {
-      navigation.navigate("otp", { 
-        userId: auth.user!.id.toString(), 
-        email: auth.user!.email 
-      });
-    } else if (auth.token && auth.user) {
-      navigation.replace("(tabs)/home");
-    }
-  }, [auth.isLoading, auth.error, auth.isFirstLogin, auth.needsOtp, auth.token]);
+  if (success) {
+    return (
+      <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+          <View style={styles.logoBlock}>
+            <LinearGradient
+              colors={["rgba(0,240,255,0.12)", "rgba(124,58,237,0.15)"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.logoIcon}
+            >
+              <Text style={styles.logoIconText}>⬡</Text>
+            </LinearGradient>
+            <GradientText text="PASSWORD RESET" fontSize={26} />
+          </View>
+
+          <View style={styles.card}>
+            <Text style={styles.successTitle}>Password updated!</Text>
+            <Text style={styles.successSub}>Your password has been successfully reset.</Text>
+
+            <TouchableOpacity activeOpacity={0.85} style={styles.ctaWrap} onPress={() => navigation.navigate("login")}>
+              <LinearGradient
+                colors={["rgba(0,240,255,0.15)", "rgba(124,58,237,0.2)"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.ctaButton}
+              >
+                <Text style={styles.ctaText}>SIGN IN</Text>
+                <Text style={styles.ctaArrow}>›</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    );
+  }
 
   return (
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      {/* Ambient glows */}
       <View style={styles.glowTopLeft} />
       <View style={styles.glowBottomRight} />
       <View style={styles.glowCenter} />
@@ -201,8 +227,6 @@ const [loading, setLoading] = useState(false);
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-
-        {/* ── Logo block ── */}
         <View style={styles.logoBlock}>
           <LinearGradient
             colors={["rgba(0,240,255,0.12)", "rgba(124,58,237,0.15)"]}
@@ -212,21 +236,17 @@ const [loading, setLoading] = useState(false);
           >
             <Text style={styles.logoIconText}>⬡</Text>
           </LinearGradient>
-
-          <GradientText text="NEXUS RENT" fontSize={26} />
-
+          <GradientText text="RESET PASSWORD" fontSize={26} />
           <View style={styles.tagPill}>
             <View style={styles.tagDot} />
-            <Text style={styles.tagText}>POWERED RENTAL PLATFORM</Text>
+            <Text style={styles.tagText}>ENTER NEW PASSWORD</Text>
           </View>
         </View>
 
-        {/* ── Card ── */}
         <View style={styles.card}>
-          {/* Card header */}
           <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Welcome back</Text>
-            <Text style={styles.cardSub}>Sign in to your account</Text>
+            <Text style={styles.cardTitle}>New password</Text>
+            <Text style={styles.cardSub}>Enter new password</Text>
           </View>
 
           {error && (
@@ -235,39 +255,14 @@ const [loading, setLoading] = useState(false);
             </View>
           )}
 
-          {/* ── Email input ── */}
+          {/* New Password */}
           <View style={styles.fieldGroup}>
-            <Text style={styles.fieldLabel}>EMAIL ADDRESS</Text>
-            <View style={[
-              styles.inputWrap,
-              focused === "email" && styles.inputFocused,
-            ]}>
-              <Icon type="email" size={18} />
-              <TextInput
-                style={styles.input}
-                placeholder="you@email.com"
-                placeholderTextColor="#4B5563"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                value={email}
-                onChangeText={(t) => { setEmail(t); setError(null); }}
-                onFocus={() => setFocused("email")}
-                onBlur={() => setFocused(null)}
-              />
-            </View>
-          </View>
-
-          {/* ── Password input ── */}
-          <View style={styles.fieldGroup}>
-           <Text style={styles.fieldLabel}>PASSWORD</Text>
-            <View style={[
-              styles.inputWrap,
-              focused === "password" && styles.inputFocused,
-            ]}>
+            <Text style={styles.fieldLabel}>NEW PASSWORD</Text>
+            <View style={[styles.inputWrap, focused === "password" && styles.inputFocused]}>
               <Icon type="lock" size={18} />
               <TextInput
                 style={styles.input}
-                placeholder="Enter your password"
+                placeholder="Create new password"
                 placeholderTextColor="#4B5563"
                 secureTextEntry={!passwordVisible}
                 value={password}
@@ -279,44 +274,51 @@ const [loading, setLoading] = useState(false);
                 onPress={() => setPasswordVisible(!passwordVisible)}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
-                {passwordVisible ? (
-    // Open eye — password visible
-    <Text style={styles.eyeIconOpen}>👁</Text>
-  ) : (
-    // Closed eye — password hidden
-    <Text style={styles.eyeIconClosed}>🫣</Text>
-  )}
+                <Text style={passwordVisible ? styles.eyeIconOpen : styles.eyeIconClosed}>
+                  {passwordVisible ? "👁" : "🫣"}
+                </Text>
               </TouchableOpacity>
             </View>
-            <View style={styles.forgotRow}>
-  <TouchableOpacity onPress={() => navigation.navigate("ForgotPassword")}>
-    <Text style={styles.forgotLink}>Forgot password?</Text>
-  </TouchableOpacity>
-</View>
           </View>
 
-          {/* ── Remember me ── */}
-          <TouchableOpacity style={styles.rememberRow} activeOpacity={0.7}>
-            <View style={styles.checkbox}>
-              <View style={styles.checkboxInner} />
+          {/* Confirm Password */}
+          <View style={styles.fieldGroup}>
+            <Text style={styles.fieldLabel}>CONFIRM PASSWORD</Text>
+            <View style={[styles.inputWrap, focused === "confirm" && styles.inputFocused]}>
+              <Icon type="lock" size={18} />
+              <TextInput
+                style={styles.input}
+                placeholder="Confirm new password"
+                placeholderTextColor="#4B5563"
+                secureTextEntry={!confirmVisible}
+                value={confirmPassword}
+                onChangeText={(t) => { setConfirmPassword(t); setError(null); }}
+                onFocus={() => setFocused("confirm")}
+                onBlur={() => setFocused(null)}
+              />
+              <TouchableOpacity
+                onPress={() => setConfirmVisible(!confirmVisible)}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Text style={confirmVisible ? styles.eyeIconOpen : styles.eyeIconClosed}>
+                  {confirmVisible ? "👁" : "🫣"}
+                </Text>
+              </TouchableOpacity>
             </View>
-            <Text style={styles.rememberText}>Keep me signed in</Text>
-          </TouchableOpacity>
+          </View>
 
-          {/* ── Primary CTA ── */}
-          <TouchableOpacity activeOpacity={0.85} style={styles.ctaWrap} onPress={handleLogin} disabled={loading}>
+          <TouchableOpacity activeOpacity={0.85} style={styles.ctaWrap} onPress={handleResetPassword} disabled={loading}>
             <LinearGradient
               colors={["rgba(0,240,255,0.15)", "rgba(124,58,237,0.2)"]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.ctaButton}
             >
-                 {loading ? (
+              {loading ? (
                 <ActivityIndicator color="#00F0FF" />
               ) : (
                 <>
-                  <Text style={styles.ctaText}>SIGN IN</Text>
-                  <Text style={styles.ctaArrow}>›</Text>
+                  <Text style={styles.ctaText}>RESET PASSWORD</Text>
                 </>
               )}
             </LinearGradient>
@@ -332,8 +334,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#060A14",
   },
-
-  // ── Ambient ──
+  // ... same glows, logoBlock, etc. as forgot-password.tsx
   glowTopLeft: {
     position: "absolute",
     top: -80,
@@ -361,7 +362,6 @@ const styles = StyleSheet.create({
     borderRadius: 100,
     backgroundColor: "rgba(124,58,237,0.05)",
   },
-
   scroll: {
     flexGrow: 1,
     paddingHorizontal: 12,
@@ -369,8 +369,6 @@ const styles = StyleSheet.create({
     paddingBottom: 48,
     alignItems: "center",
   },
-
-  // ── Logo ──
   logoBlock: {
     alignItems: "center",
     marginBottom: 16,
@@ -413,8 +411,6 @@ const styles = StyleSheet.create({
     color: "#00F0FF",
     letterSpacing: 1.5,
   },
-
-  // ── Card ──
   card: {
     width: "100%",
     backgroundColor: "#111827",
@@ -438,8 +434,20 @@ const styles = StyleSheet.create({
     color: "#9CA3AF",
     fontFamily: "Sora",
   },
-
-  // ── Fields ──
+  successTitle: {
+    fontSize: 22,
+    fontFamily: "Orbitron",
+    color: "#00FFA3",
+    marginBottom: 6,
+    textAlign: "center",
+  },
+  successSub: {
+    fontSize: 13,
+    color: "#9CA3AF",
+    fontFamily: "Sora",
+    marginBottom: 32,
+    textAlign: "center",
+  },
   fieldGroup: {
     marginBottom: 20,
   },
@@ -450,21 +458,6 @@ const styles = StyleSheet.create({
     letterSpacing: 1.5,
     marginBottom: 8,
   },
-  fieldLabelRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  forgotLink: {
-    fontSize: 11,
-    color: "#00F0FF",
-    fontFamily: "Sora",
-  },
-  forgotRow: {
-  alignItems: "flex-end",
-  marginTop: 6,
-},
   inputWrap: {
     flexDirection: "row",
     alignItems: "center",
@@ -480,51 +473,20 @@ const styles = StyleSheet.create({
     borderColor: "rgba(0,240,255,0.5)",
     backgroundColor: "rgba(0,240,255,0.03)",
   },
-  inputIcon: {
-    fontSize: 25,
-    color: "#4B5563",
-  },
   input: {
     flex: 1,
     fontSize: 14,
     color: "#E5E7EB",
     fontFamily: "Sora",
   },
-  eyeIcon: {
-    fontSize: 15,
-    color: "#4B5563",
+  eyeIconOpen: {
+    fontSize: 16,
+    color: "#67E8F9",
   },
-
-  // ── Remember ──
-  rememberRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    marginBottom: 28,
+  eyeIconClosed: {
+    fontSize: 16,
+    color: "#374151",
   },
-  checkbox: {
-    width: 18,
-    height: 18,
-    borderRadius: 5,
-    borderWidth: 1,
-    borderColor: "rgba(0,240,255,0.3)",
-    backgroundColor: "rgba(0,240,255,0.08)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  checkboxInner: {
-    width: 8,
-    height: 8,
-    borderRadius: 2,
-    backgroundColor: "#00F0FF",
-  },
-  rememberText: {
-    fontSize: 13,
-    color: "#9CA3AF",
-    fontFamily: "Sora",
-  },
-
-  // ── CTA ──
   ctaWrap: {
     marginBottom: 24,
     borderRadius: 14,
@@ -550,163 +512,30 @@ const styles = StyleSheet.create({
     color: "#00F0FF",
     lineHeight: 22,
   },
-
-  // ── Divider ──
-  dividerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    marginBottom: 16,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: "#1F2937",
-  },
-  dividerText: {
-    fontSize: 11,
-    color: "#4B5563",
-    fontFamily: "Sora",
-  },
-
-  // ── Social ──
-  socialRow: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  socialBtn: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingVertical: 13,
-    borderRadius: 12,
-    backgroundColor: "#0d1520",
-    borderWidth: 1,
-    borderColor: "#1F2937",
-  },
-  socialIcon: {
-    fontSize: 14,
-    color: "#E5E7EB",
-    fontWeight: "600",
-  },
-  socialLabel: {
+  backLink: {
     fontSize: 13,
-    color: "#9CA3AF",
-    fontFamily: "Sora",
-  },
-
-  // ── Trust ──
-  trustRow: {
-    flexDirection: "row",
-    gap: 10,
-    marginBottom: 24,
-    width: "100%",
-  },
-  trustBadge: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    backgroundColor: "#111827",
-    borderWidth: 1,
-    borderColor: "#1F2937",
-    borderRadius: 10,
-    paddingVertical: 8,
-    paddingHorizontal: 8,
-  },
-  trustIcon: {
-    fontSize: 11,
     color: "#00F0FF",
+    fontFamily: "Sora",
+    textAlign: "center",
   },
-  trustLabel: {
-    fontSize: 9,
-    color: "#9CA3AF",
-    fontFamily: "Orbitron",
-    letterSpacing: 0.5,
+  changeEmail: {
+    fontSize: 13,
+    color: "#00F0FF",
+    fontFamily: "Sora",
+    textAlign: "center",
   },
-
-  // ── Sign up ──
-  signupRow: {
-    flexDirection: "row",
-    alignItems: "center",
+  errorBanner: {
+    backgroundColor: "rgba(255,59,129,0.1)",
+    borderWidth: 1,
+    borderColor: "rgba(255,59,129,0.3)",
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
     marginBottom: 20,
   },
-  signupText: {
-    fontSize: 13,
-    color: "#9CA3AF",
-    fontFamily: "Sora",
-  },
-  signupLink: {
-    fontSize: 13,
-    color: "#00F0FF",
-    fontFamily: "Sora",
-  },
-
-  // ── Role toggle ──
-  roleToggle: {
-    flexDirection: "row",
-    backgroundColor: "#111827",
-    borderWidth: 1,
-    borderColor: "#1F2937",
-    borderRadius: 12,
-    padding: 4,
-  },
-  roleBtn: {
-    flex: 1,
-    paddingVertical: 8,
-    alignItems: "center",
-    borderRadius: 9,
-  },
-  roleBtnActive: {
-    backgroundColor: "rgba(0,240,255,0.1)",
-    borderWidth: 1,
-    borderColor: "rgba(0,240,255,0.25)",
-  },
-  roleLabel: {
-    fontSize: 12,
-    fontFamily: "Orbitron",
-    color: "#4B5563",
-    letterSpacing: 1,
-  },
-  roleLabelActive: {
-    fontSize: 12,
-    fontFamily: "Orbitron",
-    color: "#00F0FF",
-    letterSpacing: 1,
-  },
-  inputIconEmail: {
-  fontSize: 16,
-  color: "#2DD4BF",       
-},
-
-inputIconPassword: {
-  fontSize: 16,
-  color: "#A78BFA",       
-},
-
-eyeIconOpen: {
-  fontSize: 16,
-  color: "#67E8F9",      
-},
-
-eyeIconClosed: {
-  fontSize: 16,
-  color: "#374151",        
-},
-errorBanner: {
-  backgroundColor: "rgba(255,59,129,0.1)",
-  borderWidth: 1,
-  borderColor: "rgba(255,59,129,0.3)",
-  borderRadius: 10,
-  paddingVertical: 10,
-  paddingHorizontal: 14,
-  marginBottom: 20,
-},
-errorText: {
+  errorText: {
   color: "#FF3B81",
   fontSize: 12,
-  fontFamily: "Sora",
-},
+    fontFamily: "Sora",
+  },
 });

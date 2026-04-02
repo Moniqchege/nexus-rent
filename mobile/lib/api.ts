@@ -1,7 +1,7 @@
 import Constants from 'expo-constants';
 import { Property } from '../types/property';
 
-export const API_BASE = Constants.expoConfig?.extra?.apiUrl || 'http://localhost:4000';
+export const API_BASE = Constants.expoConfig?.extra?.apiUrl || 'http://localhost:4000' || 'http://192.168.1.103:4000';
 
 const api = {
     async fetchProperties(token?: string): Promise<Property[]> {
@@ -22,7 +22,7 @@ const api = {
         return response.json();
     },
 
-    async login(email: string, password: string): Promise<{ token: string; user: { id: number; email: string; name: string } }> {
+    async login(email: string, password: string): Promise<any> {
         const response = await fetch(`${API_BASE}/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -35,10 +35,70 @@ const api = {
         }
 
         const data = await response.json();
-        if (data.requiresOtp) {
-            throw new Error('OTP required - login flow needs OTP screen');
+        return data;
+    },
+
+    async forgotPassword(email: string): Promise<{ message: string }> {
+        const response = await fetch(`${API_BASE}/auth/forgot-password`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email }),
+        });
+
+        if (!response.ok) {
+            const err = await response.text();
+            throw new Error(err);
         }
-        return { token: data.token, user: data.user };
+
+        return response.json();
+    },
+
+    async resetPassword(password: string): Promise<{ message: string }> {
+        const response = await fetch(`${API_BASE}/auth/reset-password`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ password }),
+        });
+
+        if (!response.ok) {
+            const err = await response.text();
+            throw new Error(err);
+        }
+
+        return response.json();
+    },
+
+    async resetFirstPassword(token: string, password: string): Promise<{ message: string }> {
+        const response = await fetch(`${API_BASE}/auth/reset-first-password`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify({ newPassword: password }),
+        });
+
+        if (!response.ok) {
+            const err = await response.text();
+            throw new Error(err);
+        }
+
+        return response.json();
+    },
+
+    async verifyOtp(userId: string, code: string): Promise<{ token: string; user: { id: number; email: string; name: string } }> {
+        const response = await fetch(`${API_BASE}/auth/verify-otp`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId, code }),
+        });
+
+        if (!response.ok) {
+            const err = await response.text();
+            throw new Error(err);
+        }
+
+        return response.json();
     },
 
 };

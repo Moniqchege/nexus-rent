@@ -25,13 +25,33 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 4000;
+
 app.use(express.json());
+// app.use(cors({
+//   origin: [
+//     "http://localhost:3000",
+//     "http://localhost:8081",
+//     "exp://eqpng0s-anonymous-8082.exp.direct",
+//     "https://resume-builder-frontend-6w43zpqnp-moniqcheges-projects.vercel.app/",
+//   ],
+//   credentials: true,
+// }));
+
 app.use(cors({
-  origin: [
-    "http://localhost:3000",
-    "http://localhost:8081",
-    "https://resume-builder-frontend-6w43zpqnp-moniqcheges-projects.vercel.app/",
-  ],
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+
+    if (
+      origin.includes("localhost") ||
+      origin.includes("exp.direct") ||
+      origin.includes("vercel.app")
+    ) {
+      return callback(null, true);
+    }
+
+    return callback(new Error("Not allowed by CORS"));
+  },
   credentials: true,
 }));
 
@@ -55,6 +75,6 @@ app.use("/api/roles", rolesRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/properties", propertiesRoutes);
 app.use("/api/admin", adminRoutes);
-app.listen(process.env.PORT || 4000, () => console.log("Server running"));
+app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));
 
 

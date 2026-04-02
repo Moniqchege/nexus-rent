@@ -2,11 +2,16 @@
   "expo": {
     "name": "nexus-rent-mobile",
     "slug": "nexus-rent-mobile",
+    "scheme": "nexus-rent-mobile",
     "version": "1.0.0",
+    "platforms": ["ios", "android", "web"],
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
+    "extra": {
+      "apiUrl": "http://192.168.1.103:4000"
+    },
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",

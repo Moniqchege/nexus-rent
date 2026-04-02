@@ -199,7 +199,12 @@ router.post("/reset-first-password", async (req: Request, res: Response) => {
 // Verify otp
 router.post("/verify-otp", async (req: Request, res: Response) => {
   try {
-    const { userId, code } = req.body;
+    const { userId: userIdStr, code } = req.body;
+    const userId = Number(userIdStr);
+
+    if (isNaN(userId)) {
+  return res.status(400).json({ message: "Invalid userId" });
+}
 
     const otpRecord = await db.otpCode.findFirst({
       where: {

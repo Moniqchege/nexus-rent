@@ -12,12 +12,20 @@ interface User {
 interface AuthState {
     user: User | null;
     token: string | null;
+    tempToken: string | null;
+    isFirstLogin: boolean;
+    needsOtp: boolean;
     isLoading: boolean;
     error: string | null;
 
     login: (email: string, password: string) => Promise<void>;
     logout: () => void;
     setToken: (token: string, user: User) => void;
+    setTempToken: (token: string) => void;
+    verifyOtp: (userId: string, code: string) => Promise<void>;
+
+     setError: (msg: string | null) => void;
+  setLoading: (loading: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -25,14 +33,23 @@ export const useAuthStore = create<AuthState>()(
         (set, get) => ({
             user: null,
             token: null,
+            tempToken: null,
+            isFirstLogin: false,
+            needsOtp: false,
             isLoading: false,
             error: null,
 
             login: async (email: string, password: string) => {
                 set({ isLoading: true, error: null });
                 try {
-                    const { token, user } = await api.login(email, password);
-                    set({ token, user, isLoading: false });
+                    const data = await api.login(email, password);
+                    if (data.isFirstLogin) {
+                        set({ tempToken: data.token, user: data.user, isFirstLogin: true, isLoading: false });
+                    } else if (data.requiresOtp) {
+                        set({ needsOtp: true, user: data.user, isLoading: false });
+                    } else {
+                        set({ token: data.token, user: data.user, isLoading: false });
+                    }
                 } catch (err: any) {
                     set({ error: err.message, isLoading: false });
                     throw err;
@@ -40,10 +57,25 @@ export const useAuthStore = create<AuthState>()(
             },
 
             logout: () => {
-                set({ user: null, token: null, error: null });
+                set({ user: null, token: null, tempToken: null, isFirstLogin: false, needsOtp: false, error: null });
+            },
+
+            setTempToken: (token: string) => set({ tempToken: token, isFirstLogin: true }),
+
+            verifyOtp: async (userId: string, code: string) => {
+                set({ isLoading: true, error: null });
+                try {
+                    const data = await api.verifyOtp(userId, code);
+                    set({ token: data.token, user: data.user, tempToken: null, isFirstLogin: false, needsOtp: false, isLoading: false });
+                } catch (err: any) {
+                    set({ error: err.message, isLoading: false });
+                    throw err;
+                }
             },
 
             setToken: (token: string, user: User) => set({ token, user }),
+            setError: (msg: string | null) => set({ error: msg }),
+      setLoading: (loading: boolean) => set({ isLoading: loading }),
         }),
         {
             name: 'auth-storage',
