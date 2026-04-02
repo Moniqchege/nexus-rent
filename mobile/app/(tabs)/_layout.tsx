@@ -1,7 +1,27 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useAuthStore } from '../../store/authStore';
+import { useEffect } from 'react';
+import { useRouter, useSegments } from 'expo-router';
 
 export default function TabLayout() {
+  const { user } = useAuthStore();
+  const segments = useSegments();
+  const router = useRouter();
+
+  useEffect(() => {
+  if (!user) {
+    router.replace('/login');
+    return;
+  }
+
+  if (user && segments[0] === 'login') {
+    router.replace('/(tabs)/home');
+  }
+}, [user, segments, router]);
+
+  if (!user) return null;
+
   return (
     <Tabs
       screenOptions={{

@@ -1,7 +1,9 @@
-import { Stack } from 'expo-router';
+import { Stack, useRouter, useSegments } from 'expo-router';
+import { useEffect } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
 
 import { 
   Orbitron_400Regular,
@@ -21,6 +23,7 @@ import {
   JetBrainsMono_400Regular,
   JetBrainsMono_600SemiBold
 } from '@expo-google-fonts/jetbrains-mono';
+import { useAuthStore } from '../store/authStore';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -38,11 +41,30 @@ export default function RootLayout() {
     JetBrainsMono_600SemiBold,
   });
 
+  const auth = useAuthStore();
+  const segments = useSegments();
+  const router = useRouter();
+
   useEffect(() => {
     if (fontsLoaded) {
       SplashScreen.hideAsync();
     }
   }, [fontsLoaded]);
+
+  useEffect(() => {
+    if (!fontsLoaded) return;
+
+    const inTabsGroup = segments[0] === '(tabs)';
+
+    if (!auth.user && inTabsGroup) {
+      router.replace('/login');
+      return;
+    }
+
+    if (auth.user && !inTabsGroup) {
+      router.replace('/(tabs)/home');
+    }
+  }, [auth.user, segments, router, fontsLoaded]);
 
   if (!fontsLoaded) return null;
 

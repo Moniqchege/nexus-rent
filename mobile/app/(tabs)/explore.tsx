@@ -1,6 +1,10 @@
-import { View, Text, TextInput, ScrollView, StyleSheet, TouchableOpacity, FlatList } from "react-native";
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, ScrollView, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator, RefreshControl } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import MaskedView from "@react-native-masked-view/masked-view";
+import { Property } from '../../types/property';
+import { useAuthStore } from '../../store/authStore';
+import api from '../../lib/api';
 
 type ColorKey = "neon" | "purple" | "success" | "danger" | "warn";
 
@@ -13,55 +17,51 @@ const colorMap: Record<ColorKey, { text: string; bg: string }> = {
   warn: { text: "#F59E0B", bg: "rgba(245,158,11,0.08)" },
 };
 
-// Chips data
+
 const areas = ["All Areas", "Westlands", "Kilimani", "Karen", "Lavington", "Parklands", "Upper Hill"];
 
-// Featured cards data
-const featured = [
-  { icon: "🏙", price: "$2,400", area: "Westlands", name: "Sky Vista", ai: 94, color: "neon" },
-  { icon: "🏘", price: "$1,850", area: "Kilimani", name: "Aurora Res.", ai: 88, color: "purple" },
-  { icon: "🌿", price: "$3,100", area: "Karen", name: "Emerald Court", ai: 91, color: "success" },
-];
+interface ListingItem {
+  icon: string;
+  price: string;
+  area: string;
+  name: string;
+  ai: number;
+  beds: string;
+  baths: string;
+  size: string;
+  color: 'neon' | 'purple' | 'success' | 'danger';
+  gradientColors: [string, string];
+}
 
-// Full listings data
-const listings = [
-  {
-    icon: "🏯",
-    price: "$5,500",
-    area: "Upper Hill",
-    name: "The Crimson Tower",
-    ai: 83,
-    beds: "5 Beds",
-    baths: "4 Baths",
-    size: "3.6K sqft",
-    color: "danger",
-    gradientColors: ["#450a0a", "#12001a"], 
-  },
-  {
-    icon: "🌊",
-    price: "$2,800",
-    area: "Lavington",
-    name: "Azure Heights",
-    ai: 79,
-    beds: "3 Beds",
-    baths: "2 Baths",
-    size: "1.6K sqft",
-    color: "neon",
-    gradientColors: ["#0f2027", "#203a43"],
-  },
-  {
-    icon: "🏗",
-    price: "$1,200",
-    area: "Parklands",
-    name: "Sapphire Studios",
-    ai: 76,
-    beds: "1 Bed",
-    baths: "1 Bath",
-    size: "550 sqft",
-    color: "neon",
-    gradientColors: ["#1e293b", "#0f172a"],
-  },
-];
+const getIconFromLocation = (location: string): string => {
+  const icons = { westlands: '🏙', kilimani: '🏘', karen: '🌿', 'upper hill': '🏯' };
+  const lower = location.toLowerCase();
+  for (const [key, icon] of Object.entries(icons)) {
+    if (lower.includes(key)) return icon;
+  }
+  return '🏠';
+};
+
+const getColorFromScore = (score?: number | null): 'neon' | 'purple' | 'success' | 'danger' => {
+  if (!score) return 'neon';
+  if (score > 90) return 'success';
+  if (score > 80) return 'purple';
+  if (score > 70) return 'neon';
+  return 'danger';
+};
+
+const propertyToListing = (p: Property): ListingItem => ({
+  icon: getIconFromLocation(p.location),
+  price: `$${Math.round(p.price)}`,
+  area: p.location,
+  name: p.title,
+  ai: Math.round((p.score || 75) || 75),
+  beds: `${p.beds} Beds`,
+  baths: `${p.baths} Baths`,
+  size: `${Math.round(p.sqft / 100) / 10}K sqft`,
+  color: getColorFromScore(p.score != null ? p.score : undefined),
+  gradientColors: ['#0f2027', '#203a43'] as [string, string],
+});
 
 function GradientTitle({ text }: { text: string }) {
   return (
@@ -71,7 +71,7 @@ function GradientTitle({ text }: { text: string }) {
           style={{
             fontSize: 32,
             fontFamily: "Orbitron",
-            color: "black", // Must be non-transparent for MaskedView to work
+            color: "black", 
             textAlign: "left",
           }}
         >
@@ -88,7 +88,7 @@ function GradientTitle({ text }: { text: string }) {
           style={{
             fontSize: 32,
             fontFamily: "Orbitron",
-            color: "transparent", // Gradient shows through
+            color: "transparent",
             textAlign: "left",
           }}
         >
@@ -100,12 +100,55 @@ function GradientTitle({ text }: { text: string }) {
 }
 
 export default function Explore() {
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [featured, setFeatured] = useState<ListingItem[]>([]);
+  const [listings, setListings] = useState<ListingItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState('');
+  const { token } = useAuthStore();
+
+  const loadProperties = async () => {
+    if (!token) return;
+    setRefreshing(true);
+    try {
+      setError('');
+      const data = await api.fetchProperties(token);
+      setProperties(data);
+      setFeatured(data.slice(0, 3).map(propertyToListing).sort((a, b) => b.ai - a.ai));
+      setListings(data.map(propertyToListing));
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setRefreshing(false);
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadProperties();
+  }, [token]);
+
+  if (loading) {
+    return (
+      <View style={[styles.container, styles.center]}>
+        <ActivityIndicator size="large" color="#00FFFF" />
+        <Text style={styles.loadingText}>Loading properties...</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       {/* Ambient Glow */}
       <View style={styles.ambientGlow} />
 
-      <ScrollView contentContainerStyle={{ paddingTop: 20, paddingBottom: 120 }}>
+      <ScrollView 
+        contentContainerStyle={{ paddingTop: 20, paddingBottom: 120 }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={loadProperties} colors={['#00FFFF']} />
+        }
+      >
   {/* Page Header */}
   <View style={styles.header}>
     <View>
@@ -309,4 +352,6 @@ const styles = StyleSheet.create({
   tagsWrap: { flexDirection: "row", gap: 6 },
   tag: { backgroundColor: "rgba(255,255,255,0.04)", borderWidth: 1, borderColor: "#222", borderRadius: 12, paddingHorizontal: 6, paddingVertical: 2 },
   tagText: { fontSize: 10, color: "#888" },
+  center: { justifyContent: "center", alignItems: "center", },
+  loadingText: {  marginTop: 10, color: "#9CA3AF", fontSize: 14 }
 });
