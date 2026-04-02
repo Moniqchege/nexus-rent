@@ -1,7 +1,7 @@
 import Constants from 'expo-constants';
 import { Property } from '../types/property';
 
-const API_BASE = Constants.expoConfig?.extra?.apiUrl || 'http://localhost:4000';
+export const API_BASE = Constants.expoConfig?.extra?.apiUrl || 'http://localhost:4000';
 
 const api = {
     async fetchProperties(token?: string): Promise<Property[]> {

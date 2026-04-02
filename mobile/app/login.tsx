@@ -1,7 +1,9 @@
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import MaskedView from "@react-native-masked-view/masked-view";
 import { useState } from "react";
+import { useNavigation } from "expo-router";
+import { API_BASE } from "../lib/api";
 
 type ColorKey = "neon" | "purple" | "success" | "danger" | "warn";
 
@@ -144,6 +146,59 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [focused, setFocused] = useState<"email" | "password" | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const navigation = useNavigation<any>();
+
+  const handleLogin = async () => {
+    if (!email.trim() || !password.trim()) {
+      setError("Please enter your email and password.");
+      return;
+    }
+
+    setError(null);
+    setLoading(true);
+
+    try {
+      const response = await fetch(`${API_BASE}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        setError(data.message || "Invalid credentials.");
+        return;
+      }
+
+    if (data.isFirstLogin) {
+        navigation.navigate("ResetFirstPassword", {
+          token: data.token,
+        });
+        return;
+      }
+
+    if (data.requiresOtp) {
+        navigation.navigate("OtpVerification", {
+          userId: data.userId,
+          email: data.user.email,
+        });
+        return;
+      }
+
+    if (data.token) {
+        navigation.navigate("Home", { token: data.token, user: data.user });
+      }
+
+     } catch (err: any) {
+      setError("Network error. Please check your connection.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <KeyboardAvoidingView
@@ -182,12 +237,17 @@ export default function Login() {
 
         {/* ── Card ── */}
         <View style={styles.card}>
-
           {/* Card header */}
           <View style={styles.cardHeader}>
             <Text style={styles.cardTitle}>Welcome back</Text>
             <Text style={styles.cardSub}>Sign in to your account</Text>
           </View>
+
+          {error && (
+            <View style={styles.errorBanner}>
+              <Text style={styles.errorText}>⚠ {error}</Text>
+            </View>
+          )}
 
           {/* ── Email input ── */}
           <View style={styles.fieldGroup}>
@@ -204,7 +264,7 @@ export default function Login() {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={(t) => { setEmail(t); setError(null); }}
                 onFocus={() => setFocused("email")}
                 onBlur={() => setFocused(null)}
               />
@@ -225,7 +285,7 @@ export default function Login() {
                 placeholderTextColor="#4B5563"
                 secureTextEntry={!passwordVisible}
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={(t) => { setPassword(t); setError(null); }}
                 onFocus={() => setFocused("password")}
                 onBlur={() => setFocused(null)}
               />
@@ -243,7 +303,7 @@ export default function Login() {
               </TouchableOpacity>
             </View>
             <View style={styles.forgotRow}>
-  <TouchableOpacity>
+  <TouchableOpacity onPress={() => navigation.navigate("ForgotPassword")}>
     <Text style={styles.forgotLink}>Forgot password?</Text>
   </TouchableOpacity>
 </View>
@@ -258,15 +318,21 @@ export default function Login() {
           </TouchableOpacity>
 
           {/* ── Primary CTA ── */}
-          <TouchableOpacity activeOpacity={0.85} style={styles.ctaWrap}>
+          <TouchableOpacity activeOpacity={0.85} style={styles.ctaWrap} onPress={handleLogin} disabled={loading}>
             <LinearGradient
               colors={["rgba(0,240,255,0.15)", "rgba(124,58,237,0.2)"]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.ctaButton}
             >
-              <Text style={styles.ctaText}>SIGN IN</Text>
-              <Text style={styles.ctaArrow}>›</Text>
+                 {loading ? (
+                <ActivityIndicator color="#00F0FF" />
+              ) : (
+                <>
+                  <Text style={styles.ctaText}>SIGN IN</Text>
+                  <Text style={styles.ctaArrow}>›</Text>
+                </>
+              )}
             </LinearGradient>
           </TouchableOpacity>
         </View>
@@ -642,5 +708,19 @@ eyeIconOpen: {
 eyeIconClosed: {
   fontSize: 16,
   color: "#374151",        
+},
+errorBanner: {
+  backgroundColor: "rgba(255,59,129,0.1)",
+  borderWidth: 1,
+  borderColor: "rgba(255,59,129,0.3)",
+  borderRadius: 10,
+  paddingVertical: 10,
+  paddingHorizontal: 14,
+  marginBottom: 20,
+},
+errorText: {
+  color: "#FF3B81",
+  fontSize: 12,
+  fontFamily: "Sora",
 },
 });
