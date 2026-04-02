@@ -7,6 +7,9 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import MaskedView from "@react-native-masked-view/masked-view";
+import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuthStore } from "../../store/authStore";
 
 function GradientTitle({ text }: { text: string }) {
   return (
@@ -29,6 +32,19 @@ function GradientTitle({ text }: { text: string }) {
 }
 
 export default function Profile() {
+const logout = useAuthStore((state) => state.logout);
+const navigation = useNavigation<any>();
+const handleSignOut = async () => {
+    try {
+      logout(); // ✅ clears Zustand state AND AsyncStorage via persist middleware
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      });
+    } catch (err) {
+      console.error("Sign out error:", err);
+    }
+  };
   return (
     <View style={styles.container}>
       {/* Ambient */}
@@ -210,19 +226,23 @@ export default function Profile() {
 </View>
 
         {/* Logout */}
-        <View style={styles.group}>
-          <View style={styles.row}>
-            <View style={styles.rowIcon}>
-              <Text style={{ color: "#FF3B81" }}>⎋</Text>
-            </View>
+    <View style={styles.group}>
+  <TouchableOpacity
+    onPress={handleSignOut}
+    activeOpacity={0.7}
+    style={{ flexDirection: "row", alignItems: "center", paddingVertical: 10, paddingHorizontal: 10 }}
+  >
+    <View style={[styles.rowIcon, { backgroundColor: "rgba(255,59,129,0.15)" }]}>
+      <Text style={{ color: "#FF3B81" }}>⎋</Text>
+    </View>
 
-            <Text style={[styles.rowTitle, { color: "#FF3B81" }]}>
-              Sign Out
-            </Text>
+    <Text style={[styles.rowTitle, { color: "#FF3B81", marginLeft: 10 }]}>
+      Sign Out
+    </Text>
 
-            <Text style={[styles.arrow, { color: "#FF3B81" }]}>›</Text>
-          </View>
-        </View>
+    <Text style={[styles.arrow, { color: "#FF3B81", marginLeft: "auto" }]}>›</Text>
+  </TouchableOpacity>
+</View>
 
         {/* Footer */}
         <View style={styles.footer}>
