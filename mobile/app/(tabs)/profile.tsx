@@ -36,7 +36,7 @@ const logout = useAuthStore((state) => state.logout);
 const navigation = useNavigation<any>();
 const handleSignOut = async () => {
     try {
-      logout(); // ✅ clears Zustand state AND AsyncStorage via persist middleware
+      logout(); 
       navigation.reset({
         index: 0,
         routes: [{ name: 'Login' }],
