@@ -1,7 +1,7 @@
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import MaskedView from "@react-native-masked-view/masked-view";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigation } from "expo-router";
 import { useAuthStore } from "../store/authStore";
 
@@ -148,7 +148,8 @@ export default function Login() {
   const [focused, setFocused] = useState<"email" | "password" | null>(null);
   const auth = useAuthStore();
   const [error, setError] = useState<string | null>(null);
-const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const loginAttempted = useRef(false);
 
   const navigation = useNavigation<any>();
 
@@ -157,6 +158,8 @@ const [loading, setLoading] = useState(false);
       auth.setError("Please enter your email and password.");
       return;
     }
+    loginAttempted.current = true;
+    setError(null);
 
     try {
       await auth.login(email, password);
@@ -165,26 +168,41 @@ const [loading, setLoading] = useState(false);
     }
   };
 
-  useEffect(() => {
-    if (auth.error) {
-      setError(auth.error);
-    }
-    if (auth.isLoading) {
-      setLoading(true);
-    } else {
-      setLoading(false);
-    }
-    if (auth.isFirstLogin) {
-      navigation.navigate("reset-password");
-    } else if (auth.needsOtp) {
-      navigation.navigate("otp", { 
-        userId: auth.user!.id.toString(), 
-        email: auth.user!.email 
-      });
-    } else if (auth.token && auth.user) {
-      navigation.replace("(tabs)/home");
-    }
-  }, [auth.isLoading, auth.error, auth.isFirstLogin, auth.needsOtp, auth.token]);
+useEffect(() => {
+  if (!loginAttempted.current) return;
+
+  if (auth.isLoading) {
+    setLoading(true);
+    return;
+  }
+
+  setLoading(false);
+
+  if (auth.error) {
+    setError(auth.error);
+    return;
+  }
+
+  // 🔥 PRIORITY 1: First login MUST win
+  if (auth.isFirstLogin && auth.tempToken) {
+    navigation.replace("reset-password");
+    return;
+  }
+
+  // 🔥 PRIORITY 2: OTP
+  if (auth.needsOtp) {
+    navigation.replace("otp", {
+      userId: auth.user!.id.toString(),
+      email: auth.user!.email,
+    });
+    return;
+  }
+
+  // 🔥 PRIORITY 3: Normal login
+  if (auth.token && auth.user) {
+    navigation.replace("(tabs)/home");
+  }
+}, [auth.isLoading, auth.error, auth.isFirstLogin, auth.needsOtp, auth.token]);
 
   return (
     <KeyboardAvoidingView

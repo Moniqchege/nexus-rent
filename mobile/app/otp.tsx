@@ -14,6 +14,7 @@ import MaskedView from "@react-native-masked-view/masked-view";
 import React, { useEffect, useState } from "react";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useAuthStore } from "../store/authStore";
+import api from "../lib/api";
 
 function GradientText({ text, fontSize = 24 }: { text: string; fontSize?: number }) {
   return (
@@ -62,8 +63,8 @@ export default function OtpVerification() {
 
   const userId = params.userId as string | undefined;
   const email = params.email as string | undefined;
+  const [resending, setResending] = useState(false);
 
-  // ✅ FIX: navigation side-effect handled properly
   useEffect(() => {
     if (!userId || !email) {
       router.back();
@@ -92,9 +93,29 @@ export default function OtpVerification() {
   };
 
   const handleResendOtp = async () => {
+  try {
     setError(null);
-    // TODO: implement resend API
-  };
+    setResending(true);
+
+    const tokenToUse = auth.tempToken || auth.token;
+
+    if (!tokenToUse) {
+      setError("Session expired. Please login again.");
+      setResending(false);
+      return;
+    }
+
+    await api.sendOtp(tokenToUse);
+    setResending(false);
+
+    // Optional: show success toast/message
+    console.log("OTP resent successfully!");
+
+  } catch (err: any) {
+    setError(err?.message || "Failed to resend OTP.");
+    setResending(false);
+  }
+};
 
   return (
     <KeyboardAvoidingView
@@ -196,9 +217,9 @@ export default function OtpVerification() {
           </TouchableOpacity>
 
           {/* Resend */}
-          <TouchableOpacity onPress={handleResendOtp} style={styles.resendRow}>
-            <Text style={styles.resendText}>Resend OTP?</Text>
-          </TouchableOpacity>
+         <TouchableOpacity onPress={handleResendOtp} style={styles.resendRow} disabled={resending}>
+  <Text style={styles.resendText}>{resending ? "Resending..." : "Resend OTP?"}</Text>
+</TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

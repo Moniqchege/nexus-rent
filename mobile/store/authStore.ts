@@ -24,8 +24,8 @@ interface AuthState {
     setTempToken: (token: string) => void;
     verifyOtp: (userId: string, code: string) => Promise<void>;
 
-     setError: (msg: string | null) => void;
-  setLoading: (loading: boolean) => void;
+    setError: (msg: string | null) => void;
+    setLoading: (loading: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -39,14 +39,47 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false,
             error: null,
 
+            // login: async (email: string, password: string) => {
+            //     set({ isLoading: true, error: null });
+            //     try {
+            //         const data = await api.login(email, password);
+            //         if (data.isFirstLogin) {
+            //             set({ tempToken: data.token, user: data.user, isFirstLogin: true, isLoading: false });
+            //         } else if (data.requiresOtp) {
+            //             set({ needsOtp: true, user: data.user, isLoading: false });
+            //         } else {
+            //             set({ token: data.token, user: data.user, isLoading: false });
+            //         }
+            //     } catch (err: any) {
+            //         set({ error: err.message, isLoading: false });
+            //         throw err;
+            //     }
+            // },
+
             login: async (email: string, password: string) => {
-                set({ isLoading: true, error: null });
+                set({
+                    isLoading: true,
+                    error: null,
+                    isFirstLogin: false,
+                    needsOtp: false,
+                    token: null,
+                    tempToken: null
+                });
                 try {
                     const data = await api.login(email, password);
+                    console.log("Login response:", JSON.stringify(data));
+
                     if (data.isFirstLogin) {
-                        set({ tempToken: data.token, user: data.user, isFirstLogin: true, isLoading: false });
-                    } else if (data.requiresOtp) {
-                        set({ needsOtp: true, user: data.user, isLoading: false });
+                        set({
+                            tempToken: data.token,
+                            user: data.user,
+                            isFirstLogin: true,
+                            isLoading: false,
+                            token: null
+                        });
+                    } else if (data.needsOtp || data.requiresOtp || data.otp_required) {
+                        // ← match whatever field your API actually returns
+                        set({ needsOtp: true, user: data.user, tempToken: data.token, isLoading: false });
                     } else {
                         set({ token: data.token, user: data.user, isLoading: false });
                     }
@@ -75,10 +108,16 @@ export const useAuthStore = create<AuthState>()(
 
             setToken: (token: string, user: User) => set({ token, user }),
             setError: (msg: string | null) => set({ error: msg }),
-      setLoading: (loading: boolean) => set({ isLoading: loading }),
+            setLoading: (loading: boolean) => set({ isLoading: loading }),
         }),
         {
             name: 'auth-storage',
+            partialize: (state) => ({
+                token: state.token,
+                user: state.user,
+                isFirstLogin: state.isFirstLogin,
+                tempToken: state.tempToken,
+            }),
             storage: {
                 getItem: async (name) => {
                     const value = await AsyncStorage.getItem(name);

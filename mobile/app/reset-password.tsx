@@ -134,10 +134,24 @@ export default function ResetPassword() {
   const navigation = useNavigation<any>();
   const auth = useAuthStore();
 
-   const isStrongPassword = (pw: string) => {
-    const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{6,}$/;
-    return regex.test(pw);
-  };
+  const [passwordCriteria, setPasswordCriteria] = useState({
+  minLength: false,
+  uppercase: false,
+  lowercase: false,
+  number: false,
+  special: false,
+});
+
+const validatePassword = (pwd: string) => {
+  setPasswordCriteria({
+    minLength: pwd.length >= 8,
+    uppercase: /[A-Z]/.test(pwd),
+    lowercase: /[a-z]/.test(pwd),
+    number: /[0-9]/.test(pwd),
+    special: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(pwd),
+  });
+};
+
 
   const handleResetPassword = async () => {
     if (!password || !confirmPassword) {
@@ -148,24 +162,28 @@ export default function ResetPassword() {
       setError("Passwords do not match.");
       return;
     }
-    if (!isStrongPassword(password)) {
-      setError(
-        "Password must be at least 6 characters and include uppercase, lowercase, number, and special character."
-      );
-      return;
-    }
+   if (!Object.values(passwordCriteria).every(Boolean)) {
+  setError("Password does not meet all requirements.");
+  return;
+}
 
     setError(null);
     setLoading(true);
 
     try {
       if (auth.isFirstLogin && auth.tempToken && auth.user) {
-        await api.resetFirstPassword(auth.tempToken, password);
-        navigation.navigate("otp", { 
-          userId: auth.user.id.toString(), 
-          email: auth.user.email 
-        });
-      } else {
+  // Step 1: reset the password
+  await api.resetFirstPassword(auth.tempToken, password);
+  
+  // Step 2: directly request OTP using the temp token — no re-login needed
+  await api.sendOtp(auth.tempToken);
+
+  // Step 3: go to OTP screen
+  navigation.navigate("otp", {
+    userId: auth.user.id.toString(),
+    email: auth.user.email,
+  });
+} else {
         await api.resetPassword(password);
         setSuccess(true);
       }
@@ -266,7 +284,7 @@ export default function ResetPassword() {
                 placeholderTextColor="#4B5563"
                 secureTextEntry={!passwordVisible}
                 value={password}
-                onChangeText={(t) => { setPassword(t); setError(null); }}
+                onChangeText={(t) => { setPassword(t); validatePassword(t); setError(null); }}
                 onFocus={() => setFocused("password")}
                 onBlur={() => setFocused(null)}
               />
@@ -281,6 +299,29 @@ export default function ResetPassword() {
             </View>
           </View>
 
+          <View style={styles.criteriaBox}>
+  <Text style={styles.criteriaTitle}>Password must contain:</Text>
+  {[
+    { key: "minLength",  label: "Minimum 8 characters" },
+    { key: "uppercase",  label: "At least one uppercase letter" },
+    { key: "lowercase",  label: "At least one lowercase letter" },
+    { key: "number",     label: "At least one number" },
+    { key: "special",    label: "At least one special character" },
+  ].map(({ key, label }) => {
+    const met = passwordCriteria[key as keyof typeof passwordCriteria];
+    return (
+      <View key={key} style={styles.criteriaRow}>
+        <Text style={[styles.criteriaIcon, met && styles.criteriaIconMet]}>
+          {met ? "✓" : "○"}
+        </Text>
+        <Text style={[styles.criteriaText, met && styles.criteriaTextMet]}>
+          {label}
+        </Text>
+      </View>
+    );
+  })}
+</View>
+
           {/* Confirm Password */}
           <View style={styles.fieldGroup}>
             <Text style={styles.fieldLabel}>CONFIRM PASSWORD</Text>
@@ -292,7 +333,7 @@ export default function ResetPassword() {
                 placeholderTextColor="#4B5563"
                 secureTextEntry={!confirmVisible}
                 value={confirmPassword}
-                onChangeText={(t) => { setConfirmPassword(t); setError(null); }}
+                onChangeText={(t) => { setConfirmPassword(t); validatePassword(t); setError(null); }}
                 onFocus={() => setFocused("confirm")}
                 onBlur={() => setFocused(null)}
               />
@@ -538,4 +579,42 @@ const styles = StyleSheet.create({
   fontSize: 12,
     fontFamily: "Sora",
   },
+  criteriaBox: {
+  backgroundColor: "rgba(0,240,255,0.03)",
+  borderWidth: 1,
+  borderColor: "#1F2937",
+  borderRadius: 12,
+  padding: 14,
+  marginTop: -8,
+  marginBottom: 20,
+},
+criteriaTitle: {
+  fontSize: 10,
+  fontFamily: "Orbitron",
+  color: "#9CA3AF",
+  letterSpacing: 1,
+  marginBottom: 10,
+},
+criteriaRow: {
+  flexDirection: "row",
+  alignItems: "center",
+  gap: 8,
+  marginBottom: 6,
+},
+criteriaIcon: {
+  fontSize: 12,
+  color: "#374151",
+  width: 14,
+},
+criteriaIconMet: {
+  color: "#00FFA3",
+},
+criteriaText: {
+  fontSize: 12,
+  fontFamily: "Sora",
+  color: "#6B7280",
+},
+criteriaTextMet: {
+  color: "#00FFA3",
+},
 });

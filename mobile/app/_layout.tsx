@@ -56,15 +56,16 @@ export default function RootLayout() {
 
     const inTabsGroup = segments[0] === '(tabs)';
 
-    // Allow reset-password and otp screens during firstLogin flow
-    const isAuthFlow = segments[0] === 'reset-password' || segments[0] === 'otp' || segments[0] === 'forgot-password';
+    // Allow auth screens (login/reset-password/otp/forgot-password) during firstLogin/OTP flows
+    const isAuthFlow = segments[0] === 'reset-password' || segments[0] === 'otp' || segments[0] === 'forgot-password' || segments[0] === 'login';
 
     if (!auth.token && !auth.tempToken && inTabsGroup && !isAuthFlow) {
       router.replace('/login');
       return;
     }
 
-    if ((auth.token || auth.tempToken) && !inTabsGroup && !isAuthFlow) {
+    // Skip home redirect during firstLogin (tempToken + isFirstLogin = allow reset-password flow)
+    if ((auth.token || (auth.tempToken && !auth.isFirstLogin)) && !inTabsGroup && !isAuthFlow) {
       router.replace('/(tabs)/home');
     }
   }, [auth.token, auth.tempToken, segments, router, fontsLoaded]);

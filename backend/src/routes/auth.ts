@@ -145,10 +145,17 @@ router.post("/login", async (req: Request, res: Response) => {
       html: `<h3>Your Login OTP</h3><p>Code: <strong>${otp}</strong></p><p>Expires in 5 minutes</p>`,
     });
 
+    const tempToken = jwt.sign(
+      { sub: user.id.toString() },
+      process.env.JWT_SECRET!,
+      { expiresIn: "5m" } // short-lived token for OTP
+    );
+
     // ✅ Return OTP info
     return res.status(200).json({
       message: "OTP sent successfully",
       requiresOtp: true,
+      token: tempToken,
       userId: user.id,
       user: {
         id: user.id,
@@ -196,6 +203,79 @@ router.post("/reset-first-password", async (req: Request, res: Response) => {
   }
 });
 
+// Send OTP (used after first password reset OR manual trigger)
+router.post("/send-otp", async (req: Request, res: Response) => {
+  try {
+    const header = req.headers.authorization;
+
+    if (!header?.startsWith("Bearer ")) {
+      return res.status(401).json({ message: "Missing token" });
+    }
+
+    const token = header.slice(7);
+
+    // 🔥 Manually verify JWT (NOT session-based)
+    const payload = jwt.verify(token, process.env.JWT_SECRET!) as { sub?: string };
+
+    const userId = payload?.sub ? Number(payload.sub) : null;
+
+    if (!userId) {
+      return res.status(401).json({ message: "Invalid token" });
+    }
+
+    const user = await db.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true, name: true },
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // 🔥 Invalidate previous OTPs
+    await db.otpCode.updateMany({
+      where: { userId: user.id, used: false },
+      data: { used: true },
+    });
+
+    // 🔢 Generate OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpHash = await bcrypt.hash(otp, 10);
+
+    await db.otpCode.create({
+      data: {
+        userId: user.id,
+        identifier: user.email,
+        codeHash: otpHash,
+        expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+      },
+    });
+
+    console.log("OTP for", user.email, ":", otp);
+
+    await transporter.sendMail({
+      from: `"Nexus Rent" <${process.env.SMTP_USER}>`,
+      to: user.email,
+      subject: "Your OTP Code",
+      html: `
+        <h3>Your OTP Code</h3>
+        <p><strong>${otp}</strong></p>
+        <p>Expires in 5 minutes</p>
+      `,
+    });
+
+    return res.json({
+      message: "OTP sent successfully",
+      requiresOtp: true,
+      userId: user.id,
+    });
+
+  } catch (err) {
+    console.error("SEND OTP ERROR:", err);
+    return res.status(500).json({ message: "Failed to send OTP" });
+  }
+});
+
 // Verify otp
 router.post("/verify-otp", async (req: Request, res: Response) => {
   try {
@@ -203,8 +283,8 @@ router.post("/verify-otp", async (req: Request, res: Response) => {
     const userId = Number(userIdStr);
 
     if (isNaN(userId)) {
-  return res.status(400).json({ message: "Invalid userId" });
-}
+      return res.status(400).json({ message: "Invalid userId" });
+    }
 
     const otpRecord = await db.otpCode.findFirst({
       where: {
@@ -265,7 +345,7 @@ router.post("/verify-otp", async (req: Request, res: Response) => {
       data: {
         token: token,
         user_id: user!.id,
-        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), 
+        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       },
     });
 

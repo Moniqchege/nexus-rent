@@ -28,22 +28,15 @@ const app = express();
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 4000;
 
 app.use(express.json());
-// app.use(cors({
-//   origin: [
-//     "http://localhost:3000",
-//     "http://localhost:8081",
-//     "exp://eqpng0s-anonymous-8082.exp.direct",
-//     "https://resume-builder-frontend-6w43zpqnp-moniqcheges-projects.vercel.app/",
-//   ],
-//   credentials: true,
-// }));
-
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
 
     if (
       origin.includes("localhost") ||
+      origin.includes("127.0.0.1") ||
+      origin.includes("192.168") ||
+      origin.includes("10.") ||
       origin.includes("exp.direct") ||
       origin.includes("vercel.app")
     ) {
@@ -54,6 +47,27 @@ app.use(cors({
   },
   credentials: true,
 }));
+
+// app.options("*", cors());
+
+// app.use(cors({
+//   origin: (origin, callback) => {
+//     if (!origin) return callback(null, true);
+
+//    if (
+//   origin.includes("localhost") ||
+//   origin.includes("127.0.0.1") ||
+//   origin.includes("192.168") ||
+//   origin.includes("exp.direct") ||
+//   origin.includes("vercel.app")
+// ) {
+//       return callback(null, true);
+//     }
+
+//     return callback(new Error("Not allowed by CORS"));
+//   },
+//   credentials: true,
+// }));
 
 app.use(
   session({

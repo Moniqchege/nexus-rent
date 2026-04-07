@@ -1,7 +1,7 @@
 import Constants from 'expo-constants';
 import { Property } from '../types/property';
 
-export const API_BASE = Constants.expoConfig?.extra?.apiUrl || 'http://localhost:4000' || 'http://192.168.1.103:4000';
+export const API_BASE = Constants.expoConfig?.extra?.apiUrl ?? 'http://localhost:4000';
 
 const api = {
     async fetchProperties(token?: string): Promise<Property[]> {
@@ -84,6 +84,24 @@ const api = {
         }
 
         return response.json();
+    },
+
+    sendOtp: async (token: string) => {
+        const res = await fetch(`${API_BASE}/auth/send-otp`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            throw new Error(data.message || "Failed to send OTP.");
+        }
+
+        return data;
     },
 
     async verifyOtp(userId: string, code: string): Promise<{ token: string; user: { id: number; email: string; name: string } }> {
