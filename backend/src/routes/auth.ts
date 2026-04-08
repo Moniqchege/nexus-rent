@@ -148,7 +148,7 @@ router.post("/login", async (req: Request, res: Response) => {
     const tempToken = jwt.sign(
       { sub: user.id.toString() },
       process.env.JWT_SECRET!,
-      { expiresIn: "5m" } 
+      { expiresIn: "5m" }
     );
 
     // ✅ Return OTP info
@@ -326,6 +326,26 @@ router.post("/verify-otp", async (req: Request, res: Response) => {
         image: true,
         plan: true,
         firstLogin: true,
+        userProperties: {
+          select: {
+            propertyId: true,
+            role: { select: { id: true, name: true } },
+            property: {
+              select: {
+                id: true,
+                title: true,
+                location: true,
+                price: true,
+                beds: true,
+                baths: true,
+                sqft: true,
+                status: true,
+                amenities: true,
+                image: true,
+              },
+            },
+          },
+        },
       },
     });
 

@@ -50,9 +50,9 @@ const stats: {  label: string; value: string; color: ColorKey; change: string }[
 
 // Forecast
 const forecast: { month: string; price: string; color: ColorKey }[] = [
-  { month: "MAR", price: "$2,400", color: "neon" },
-  { month: "APR", price: "$2,640", color: "warn" },
-  { month: "MAY", price: "$2,880", color: "danger" },
+  { month: "MAR", price: "Ksh2,400", color: "neon" },
+  { month: "APR", price: "Ksh2,640", color: "warn" },
+  { month: "MAY", price: "Ksh2,880", color: "danger" },
 ];
 
 function GradientTitle({ text }: { text: string }) {
@@ -145,24 +145,48 @@ export default function Home() {
   />
         </View>
 
-        {/* Hero Card */}
-        <LinearGradient colors={["rgba(0,240,255,0.08)", "rgba(124,58,237,0.12)"]} style={styles.heroCard}>
-          <Text style={styles.heroLabel}>CURRENT MONTHLY RENT</Text>
-          <Text style={[styles.heroValue, colorMap.neon.text]}>$2,400</Text>
-          <Text style={styles.textMutedSmall}>Sky Vista Penthouse · Westlands</Text>
+     {/* Hero Card */}
+{user?.userProperties?.length ? (() => {
+  const currentProperty = user.userProperties[0]?.property;
 
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            {[
-              { label: "STATUS", value: "✓ Paid", color: "success" as ColorKey },
-              { label: "NEXT DUE", value: "Mar 1", color: "warn" as ColorKey },
-            ].map((item, i) => (
-              <View key={i} style={styles.heroStatBox}>
-                <Text style={styles.textMutedSmall}>{item.label}</Text>
-                <Text style={[{ fontFamily: "monospace" }, colorMap[item.color].text]}>{item.value}</Text>
-              </View>
-            ))}
+  if (!currentProperty) return null;
+
+  // Fallbacks
+  const price = currentProperty.price ?? 0;
+  const title = currentProperty.title ?? "Untitled Property";
+  const location = currentProperty.location ?? "Unknown Location";
+
+  // Format next due date (1st of next month)
+  const today = new Date();
+  const nextDue = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+  const nextDueFormatted = nextDue.toLocaleString("default", { month: "short", day: "numeric" });
+
+  // Status - placeholder logic (replace with real status if available)
+  const statusLabel = "✓ Paid";
+  const statusColor: ColorKey = "success";
+
+  return (
+    <LinearGradient colors={["rgba(0,240,255,0.08)", "rgba(124,58,237,0.12)"]} style={styles.heroCard}>
+      <Text style={styles.heroLabel}>CURRENT MONTHLY RENT</Text>
+      <Text style={[styles.heroValue, colorMap.neon.text]}>Ksh{price.toLocaleString()}</Text>
+      <Text style={styles.textMutedSmall}>{title} · {location}</Text>
+
+      <View style={{ flexDirection: "row", gap: 8 }}>
+        {[
+          { label: "STATUS", value: statusLabel, color: statusColor },
+          { label: "NEXT DUE", value: nextDueFormatted, color: "warn" as ColorKey },
+        ].map((item, i) => (
+          <View key={i} style={styles.heroStatBox}>
+            <Text style={styles.textMutedSmall}>{item.label}</Text>
+            <Text style={[{ fontFamily: "monospace" }, colorMap[item.color].text]}>
+              {item.value}
+            </Text>
           </View>
-        </LinearGradient>
+        ))}
+      </View>
+    </LinearGradient>
+  );
+})() : null}
 
         {/* Quick Actions */}
         <Text style={styles.sectionTitle}>QUICK ACTIONS</Text>
@@ -215,7 +239,7 @@ export default function Home() {
       color: "success" as ColorKey,
       title: "February Rent Paid",
       subtitle: "Feb 1, 2025 · On time · M-Pesa",
-      amount: "$2,400",
+      amount: "Ksh2,400",
       amountColor: "success" as ColorKey,
     },
     {
@@ -276,7 +300,7 @@ const styles = StyleSheet.create({
   aiIcon: { width: 40, height: 40, borderRadius: 16, alignItems: "center", justifyContent: "center" },
   heroCard: { marginHorizontal: 20, marginBottom: 20, padding: 24, borderRadius: 24, borderWidth: 1, borderColor: "rgba(0,255,255,0.3)" },
   heroLabel: { fontSize: 10, fontFamily: "Orbitron", color: "#888", letterSpacing: 2, marginBottom: 4 },
-  heroValue: { fontSize: 32, fontFamily: "monospace" },
+  heroValue: { fontSize: 20, fontFamily: "monospace" },
   heroStatBox: { flex: 1, backgroundColor: "rgba(0,0,0,0.3)", borderWidth: 1, borderColor: "rgba(255,255,255,0.1)", borderRadius: 16, padding: 10 },
   sectionTitle: { paddingHorizontal: 20, marginBottom: 8, fontSize: 10, fontFamily: "Orbitron", color: "#888", letterSpacing: 2 },
   quickActions: { flexDirection: "row", flexWrap: "wrap", gap: 25, paddingHorizontal: 20, marginBottom: 24 },

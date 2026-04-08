@@ -111,56 +111,73 @@ const navigation = useNavigation<any>();
           </View>
         </View>
 
-        {/* MY PROPERTY */}
-       <Text style={styles.sectionTitle}>MY PROPERTY</Text>
+ {/* MY PROPERTY */}
+<Text style={styles.sectionTitle}>MY PROPERTY</Text>
 
-       <View style={styles.propertyCard}>
-  {/* Image Strip */}
-  <LinearGradient
-    colors={["#0f2027", "#203a43", "#2c5364"]}
-    start={{ x: 0, y: 0 }}
-    end={{ x: 1, y: 1 }}
-    style={styles.propertyImageStrip}
-  >
-    <Text style={styles.propertyEmoji}>🏙</Text>
+{user?.userProperties?.length ? (() => {
+  const propertyItem = user.userProperties[0]?.property;
+  if (!propertyItem) return null;
 
-    {/* Bottom overlay with badges */}
-    <View style={styles.propertyOverlay}>
-      <View style={styles.badgeRow}>
-        <View style={styles.activeBadge}>
-          <Text style={styles.activeBadgeText}>● ACTIVE LEASE</Text>
+  const name = propertyItem.title ?? "Untitled Property";
+  const price = propertyItem.price ? `Ksh${propertyItem.price.toLocaleString()}/mo` : "N/A";
+  const location = propertyItem.location ?? "Unknown Location";
+
+  const specs = [
+    { icon: "⊞", label: `${propertyItem.beds ?? 0} Beds` },
+    { icon: "◎", label: `${propertyItem.baths ?? 0} Baths` },
+    { icon: "▣", label: `${propertyItem.sqft ?? "N/A"} sqft` },
+    { icon: "📅", label: "Jul 15" }, // hardcoded nextDue
+  ];
+
+  const aiScore = 94; 
+
+  return (
+    <View style={styles.propertyCard}>
+      {/* Image Strip */}
+      <LinearGradient
+        colors={["#0f2027", "#203a43", "#2c5364"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.propertyImageStrip}
+      >
+        <Text style={styles.propertyEmoji}>🏙</Text>
+
+        {/* Bottom overlay with badges */}
+        <View style={styles.propertyOverlay}>
+          <View style={styles.badgeRow}>
+            <View style={styles.activeBadge}>
+              <Text style={styles.activeBadgeText}>● ACTIVE LEASE</Text>
+            </View>
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>AI {aiScore}%</Text>
+            </View>
+          </View>
         </View>
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>AI 94%</Text>
+      </LinearGradient>
+
+      {/* Body */}
+      <View style={styles.propertyBody}>
+        <View style={styles.propertyTopRow}>
+          <Text style={styles.propertyName}>{name}</Text>
+          <Text style={styles.propertyPrice}>{price}</Text>
+        </View>
+
+        <Text style={styles.propertyLocation}>📍 {location} </Text>
+
+        <View style={styles.specRow}>
+          {specs.map((s, i) => (
+            <View key={i} style={styles.spec}>
+              <Text style={styles.specIcon}>{s.icon}</Text>
+              <Text style={styles.specText}>{s.label}</Text>
+            </View>
+          ))}
         </View>
       </View>
     </View>
-  </LinearGradient>
-
-  {/* Body */}
-  <View style={styles.propertyBody}>
-    <View style={styles.propertyTopRow}>
-      <Text style={styles.propertyName}>Sky Vista Penthouse</Text>
-      <Text style={styles.propertyPrice}>$2,400/mo</Text>
-    </View>
-
-    <Text style={styles.propertyLocation}>📍 Westlands, Nairobi · Floor 18</Text>
-
-    <View style={styles.specRow}>
-      {[
-        { icon: "⊞", label: "3 Beds" },
-        { icon: "◎", label: "2 Baths" },
-        { icon: "▣", label: "1,400 sqft" },
-        { icon: "📅", label: "Jul 15" },
-      ].map((s, i) => (
-        <View key={i} style={styles.spec}>
-          <Text style={styles.specIcon}>{s.icon}</Text>
-          <Text style={styles.specText}>{s.label}</Text>
-        </View>
-      ))}
-    </View>
-  </View>
-</View>
+  );
+})() : (
+  <Text style={{ marginHorizontal: 20, color: "#888", fontSize: 12 }}>No properties available.</Text>
+)}
 
         {/* SETTINGS */}
         <Text style={styles.sectionTitle}>ACCOUNT SETTINGS</Text>

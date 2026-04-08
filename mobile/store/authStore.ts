@@ -124,7 +124,7 @@ export const useAuthStore = create<AuthState>()(
                 try {
                     const data = await api.verifyOtp(userId, code);
                     const normalizedUser = normalizeUser(data.user);
-                    console.log("OTP verification - user object:", normalizedUser);
+                   console.log("OTP verification - user object:", JSON.stringify(normalizedUser, null, 2));
                     set({ token: data.token, user: normalizedUser, tempToken: null, isFirstLogin: false, needsOtp: false, isLoading: false });
                 } catch (err: any) {
                     set({ error: err.message, isLoading: false });
