@@ -7,7 +7,56 @@ interface User {
     id: number;
     email: string;
     name: string;
+    username?: string;
+    phone?: string;
+    plan?: string;
+    userProperties: UserProperty[];
 }
+
+interface Property {
+    id: number;
+    title: string;
+    location?: string;
+    price?: number;
+    beds?: number;
+    baths?: number;
+    sqft?: number;
+    status?: string;
+    amenities?: string[];
+    image?: string;
+}
+
+interface Role {
+    id: number;
+    name: string;
+}
+
+interface UserProperty {
+    propertyId: number;
+    role: Role;
+    property: Property;
+}
+
+const normalizeUser = (user: any): User => ({
+    ...user,
+    userProperties: (user.userProperties ?? []).map((up: any) => ({
+        ...up,
+        property: {
+            id: up.property.id,
+            title: up.property.title,
+            location: up.property.location,
+            price: up.property.price,
+            beds: up.property.beds,
+            baths: up.property.baths,
+            sqft: up.property.sqft,
+            status: up.property.status,
+            amenities: up.property.amenities,
+            image: up.property.image,
+        },
+        role: up.role, // keep as is
+        propertyId: up.propertyId,
+    })),
+});
 
 interface AuthState {
     user: User | null;
@@ -17,6 +66,7 @@ interface AuthState {
     needsOtp: boolean;
     isLoading: boolean;
     error: string | null;
+    
 
     login: (email: string, password: string) => Promise<void>;
     logout: () => void;
@@ -39,49 +89,29 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false,
             error: null,
 
-            // login: async (email: string, password: string) => {
-            //     set({ isLoading: true, error: null });
-            //     try {
-            //         const data = await api.login(email, password);
-            //         if (data.isFirstLogin) {
-            //             set({ tempToken: data.token, user: data.user, isFirstLogin: true, isLoading: false });
-            //         } else if (data.requiresOtp) {
-            //             set({ needsOtp: true, user: data.user, isLoading: false });
-            //         } else {
-            //             set({ token: data.token, user: data.user, isLoading: false });
-            //         }
-            //     } catch (err: any) {
-            //         set({ error: err.message, isLoading: false });
-            //         throw err;
-            //     }
-            // },
-
             login: async (email: string, password: string) => {
-                set({
-                    isLoading: true,
-                    error: null,
-                    isFirstLogin: false,
-                    needsOtp: false,
-                    token: null,
-                    tempToken: null
-                });
+                set({ isLoading: true, error: null, isFirstLogin: false, needsOtp: false });
                 try {
                     const data = await api.login(email, password);
-                    console.log("Login response:", JSON.stringify(data));
+                    const normalizedUser = normalizeUser(data.user);
+
+                    console.log("Login response user object:", normalizedUser);
 
                     if (data.isFirstLogin) {
                         set({
                             tempToken: data.token,
-                            user: data.user,
+                            user: normalizedUser,
                             isFirstLogin: true,
                             isLoading: false,
                             token: null
                         });
+                        console.log("First login - user set:", normalizedUser);
                     } else if (data.needsOtp || data.requiresOtp || data.otp_required) {
-                        // ← match whatever field your API actually returns
-                        set({ needsOtp: true, user: data.user, tempToken: data.token, isLoading: false });
+                        set({ needsOtp: true, user: normalizedUser, tempToken: data.token, isLoading: false });
+                        console.log("OTP required - user set:", normalizedUser);
                     } else {
-                        set({ token: data.token, user: data.user, isLoading: false });
+                        set({ token: data.token, user: normalizedUser, isLoading: false });
+                        console.log("Normal login - user set:", normalizedUser);
                     }
                 } catch (err: any) {
                     set({ error: err.message, isLoading: false });
@@ -89,24 +119,26 @@ export const useAuthStore = create<AuthState>()(
                 }
             },
 
-            logout: () => {
-                set({ user: null, token: null, tempToken: null, isFirstLogin: false, needsOtp: false, error: null });
-            },
-
-            setTempToken: (token: string) => set({ tempToken: token, isFirstLogin: true }),
-
             verifyOtp: async (userId: string, code: string) => {
                 set({ isLoading: true, error: null });
                 try {
                     const data = await api.verifyOtp(userId, code);
-                    set({ token: data.token, user: data.user, tempToken: null, isFirstLogin: false, needsOtp: false, isLoading: false });
+                    const normalizedUser = normalizeUser(data.user);
+                    console.log("OTP verification - user object:", normalizedUser);
+                    set({ token: data.token, user: normalizedUser, tempToken: null, isFirstLogin: false, needsOtp: false, isLoading: false });
                 } catch (err: any) {
                     set({ error: err.message, isLoading: false });
                     throw err;
                 }
             },
 
-            setToken: (token: string, user: User) => set({ token, user }),
+            setToken: (token: string, user: User) => {
+                const normalizedUser = normalizeUser(user);
+                set({ token, user: normalizedUser });
+            },
+
+            logout: () => set({ user: null, token: null, tempToken: null, isFirstLogin: false, needsOtp: false, error: null }),
+            setTempToken: (token: string) => set({ tempToken: token, isFirstLogin: true }),
             setError: (msg: string | null) => set({ error: msg }),
             setLoading: (loading: boolean) => set({ isLoading: loading }),
         }),

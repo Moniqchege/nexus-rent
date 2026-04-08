@@ -12,7 +12,7 @@ export default {
     userInterfaceStyle: "dark",
     newArchEnabled: true,
     extra: {
-      apiUrl: process.env.API_URL,  
+      apiUrl: "https://lavenia-pronounceable-radically.ngrok-free.dev",  
     },
     splash: {
       image: "./assets/splash-icon.png",

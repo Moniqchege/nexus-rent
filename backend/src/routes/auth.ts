@@ -148,7 +148,7 @@ router.post("/login", async (req: Request, res: Response) => {
     const tempToken = jwt.sign(
       { sub: user.id.toString() },
       process.env.JWT_SECRET!,
-      { expiresIn: "5m" } // short-lived token for OTP
+      { expiresIn: "5m" } 
     );
 
     // ✅ Return OTP info

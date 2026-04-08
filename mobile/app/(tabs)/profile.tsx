@@ -4,12 +4,14 @@ import {
   ScrollView,
   StyleSheet,
   TouchableOpacity,
+  Image,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import MaskedView from "@react-native-masked-view/masked-view";
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from "../../store/authStore";
+import { useRouter } from "expo-router";
 
 function GradientTitle({ text }: { text: string }) {
   return (
@@ -33,18 +35,18 @@ function GradientTitle({ text }: { text: string }) {
 
 export default function Profile() {
 const logout = useAuthStore((state) => state.logout);
+const router = useRouter();
 const navigation = useNavigation<any>();
-const handleSignOut = async () => {
-    try {
-      logout(); 
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Login' }],
-      });
-    } catch (err) {
-      console.error("Sign out error:", err);
-    }
+ const handleSignOut = async () => {
+    logout(); // clear user state
+    router.replace('/login'); 
   };
+
+  const user = useAuthStore((state) => state.user);
+  const isHydrated = useAuthStore.persist.hasHydrated();
+
+  if (!isHydrated) return null;
+  const displayName = user?.name?.trim().split(/\s+/).slice(0, 2).join(" ") || "User";
   return (
     <View style={styles.container}>
       {/* Ambient */}
@@ -65,20 +67,14 @@ const handleSignOut = async () => {
 
         {/* Profile Hero */}
         <View style={styles.profileCard}>
-          <LinearGradient
-  colors={["#7C3AED", "#00F0FF"]}
-  start={{ x: 0, y: 0 }}
-  end={{ x: 1, y: 1 }}
-  style={styles.avatar}
->
-  {/* avatar content here */}
-   <View style={styles.avatar}>
-            <Text style={{ fontSize: 28 }}>👤</Text>
-          </View>
-</LinearGradient>
+          <Image
+              source={require("../../assets/profile.png")} 
+              style={{ width: 92, height: 92, borderRadius: 16 }}
+              resizeMode="contain"
+            />
 
-          <Text style={styles.name}>Alex Kimani</Text>
-          <Text style={styles.email}>alex.kimani@email.com</Text>
+          <Text style={styles.name}>{displayName}</Text>
+          <Text style={styles.email}>{user?.email || "No email"}</Text>
 
           <View style={styles.verifiedTag}>
             <Text style={styles.icon}>◈</Text>

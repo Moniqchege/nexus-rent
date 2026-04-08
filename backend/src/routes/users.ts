@@ -64,6 +64,14 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
               select: {
                 id: true,
                 title: true,
+                location: true,
+                price: true,
+                beds: true,
+                baths: true,
+                sqft: true,
+                status: true,
+                amenities: true,
+                image: true,
               },
             },
           },
@@ -191,6 +199,14 @@ router.get('/:id', requireAuth, async (req: Request, res: Response) => {
               select: {
                 id: true,
                 title: true,
+                location: true,
+                price: true,
+                beds: true,
+                baths: true,
+                sqft: true,
+                status: true,
+                amenities: true,
+                image: true,
               },
             },
           },
@@ -211,7 +227,7 @@ router.patch('/:id', requireAuth, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const userId = parseInt(Array.isArray(id) ? id[0] : id, 10);
-    const { propertyAssignments, ...data } = req.body as any; 
+    const { propertyAssignments, ...data } = req.body as any;
 
     // Block email change if set
     if (data.email) delete data.email;

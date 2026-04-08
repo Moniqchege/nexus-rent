@@ -1,6 +1,7 @@
-import { View, Text, ScrollView, StyleSheet } from "react-native";
+import { View, Text, ScrollView, StyleSheet, Image } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import MaskedView from "@react-native-masked-view/masked-view";
+import { useAuthStore } from "../../store/authStore";
 
 type ColorKey = "neon" | "purple" | "success" | "danger" | "warn";
 
@@ -91,6 +92,17 @@ function GradientTitle({ text }: { text: string }) {
 }
 
 export default function Home() {
+  const user = useAuthStore((state) => state.user);
+
+  const firstName = user?.name?.split(" ").slice(0, 2).join(" ") || "User";
+
+  const getGreeting = () => {
+  const hour = new Date().getHours();
+
+  if (hour < 12) return "Good morning ☀️";
+  if (hour < 17) return "Good afternoon 🌤️";
+  return "Good evening 🌙";
+};
   return (
     <View style={styles.container}>
       {/* Ambient Glow */}
@@ -101,7 +113,9 @@ export default function Home() {
         {/* Header */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.textMuted}>Good morning,</Text>
+            <Text style={styles.textMuted}>
+               {getGreeting()},
+            </Text>
             <MaskedView
               style={{ flexDirection: "row" }}  
               maskElement={
@@ -111,7 +125,7 @@ export default function Home() {
                   backgroundColor: "transparent",
                   color: "black" 
                 }}>
-                  Alex Kimani
+                   {firstName}
                 </Text>
               }
             >
@@ -120,21 +134,15 @@ export default function Home() {
                       end={{ x: 1, y: 0 }}
                       colors={["#00FFFF", "#7C3AED"]}
                     >
-                      <Text style={{ fontSize: 24, fontFamily: "Orbitron", color: "transparent" }}>Alex Kimani</Text>
+                      <Text style={{ fontSize: 24, fontFamily: "Orbitron", color: "transparent" }}>{firstName}</Text>
                     </LinearGradient>
                   </MaskedView>
           </View>
-           <LinearGradient
-            colors={["#7C3AED", "#00F0FF"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.avatar}
-          >
-            {/* avatar content here */}
-             <View style={styles.avatar}>
-                      <Text style={{ fontSize: 17 }}>👤</Text>
-                    </View>
-          </LinearGradient>
+  <Image
+    source={require("../../assets/profile.png")} 
+    style={{ width: 42, height: 42, borderRadius: 16 }}
+    resizeMode="contain"
+  />
         </View>
 
         {/* Hero Card */}
