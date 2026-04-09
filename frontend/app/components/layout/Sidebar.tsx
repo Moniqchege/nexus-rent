@@ -18,7 +18,7 @@ export default function Sidebar() {
   useEffect(() => {
     if (!user) return;
 
-    api.get("/api/notifications/reviews").then(({ data }) => {
+    api.get("/notifications/reviews").then(({ data }) => {
       setUnreadCount(data.length);
     }).catch(() => setUnreadCount(0));
   }, [user]);
@@ -30,7 +30,7 @@ export default function Sidebar() {
   // { label: "AI Insights", icon: "🤖", to: "/ai-insights" },
   { label: "Roles", icon: "/roles_icon.png", to: "/roles", type: "image" },
   { label: "Users", icon: "/users_icon.png", to: "/users", type: "image" },
-    { label: "Notifications", icon: "/notifications_icon.png", to: "/notifications", type: "image", badge: unreadCount,  },
+  { label: "Alerts", icon: "/notifications_icon.png", to: "/notifications", type: "image", badge: unreadCount,  },
 
 ];
 

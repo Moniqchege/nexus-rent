@@ -327,7 +327,7 @@ button::placeholder {
   /* ========= SECTION LABEL ========= */
   .section-label {
     font-family: 'Orbitron', monospace;
-    font-size: 11px;
+    font-size: 10px;
     letter-spacing: 4px;
     color: var(--neon-blue);
     text-transform: uppercase;

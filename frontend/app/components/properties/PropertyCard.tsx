@@ -7,6 +7,7 @@ export interface Property {
   id: number;
   title: string;
   location: string;
+  floor?: string;
   price: number;
   beds: number;
   baths: number;
@@ -90,6 +91,11 @@ export default function PropertyCard({ property, onSaveToggle }: PropertyCardPro
           📍 {property.location}
         </div>
         <div className="prop-meta">
+          {property.floor && (
+            <div className="meta-item">
+              <span className="meta-icon">⬆️</span> Floor {property.floor}
+            </div>
+          )}
           <div className="meta-item">
             <span className="meta-icon">⊞</span> {property.beds} Beds
           </div>
@@ -99,9 +105,11 @@ export default function PropertyCard({ property, onSaveToggle }: PropertyCardPro
           <div className="meta-item">
             <span className="meta-icon">▣</span> {property.sqft.toLocaleString()} sqft
           </div>
-          <div className="meta-item">
-            <span className="meta-icon">◉</span> {property.distance} km
-          </div>
+          {property.distance && (
+            <div className="meta-item">
+              <span className="meta-icon">◉</span> {property.distance} km
+            </div>
+          )}
         </div>
         {property.amenities.length > 0 && (
           <div className="prop-amenities" style={{

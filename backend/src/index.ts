@@ -19,6 +19,7 @@ import { setupOAuth } from "./services/oauthStrategies.js";
 
 
 console.log('INDEX.TS LOADED AT:', new Date().toISOString());
+console.log("DATABASE_URL:", process.env.DATABASE_URL);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

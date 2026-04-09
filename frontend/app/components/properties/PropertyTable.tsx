@@ -10,6 +10,7 @@ interface PropertyApi {
   id: number;
   title: string;
   location: string;
+  floor?: string;
   price: number;
   beds: number;
   baths: number;

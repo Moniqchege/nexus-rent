@@ -12,6 +12,7 @@ import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from "../../store/authStore";
 import { useRouter } from "expo-router";
+import { useNotificationsStore } from "../../store/notificationsStore";
 
 function GradientTitle({ text }: { text: string }) {
   return (
@@ -40,6 +41,13 @@ const navigation = useNavigation<any>();
  const handleSignOut = async () => {
     logout(); // clear user state
     router.replace('/login'); 
+  };
+
+  const { unreadCount } = useNotificationsStore();
+  const routerPush = (path: string) => router.push(path);
+
+  const handleRentAlertsPress = () => {
+    routerPush('/(tabs)/notifications');
   };
 
   const user = useAuthStore((state) => state.user);
@@ -187,7 +195,7 @@ const navigation = useNavigation<any>();
           <View style={styles.preferencesDivider} />
 
         {[
-  { icon: "🔔", name: "Rent Alerts", color: "#00F0FF", bg: "rgba(0,240,255,0.1)", border: "rgba(0,240,255,0.25)", on: true },
+{ icon: "🔔", name: "Rent Alerts", color: "#00F0FF", bg: "rgba(0,240,255,0.1)", border: "rgba(0,240,255,0.25)", on: true, onPress: handleRentAlertsPress },
   { icon: "📊", name: "Market Reports", color: "#7C3AED", bg: "rgba(124,58,237,0.1)", border: "rgba(124,58,237,0.25)", on: true },
   { icon: "💳", name: "Auto-Pay", color: "#00FFA3", bg: "rgba(0,255,163,0.1)", border: "rgba(0,255,163,0.25)", on: false },
 ].map((item, i, arr) => (

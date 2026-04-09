@@ -19,6 +19,7 @@ interface PropertyApi {
   id?: number;
   title: string;
   location: string;
+  floor: string;
   price: number;
   beds: number;
   baths: number;
@@ -360,6 +361,33 @@ useEffect(() => {
           </div>
           <div>
             <label style={{ display: "block", fontWeight: 600, fontSize: "14px", marginBottom: "8px", color: "var(--neon-blue)" }}>
+            Floor *
+          </label>
+           <input
+            type="text"
+            placeholder="e.g. 2nd, Ground, 1"
+            value={data.floor || ""}
+            onChange={(e) =>
+              setData({ ...data, floor: e.target.value })
+            }
+             style={{
+              width: "100%",
+              backgroundColor: "rgba(17,24,39,0.5)",
+              border: "1px solid var(--border-glow)",
+              borderRadius: "12px",
+              padding: "14px 20px",
+              fontSize: "14px",
+              color: "var(--text-primary)"
+            }}
+            required
+          />
+          </div>
+        </div>
+
+        {/* Beds + Baths */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+          <div>
+            <label style={{ display: "block", fontWeight: 600, fontSize: "14px", marginBottom: "8px", color: "var(--neon-blue)" }}>
             Bedrooms *
           </label>
            <input
@@ -381,10 +409,6 @@ useEffect(() => {
             required
           />
           </div>
-        </div>
-
-        {/* Baths + Sqft */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
           <div>
             <label style={{ display: "block", fontWeight: 600, fontSize: "14px", marginBottom: "8px", color: "var(--neon-blue)" }}>
             Baths *
@@ -408,6 +432,10 @@ useEffect(() => {
             required
           />
           </div>
+        </div>
+
+        {/* Baths + Sqft */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
           <div>
             <label style={{ display: "block", fontWeight: 600, fontSize: "14px", marginBottom: "8px", color: "var(--neon-blue)" }}>
             Sqft *
@@ -431,11 +459,7 @@ useEffect(() => {
             required
           />
           </div>
-        </div>
-
-        {/* Status + Amenities */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-          <div>
+           <div>
             <label style={{ display: "block", fontWeight: 600, fontSize: "14px", marginBottom: "8px", color: "var(--neon-blue)" }}>
             Status *
           </label>
@@ -461,7 +485,10 @@ useEffect(() => {
           ))}
           </select>
           </div>
+        </div>
 
+        {/* Status + Amenities */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
 <div>
   <label
     style={{
