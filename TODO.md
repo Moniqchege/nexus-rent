@@ -1,32 +1,34 @@
-# Nexus Rent - Notifications Refactor TODO
+# Nexus-Rent: Add Reviews and Survey Tabs to Notifications Page
 
-## Approved Plan Summary
-- New send page: `/notifications/send`
-- Current notifications page → Sent messages list
-- Filter users by Property (apartment) & Floor (add to Property model)
-- Users fetched via UserProperty → Property relations
+## Status: 🚀 In Progress
 
-## Steps (0/14 ✅)
+## Steps:
 
-### Backend (5 steps)
-- [✅] 1. Add `floor: String?` to Property model in `backend/prisma/schema.prisma`
-- [✅] 2. Create & run migration: `npx prisma migrate dev --name add_floor_to_property` (Migration 20260408103919 applied)
-- [⚠️] 3. `npx prisma generate` (EPERM error, prisma client outdated - run `npm i --save-dev prisma@latest @prisma/client@latest` if needed)
-- [✅] 4. Add `GET /notifications/sent` endpoint in `backend/src/routes/notifications.ts` (landlord's sent notifications)
-- [✅] 5. Update `GET /notifications/users` with `?propertyId=&floor=` filters via UserProperty join
+### 1. ✅ Create TODO.md (Done)
 
-### Frontend Core (5 steps)
-- [✅] 6. Update property components: Add floor to interfaces/display in PropertyCard.tsx, PropertyTable.tsx, PropertyForm.tsx
-- [✅] 7. Create `frontend/app/notifications/send/page.tsx` (send UI + property/floor filters)
-- [✅] 8. Convert `frontend/app/notifications/page.tsx` to sent messages list
-- [✅] 9. Update `frontend/app/notifications/layout.tsx` with tabs navigation
-- [✅] 10. Add property fetch for filter dropdown in send page
+### 2. ✅ Update Prisma Schema
+- Edit `backend/prisma/schema.prisma`: Add `Survey` and `SurveyResponse` models
+- Run migration: `cd backend && npx prisma migrate dev --name add_surveys` (in progress)
 
-### Testing & Polish (4 steps)
-- [ ] 11. Restart backend/frontend, test send → appears in sent list
-- [ ] 12. Test filters: propertyId shows users in that property, floor filters further
-- [ ] 13. Update Sidebar if needed
-- [ ] 14. ✅ Complete & cleanup TODO.md
+### 3. ✅ Update Backend Routes
+- Edit `backend/src/routes/notifications.ts`: Add survey endpoints (/surveys/sent GET, /surveys/send POST, /surveys/users GET)
 
-**Next: Backend schema → migration → generate → API endpoints**
+### 4. ✅ Update Frontend Layout
+- Edit `frontend/app/notifications/layout.tsx`: Add tabs (Notifications, Reviews, Surveys)
 
+### 5. ✅ Create Reviews Page
+- Create `frontend/app/notifications/reviews/page.tsx`: Table fetching /notifications/reviews
+
+### 6. ✅ Create Surveys Table Page
+- Create `frontend/app/notifications/surveys/page.tsx`: Table like notifications/page.tsx for surveys
+
+### 7. ✅ Create New Survey Page
+- Create `frontend/app/notifications/surveys/new/page.tsx`: Form like send/page.tsx for surveys
+
+### 8. ✅ Complete!
+- All files implemented: tabs, reviews table, surveys table + generate form
+- Backend APIs ready (/reviews, /surveys/sent, /surveys/send, /surveys/users)
+- Prisma schema updated with models/relations
+- Test: Start backend (`cd backend && npm start` or nodemon), frontend dev server, navigate /notifications
+
+## Next Step: Update Prisma Schema

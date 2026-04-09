@@ -132,11 +132,66 @@ router.get("/users", async (req, res) => {
   }
 });
 
+// GET /api/notifications/surveys/users - Alias for surveys (reuse same logic)
+router.get("/surveys/users", async (req, res) => {
+  return router.get("/users")(req, res);
+});
+
 // POST /api/notifications/send - Send message to selected users
 router.post("/send", async (req, res) => {
+
+  // POST /api/notifications/surveys/send - Send survey to selected users
+  router.post("/surveys/send", async (req, res) => {
+    const authReq = req as AuthRequest;
+    try {
+      const { title, questions, userIds } = req.body;
+
+      if (!title || title.trim().length === 0) {
+        return res.status(400).json({ error: "Title is required" });
+      }
+      if (!questions || !Array.isArray(questions) || questions.length === 0) {
+        return res.status(400).json({ error: "Questions array is required" });
+      }
+      if (!Array.isArray(userIds) || userIds.length === 0) {
+        return res.status(400).json({ error: "Select at least one user" });
+      }
+
+      // Verify all userIds exist
+      const validUsers = await db.user.findMany({
+        where: {
+          id: { in: userIds }
+        }
+      });
+
+      if (validUsers.length !== userIds.length) {
+        return res.status(403).json({ error: "Invalid users selected" });
+      }
+
+      const survey = await db.survey.create({
+        data: {
+          title: title.trim(),
+          questions,
+          landlordId: authReq.userId!,
+          recipientIds: userIds.map(id => String(id))
+        }
+      });
+
+      res.status(201).json({
+        message: "Survey sent successfully",
+        surveyId: survey.id
+      });
+    } catch (error) {
+      console.error("Send survey error:", error);
+      res.status(500).json({ error: "Failed to send survey" });
+    }
+  });
   const authReq = req as AuthRequest;
   try {
-    const { message, userIds } = req.body;
+    const { title, message, userIds } = req.body;
+
+    if (!title || title.trim().length === 0) {
+  return res.status(400).json({ error: "Title is required" });
+}
 
     if (!message || message.trim().length === 0) {
       return res.status(400).json({ error: "Message is required" });
@@ -159,9 +214,10 @@ router.post("/send", async (req, res) => {
 
     const notification = await db.notification.create({
       data: {
+        title: title.trim(),
         message: message.trim(),
         landlordId: authReq.userId!,
-        recipientIds: userIds.map(id => String(id)) // JSON array
+        recipientIds: userIds.map(id => String(id)) 
       }
     });
 
@@ -177,6 +233,51 @@ router.post("/send", async (req, res) => {
 
 // GET /api/notifications/sent - Get landlord's sent notifications
 router.get("/sent", async (req, res) => {
+
+  // GET /api/notifications/surveys/sent - Get landlord's sent surveys
+  router.get("/surveys/sent", async (req, res) => {
+    const authReq = req as AuthRequest;
+    try {
+      const { page = 1, limit = 20 } = req.query;
+      const skip = (Number(page) - 1) * Number(limit);
+
+      const surveys = await db.survey.findMany({
+        where: { landlordId: authReq.userId! },
+        select: {
+          id: true,
+          title: true,
+          recipientIds: true,
+          sentAt: true
+        },
+        orderBy: { sentAt: "desc" },
+        take: Number(limit),
+        skip
+      });
+
+      const surveysWithCount = surveys.map(s => ({
+        ...s,
+        recipientCount: Array.isArray(s.recipientIds) ? s.recipientIds.length : 0,
+        responseCount: 0 // TODO: add subquery if needed
+      }));
+
+      const total = await db.survey.count({
+        where: { landlordId: authReq.userId! }
+      });
+
+      res.json({
+        surveys: surveysWithCount,
+        pagination: {
+          page: Number(page),
+          limit: Number(limit),
+          total,
+          pages: Math.ceil(total / Number(limit))
+        }
+      });
+    } catch (error) {
+      console.error("Sent surveys error:", error);
+      res.status(500).json({ error: "Failed to fetch sent surveys" });
+    }
+  });
   const authReq = req as AuthRequest;
   try {
     const { page = 1, limit = 20 } = req.query;
@@ -187,6 +288,7 @@ router.get("/sent", async (req, res) => {
       where: { landlordId: authReq.userId! },
       select: {
         id: true,
+        title: true,
         message: true,
         recipientIds: true,
         isRead: true,

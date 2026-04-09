@@ -1,21 +1,21 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAuthStore } from "../store/authStore";
-import api from "../lib/api";
+import { useAuthStore } from "../../store/authStore";
+import api from "../../lib/api";
 import { useRouter } from "next/navigation";
 
-interface SentNotification {
+interface SentSurvey {
   id: number;
-  message: string;
+  title: string;
   recipientIds: string[];
-  recipientCount?: number; 
-  isRead: boolean;
+  recipientCount: number;
+  responseCount: number;
   sentAt: string;
 }
 
 interface SentResponse {
-  notifications: SentNotification[];
+  surveys: SentSurvey[];
   pagination: {
     page: number;
     limit: number;
@@ -24,8 +24,8 @@ interface SentResponse {
   };
 }
 
-export default function NotificationsPage() {
-  const [sentNotifications, setSentNotifications] = useState<SentNotification[]>([]);
+export default function SurveysPage() {
+  const [sentSurveys, setSentSurveys] = useState<SentSurvey[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [page, setPage] = useState(1);
@@ -34,29 +34,27 @@ export default function NotificationsPage() {
   const [pages, setPages] = useState(0);
   const router = useRouter();
 
-  const { user } = useAuthStore();
-
-  const fetchSentNotifications = async (pageNum = 1) => {
+  const fetchSentSurveys = async (pageNum = 1) => {
     try {
       setLoading(true);
       setError('');
       
-      const res = await api.get(`/notifications/sent?page=${pageNum}&limit=${limit}`);
+      const res = await api.get(`/notifications/surveys/sent?page=${pageNum}&limit=${limit}`);
       const data = res.data as SentResponse;
       
-      setSentNotifications(data.notifications);
+      setSentSurveys(data.surveys);
       setTotal(data.pagination.total);
       setPages(data.pagination.pages);
       setPage(data.pagination.page);
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to fetch sent notifications');
+      setError(err.response?.data?.error || 'Failed to fetch sent surveys');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchSentNotifications(page);
+    fetchSentSurveys(page);
   }, [page]);
 
   const formatDate = (dateString: string) => {
@@ -69,32 +67,27 @@ export default function NotificationsPage() {
     });
   };
 
- const truncateMessage = (message: string, max = 60) => {
-  if (!message) return "";
-  return message.length > max
-    ? message.slice(0, max).trim() + "…"
-    : message;
-};
-
-  const getStatus = (notification: SentNotification) => {
-  return notification.isRead ? "Read" : "Unread";
-};
+  const truncateTitle = (title: string, max = 60) => {
+    if (!title) return "";
+    return title.length > max
+      ? title.slice(0, max).trim() + "…"
+      : title;
+  };
 
   return (
     <div className="dashboard-content">
-      <div className="page-tag">📡SENT MESSAGES</div>
+      <div className="page-tag">🛡️SENT SURVEYS</div>
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          // marginBottom: "24px",
         }}
       >
-        <div className="section-label">NOTIFICATIONS</div>
+        <div className="section-label">SURVEYS</div>
 
         <button
-          onClick={() => router.push("/notifications/send")}
+          onClick={() => router.push("/notifications/surveys/new")}
           style={{
             background: "linear-gradient(to right, var(--neon-blue), var(--neon-purple))",
             color: "white",
@@ -106,31 +99,40 @@ export default function NotificationsPage() {
             fontSize: "14px",
           }}
         >
-          + New Message
+          + New Survey
         </button>
       </div>
       <div style={{ marginBottom: "24px" }}>
-        <h2 style={{ fontSize: "20px", fontWeight: 700, color: "var(--neon-purple)" }}>
-          Sent Messages
+        <h2 style={{ fontSize: "24px", fontWeight: 700, color: "var(--neon-purple)" }}>
+          Sent Surveys
         </h2>
       </div>
 
       {loading ? (
         <div className="glass-panel" style={{ textAlign: "center", padding: "64px" }}>
-          Loading sent messages...
+          Loading sent surveys...
         </div>
-      ) : sentNotifications.length === 0 ? (
+      ) : sentSurveys.length === 0 ? (
         <div className="glass-panel" style={{ textAlign: "center", padding: "4px 32px", color: "var(--text-secondary)" }}>
-          <div style={{ fontSize: "48px", marginBottom: "4px" }}>📡</div>
-           <div style={{ fontSize: "14px" }}>No sent messages yet.</div>
+          <div style={{ fontSize: "48px", marginBottom: "4px" }}>🛡️</div>
+          <div style={{ fontSize: "14px" }}>No sent surveys yet.</div>
           <div style={{ marginTop: "6px", marginBottom: "8px" }}>
-            <a href="/notifications/send" style={{ 
-              color: "var(--neon-blue)", 
-              textDecoration: "none", 
-              fontWeight: 500 
-            }}>
-              Send your first message →
-            </a>
+            <button
+              onClick={() => router.push("/notifications/surveys/new")}
+              style={{
+                background: "linear-gradient(to right, var(--neon-blue), var(--neon-purple))",
+                color: "white",
+                borderRadius: "12px",
+                padding: "8px 20px",
+                border: "none",
+                fontWeight: 500,
+                cursor: "pointer",
+                textDecoration: "none",
+                fontSize: "14px"
+              }}
+            >
+              Create your first survey →
+            </button>
           </div>
         </div>
       ) : (
@@ -140,35 +142,29 @@ export default function NotificationsPage() {
               <tr style={{ textAlign: "left", borderBottom: "2px solid var(--border-glow)" }}>
                 <th>#</th>
                 <th style={{ padding: "12px" }}>Date</th>
-                <th style={{ padding: "12px" }}>Message</th>
+                <th style={{ padding: "12px" }}>Title Preview</th>
                 <th style={{ padding: "12px" }}>Recipients</th>
-                <th style={{ padding: "12px" }}>Status</th>
+                <th style={{ padding: "12px" }}>Responses</th>
               </tr>
             </thead>
             <tbody>
-              {sentNotifications.map((notification, index) => (
-                <tr key={notification.id} style={{ borderBottom: "1px solid var(--border-glow)", backgroundColor: "rgba(17,24,39,0.4)" }}>
+              {sentSurveys.map((survey, index) => (
+                <tr key={survey.id} style={{ borderBottom: "1px solid var(--border-glow)", backgroundColor: "rgba(17,24,39,0.4)" }}>
                   <td style={{ padding: "12px", color: "var(--text-secondary)" }}>
-                {index + 1}
-              </td>
-                  <td style={{ padding: "12px", fontSize: "12px", color: "var(--neon-secondary)" }}>
-                    {formatDate(notification.sentAt)}
+                    {index + 1}
                   </td>
-                 <td style={{ padding: "12px", fontSize: "12px", color: "var(--neon-secondary)" }}>
-                   {truncateMessage(notification.title, 60)}
-                 </td>
                   <td style={{ padding: "12px", fontSize: "12px", color: "var(--neon-secondary)" }}>
-                    {notification.recipientCount ?? notification.recipientIds.length}
+                    {formatDate(survey.sentAt)}
                   </td>
-              <td style={{ padding: "12px", display: "flex", alignItems: "center" }}>
-                <button
-                  className={`action-btn status-btn ${
-                   notification.isRead ? "status-read" : "status-unread"
-               }`}
-              >
-                  {notification.isRead ? "Read" : "Unread"}
-                </button>
-              </td>
+                  <td style={{ padding: "12px", fontSize: "12px", color: "var(--neon-secondary)" }}>
+                    {truncateTitle(survey.title, 60)}
+                  </td>
+                  <td style={{ padding: "12px", fontSize: "12px", color: "var(--neon-blue)" }}>
+                    {survey.recipientCount}
+                  </td>
+                  <td style={{ padding: "12px", fontSize: "12px", color: survey.responseCount > 0 ? "var(--neon-green)" : "var(--text-secondary)" }}>
+                    {survey.responseCount}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -178,4 +174,3 @@ export default function NotificationsPage() {
     </div>
   );
 }
-

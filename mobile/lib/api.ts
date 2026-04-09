@@ -122,22 +122,20 @@ const api = {
         return response.json();
     },
 
-    async getNotifications(token: string, unreadOnly = false): Promise<any[]> {
-        const headers: Record<string, string> = {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        };
+async getNotifications(token: string): Promise<any[]> {
+    const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+    };
+    const response = await fetch(`${API_BASE}/api/notifications`, { headers });
 
-        const url = `${API_BASE}/api/notifications${unreadOnly ? '?unread=true' : ''}`;
-        const response = await fetch(url, { headers });
+    if (!response.ok) {
+        if (response.status === 401) throw new Error('Unauthorized');
+        throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+    }
 
-        if (!response.ok) {
-            if (response.status === 401) throw new Error('Unauthorized');
-            throw new Error(`HTTP ${response.status}: ${await response.text()}`);
-        }
-
-        return response.json();
-    },
+    return response.json(); 
+},
 
     async markNotificationRead(id: number, token: string): Promise<any> {
         const headers: Record<string, string> = {

@@ -133,9 +133,9 @@ export default function SendNotificationPage() {
   const [filterFloor, setFilterFloor] = useState('');
   const [propertiesLoading, setPropertiesLoading] = useState(true);
   const [usersLoading, setUsersLoading] = useState(true);
-
   const { user } = useAuthStore();
   const router = useRouter();
+  const [title, setTitle] = useState('');
 
   // Fetch properties for filter dropdown
   useEffect(() => {
@@ -197,6 +197,7 @@ export default function SendNotificationPage() {
     setError('');
     try {
       const res = await api.post('/notifications/send', {
+        title: title.trim(),
         message: message.trim(),
         userIds: selectedUsers,
       });
@@ -205,7 +206,7 @@ export default function SendNotificationPage() {
         setError('Message sent successfully!');
         setMessage('');
         setSelectedUsers([]);
-        fetchUsers(); // Refresh user list if needed
+        fetchUsers(); 
         setTimeout(() => setError(''), 3000);
       }
     } catch (err: any) {
@@ -217,7 +218,7 @@ export default function SendNotificationPage() {
 
   return (
     <div className="dashboard-content">
-      <div className="page-tag">📤 SEND NOTIFICATION</div>
+      <div className="page-tag">📡 SEND NOTIFICATION</div>
        <div
         style={{
           display: "flex",
@@ -341,14 +342,31 @@ export default function SendNotificationPage() {
         </div>
 
         {/* Message & Send */}
-        <div className="glass-panel">
+        <div className="glass-panel" style={{marginBottom: "40px"}}>
+        <label style={{ display: "block", fontWeight: 600, fontSize: "12px", marginBottom: "8px" }}>Message Title</label>
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="e.g. Rent Reminder, Water Shutdown Notice"
+          style={{
+            width: "100%",
+            padding: "12px 16px",
+            border: "1px solid var(--border-glow)",
+            borderRadius: "12px",
+            background: "rgba(255,255,255,0.03)",
+            color: "var(--text-primary)",
+            marginBottom: "24px",
+            fontSize: "14px"
+          }}
+        />
           <textarea
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            placeholder="Type your message here... (Rent due, maintenance notice, etc.)"
+            placeholder="Type your message here..."
             style={{
               width: "100%",
-              minHeight: "120px",
+              minHeight: "50px",
               padding: "16px",
               border: "1px solid var(--border-glow)",
               borderRadius: "12px",
@@ -358,12 +376,12 @@ export default function SendNotificationPage() {
               fontFamily: "inherit",
               fontSize: "14px"
             }}
-            rows={4}
+            // rows={2}
           />
-          <div style={{ marginTop: "16px", marginBottom: "26px", textAlign: "right" }}>
+          <div style={{ marginTop: "16px", textAlign: "right" }}>
             <button
               onClick={sendMessage}
-              disabled={loading || !message.trim() || selectedUsers.length === 0}
+              disabled={loading || !message.trim() || !title.trim() || selectedUsers.length === 0}
               style={{
                 padding: "12px 32px",
                 background: loading || !message.trim() || selectedUsers.length === 0 

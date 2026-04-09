@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import MaskedView from "@react-native-masked-view/masked-view";
+import { useAuthStore } from "../../store/authStore";
+import { useNotificationsStore } from "../../store/notificationsStore";
 
-// Color palette
 const colorMap = {
   neon: "#00F0FF",
   purple: "#7C3AED",
@@ -13,58 +14,6 @@ const colorMap = {
   muted: "#888",
   neutral: "#E8E8E8"
 };
-
-// Sample notifications
-const notifications = [
-  {
-    icon: "🤖",
-    title: "Rent Increase Alert",
-    text: "AI predicts a 20% rent adjustment for Sky Vista Penthouse starting May 2025. Review your options before the deadline.",
-    time: "2 hours ago",
-    status: "danger",
-    unread: true,
-  },
-  {
-    icon: "📄",
-    title: "Lease Renewal Reminder",
-    text: "Your lease expires July 15, 2025 — 147 days away. Start the renewal process to secure your current rate.",
-    time: "Yesterday, 3:42 PM",
-    status: "neutral",
-    unread: true,
-  },
-  {
-    icon: "✅",
-    title: "Payment Confirmed",
-    text: "Your February rent payment of $2,400 was received and confirmed. Receipt sent to your email.",
-    time: "Feb 1, 2025 · 9:12 AM",
-    status: "success",
-    unread: true,
-  },
-  {
-    icon: "📊",
-    title: "Market Report Ready",
-    text: "January 2025 Westlands area market analysis is available. Development index up 12.3%.",
-    time: "Jan 31, 2025",
-    status: "neutral",
-    unread: false,
-  },
-  {
-    icon: "🔧",
-    title: "Maintenance Resolved",
-    text: "Your AC maintenance request has been completed. Technician: James M. Duration: 2h 30m.",
-    time: "Jan 10, 2025",
-    status: "warn",
-    unread: false,
-  },
-  {
-    icon: "🎉",
-    title: "Lease Extended",
-    text: "Your lease for Sky Vista Penthouse has been successfully extended for 6 months.",
-    time: "Jan 15, 2025",
-    status: "success",
-    unread: false,
-  },
-];
 
 function GradientTitle({ text }: { text: string }) {
   return (
@@ -85,6 +34,25 @@ function GradientTitle({ text }: { text: string }) {
 }
 
 export default function Alerts() {
+  const token = useAuthStore(state => state.token);
+  const {
+    notifications,
+    unreadCount,
+    fetchNotifications,
+    markRead,
+  } = useNotificationsStore();
+  useEffect(() => {
+    if (token) {
+      fetchNotifications(token);
+    }
+  }, [token]);
+  const handleMarkAll = async () => {
+    if (!token) return;
+    const unreadNotifications = notifications.filter(n => !n.isRead);
+    for (const n of unreadNotifications) {
+      await markRead(n.id, token);
+    }
+  };
   return (
     <View style={styles.container}>
       {/* Ambient Glow */}
@@ -97,7 +65,7 @@ export default function Alerts() {
             <Text style={styles.pageGreeting}>UPDATES & ALERTS</Text>
             <GradientTitle text="Notifications" />
           </View>
-          <TouchableOpacity style={styles.markAllBtn}>
+          <TouchableOpacity style={styles.markAllBtn} onPress={handleMarkAll}>
             <Text style={styles.markAllText}>Mark All</Text>
           </TouchableOpacity>
         </View>
@@ -106,6 +74,7 @@ export default function Alerts() {
 <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 20, marginBottom: 12 }}>
   <Text style={styles.sectionTitle}>NEW</Text>
   <View style={{ flex: 1 }} /> 
+  {unreadCount > 0 && (
   <View style={{ 
     backgroundColor: colorMap.danger, 
     borderRadius: 8, 
@@ -114,6 +83,7 @@ export default function Alerts() {
   }}>
     <Text style={{ color: "#fff", fontSize: 9, fontFamily: "Orbitron" }}>3</Text>
   </View>
+  )}
 </View>
 
         {/* Notification List */}
@@ -143,7 +113,7 @@ export default function Alerts() {
                     : { backgroundColor: "rgba(136,136,136,0.08)", borderColor: "rgba(136,136,136,0.15)" },
                 ]}
               >
-                <Text style={{ fontSize: 18 }}>{t.icon}</Text>
+                <Text style={{ fontSize: 18 }}>{t.icon ?? "🔔"}</Text>
               </View>
 
               <View style={styles.notifBody}>
@@ -156,13 +126,13 @@ export default function Alerts() {
                     t.status === "warn" && { color: colorMap.warn },
                   ]}
                 >
-                  {t.title}
+                  {t.title ?? "Notification"}
                 </Text>
-                <Text style={styles.notifText}>{t.text}</Text>
-                <Text style={styles.notifTime}>{t.time}</Text>
+                <Text style={styles.notifText}>{t.message}</Text>
+                <Text style={styles.notifTime}>{t.sentAt}</Text>
               </View>
 
-              {t.unread && (
+              {!t.isRead && (
                 <View
                   style={[
                     styles.unreadDot,

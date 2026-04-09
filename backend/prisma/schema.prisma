@@ -30,6 +30,8 @@ model User {
   Notification   Notification[]
   passwordResetTokens PasswordResetToken[]
   otpCodes       OtpCode[]
+  surveys        Survey[]
+  surveyResponses SurveyResponse[]
 }
 
 model Session {
@@ -108,7 +110,7 @@ model Tenant {
 
 model Review {
   id         Int       @id @default(autoincrement())
-  rating     Int // 1-5
+  rating     Int
   comment    String?
   propertyId Int
   tenantId   Int
@@ -119,6 +121,7 @@ model Review {
 
 model Notification {
   id         Int      @id @default(autoincrement())
+  title        String 
   message    String
   landlordId Int?
   recipientIds Json
@@ -168,4 +171,29 @@ model Amenity {
   label     String
   category  String
   createdAt DateTime @default(now())
+}
+
+model Survey {
+  id           Int      @id @default(autoincrement())
+  title        String
+  questions    Json     /// Array of {question: string, type: "text"|"multiple"|"rating"}
+  landlordId   Int?
+  recipientIds Json    /// Array of user IDs as strings
+  sentAt       DateTime @default(now())
+  landlord     User?    @relation(fields: [landlordId], references: [id])
+
+  responses SurveyResponse[]
+}
+
+model SurveyResponse {
+  id           Int      @id @default(autoincrement())
+  surveyId     Int
+  userId       Int
+  answers      Json     /// Array of responses matching questions
+  submittedAt  DateTime @default(now())
+  
+  survey Survey  @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  user   User    @relation(fields: [userId], references: [id])
+  
+  @@unique([surveyId, userId])
 }
