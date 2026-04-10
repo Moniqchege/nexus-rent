@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 
 interface SentNotification {
   id: number;
+  title: string;
   message: string;
   recipientIds: string[];
   recipientCount?: number; 
@@ -41,7 +42,7 @@ export default function NotificationsPage() {
       setLoading(true);
       setError('');
       
-      const res = await api.get(`/notifications/sent?page=${pageNum}&limit=${limit}`);
+      const res = await api.get(`/api/notifications/sent?page=${pageNum}&limit=${limit}`);
       const data = res.data as SentResponse;
       
       setSentNotifications(data.notifications);

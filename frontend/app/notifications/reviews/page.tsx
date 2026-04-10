@@ -33,7 +33,7 @@ export default function ReviewsPage() {
     try {
       setLoading(true);
       setError('');
-      const res = await api.get('/notifications/reviews');
+      const res = await api.get('/api/notifications/reviews');
       setReviews(res.data);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to fetch reviews');

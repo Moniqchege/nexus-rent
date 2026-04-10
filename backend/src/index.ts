@@ -13,6 +13,8 @@ import rolesRoutes from "./routes/roles.js";
 import usersRoutes from "./routes/users.js";
 import propertiesRoutes from "./routes/properties.js";
 import adminRoutes from "./routes/admin.js";
+import servicesRoutes from "./routes/services.js";
+
 import { setupOAuth } from "./services/oauthStrategies.js";
 
 
@@ -89,6 +91,7 @@ app.use("/api/notifications", notificationsRoutes);
 app.use("/api/roles", rolesRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/properties", propertiesRoutes);
+app.use("/api/services", servicesRoutes);
 app.use("/api/admin", adminRoutes);
 app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));
 

@@ -197,3 +197,36 @@ model SurveyResponse {
   
   @@unique([surveyId, userId])
 }
+
+model ServiceCategory {
+  id          Int      @id @default(autoincrement())
+  name        String
+  slug        String   @unique
+  icon        String   // emoji
+  description String?
+  createdAt   DateTime @default(now())
+  
+  providers   ServiceProvider[]
+}
+
+model ServiceProvider {
+  id            Int            @id @default(autoincrement())
+  name          String
+  phone         String
+  email         String?
+  categoryId    Int
+  hourlyRate    Float?
+  location      String?
+  rating        Float?         @default(0)
+  isActive      Boolean        @default(true)
+  bio           String?
+  image         String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  
+  category      ServiceCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  
+  @@index([categoryId])
+  @@index([isActive])
+}
+

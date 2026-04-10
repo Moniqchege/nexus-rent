@@ -1,6 +1,8 @@
 import { View, Text, ScrollView, StyleSheet, Image } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import MaskedView from "@react-native-masked-view/masked-view";
+import { useRouter } from 'expo-router';
+import { Pressable } from 'react-native';
 import { useAuthStore } from "../../store/authStore";
 
 type ColorKey = "neon" | "purple" | "success" | "danger" | "warn";
@@ -36,9 +38,9 @@ const colorMap: Record<ColorKey, { box: any; text: any; bar: any }> = {
 
 // Quick actions
 const quickActions: { icon: string; label: string; color: ColorKey }[] = [
-  { icon: "💳", label: "Pay Rent", color: "neon" },
-  { icon: "📄", label: "My Lease", color: "purple" },
-  { icon: "🔧", label: "Maintenance", color: "success" },
+  { icon: "⚡", label: "Pay Rent", color: "neon" },
+  { icon: "💾", label: "My Lease", color: "purple" },
+  { icon: "🛠️", label: "Services", color: "success" },
   { icon: "📞", label: "Contact", color: "danger" },
 ];
 
@@ -92,6 +94,7 @@ function GradientTitle({ text }: { text: string }) {
 }
 
 export default function Home() {
+  const router = useRouter();
   const user = useAuthStore((state) => state.user);
 
   const firstName = user?.name?.split(" ").slice(0, 2).join(" ") || "User";
@@ -192,12 +195,20 @@ export default function Home() {
         <Text style={styles.sectionTitle}>QUICK ACTIONS</Text>
         <View style={styles.quickActions}>
           {quickActions.map((item, i) => (
-            <View key={i} style={{ alignItems: "center" }}>
-              <View style={[{ width: 56, height: 56, borderRadius: 16, alignItems: "center", justifyContent: "center" }, colorMap[item.color].box]}>
+            <Pressable 
+              key={i} 
+              style={{ alignItems: "center" }}
+              onPress={() => {
+                if (item.label === 'Services') {
+                  router.push('/(tabs)/services');
+                }
+              }}
+            >
+              <View style={[{ width: 56, height: 56, borderRadius: 16, alignItems: "center", justifyContent: "center" }, colorMap[item.color].box]}> 
                 <Text>{item.icon}</Text>
               </View>
               <Text style={styles.textTiny}>{item.label}</Text>
-            </View>
+            </Pressable>
           ))}
         </View>
 

@@ -1,5 +1,6 @@
 import Constants from 'expo-constants';
 import { Property } from '../types/property';
+import { ServiceCategory, ServiceProvider } from '../types/service';
 
 export const API_BASE = Constants.expoConfig?.extra?.apiUrl ?? 'https://lavenia-pronounceable-radically.ngrok-free.dev';
 
@@ -154,6 +155,41 @@ const api = {
         }
 
         return response.json();
+    },
+
+    async getServiceCategories(token: string): Promise<ServiceCategory[]> {
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        };
+
+        const response = await fetch(`${API_BASE}/api/services/categories`, { headers });
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+        }
+
+        const data = await response.json();
+        return data.categories || [];
+    },
+
+    async getProviders(token: string, categoryId?: number): Promise<ServiceProvider[]> {
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        };
+
+        const params = new URLSearchParams();
+        if (categoryId) params.append('categoryId', categoryId.toString());
+
+        const response = await fetch(`${API_BASE}/api/services/providers?${params}`, { headers });
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+        }
+
+        const data = await response.json();
+        return data.providers || [];
     },
 };
 

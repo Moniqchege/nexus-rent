@@ -39,7 +39,7 @@ export default function SurveysPage() {
       setLoading(true);
       setError('');
       
-      const res = await api.get(`/notifications/surveys/sent?page=${pageNum}&limit=${limit}`);
+      const res = await api.get(`/api/notifications/surveys/sent?page=${pageNum}&limit=${limit}`);
       const data = res.data as SentResponse;
       
       setSentSurveys(data.surveys);
