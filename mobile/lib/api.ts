@@ -3,9 +3,6 @@ import { Property } from '../types/property';
 
 export const API_BASE = Constants.expoConfig?.extra?.apiUrl ?? 'https://lavenia-pronounceable-radically.ngrok-free.dev';
 
-console.log('🔍 API_BASE is:', API_BASE);
-console.log('🔍 expoConfig extra:', Constants.expoConfig?.extra);
-
 const api = {
     async fetchProperties(token?: string): Promise<Property[]> {
         const headers: HeadersInit = {
@@ -122,20 +119,24 @@ const api = {
         return response.json();
     },
 
-async getNotifications(token: string): Promise<any[]> {
-    const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-    };
-    const response = await fetch(`${API_BASE}/api/notifications`, { headers });
+    async getNotifications(token: string): Promise<any[]> {
+        const url = `${API_BASE}/api/notifications`;
+        const response = await fetch(url, {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
 
-    if (!response.ok) {
-        if (response.status === 401) throw new Error('Unauthorized');
-        throw new Error(`HTTP ${response.status}: ${await response.text()}`);
-    }
+        const text = await response.text();
+        console.log('🧾 Raw response:', text);
 
-    return response.json(); 
-},
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${text}`);
+        }
+        const json = JSON.parse(text);
+        return json.notifications ?? [];
+    },
 
     async markNotificationRead(id: number, token: string): Promise<any> {
         const headers: Record<string, string> = {

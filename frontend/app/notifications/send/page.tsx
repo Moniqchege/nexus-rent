@@ -161,7 +161,7 @@ export default function SendNotificationPage() {
       if (filterPropertyId) params.append('propertyId', filterPropertyId.toString());
       if (filterFloor) params.append('floor', filterFloor);
 
-      const res = await api.get(`/notifications/users?${params.toString()}`);
+      const res = await api.get(`/api/notifications/users?${params.toString()}`);
       setUsers(res.data);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to load users');
@@ -196,7 +196,7 @@ export default function SendNotificationPage() {
     setLoading(true);
     setError('');
     try {
-      const res = await api.post('/notifications/send', {
+      const res = await api.post('/api/notifications/send', {
         title: title.trim(),
         message: message.trim(),
         userIds: selectedUsers,

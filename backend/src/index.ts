@@ -85,7 +85,7 @@ app.use(
   express.static(path.join(__dirname, "../uploads"))
 );
 app.use("/auth", authRoutes);
-app.use("/notifications", notificationsRoutes);
+app.use("/api/notifications", notificationsRoutes);
 app.use("/api/roles", rolesRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/properties", propertiesRoutes);

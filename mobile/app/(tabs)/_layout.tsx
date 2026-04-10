@@ -3,6 +3,7 @@ import { useAuthStore } from '../../store/authStore';
 import { useEffect } from 'react';
 import { useRouter, useSegments } from 'expo-router';
 import { View, Image } from 'react-native';
+import { useNotificationsStore } from '../../store/notificationsStore';
 
 function TabIcon({ source }: { source: any }) {
   return (
@@ -15,6 +16,37 @@ function TabIcon({ source }: { source: any }) {
         }}
         resizeMode="contain"
       />
+    </View>
+  );
+}
+
+function AlertsTabIcon({ source }: { source: any }) {
+  const computedUnreadCount = useNotificationsStore(
+    state => state.notifications.filter(n => !n.isRead).length
+  );
+
+  return (
+    <View style={{ alignItems: "center", justifyContent: "center" }}>
+      <Image
+        source={source}
+        style={{ width: 32, height: 32 }}
+        resizeMode="contain"
+      />
+      {computedUnreadCount > 0 && (
+        <View style={{
+          position: "absolute",
+          top: 2,
+          right: 1,
+          width: 10,
+          height: 10,
+          borderRadius: 5,
+          backgroundColor: "#00F0FF",
+          shadowColor: "#FF3B81",
+          shadowOffset: { width: 0, height: 0 },
+          shadowOpacity: 0.8,
+          shadowRadius: 3,
+        }} />
+      )}
     </View>
   );
 }
@@ -93,7 +125,7 @@ export default function TabLayout() {
         name="alerts"
         options={{
           tabBarIcon: () => (
-            <TabIcon source={require('../../assets/alerts.png')} />
+            <AlertsTabIcon  source={require('../../assets/alerts.png')} />
           ),
           tabBarLabel: 'Alerts',
         }}

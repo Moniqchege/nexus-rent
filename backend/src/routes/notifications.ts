@@ -132,11 +132,6 @@ router.get("/users", async (req, res) => {
   }
 });
 
-// GET /api/notifications/surveys/users - Alias for surveys (reuse same logic)
-router.get("/surveys/users", async (req, res) => {
-  return router.get("/users")(req, res);
-});
-
 // POST /api/notifications/send - Send message to selected users
 router.post("/send", async (req, res) => {
 
@@ -329,24 +324,23 @@ router.get("/", async (req, res) => {
   const authReq = req as AuthRequest;
   try {
     const { unread } = req.query;
-    const where: any = {
-      recipientIds: {
-        path: ['$.*'],
-        array_contains: authReq.userId!.toString()
-      }
-    };
-    if (unread === 'true') {
-      where.isRead = false;
-    }
 
-    const notifications = await db.notification.findMany({
-      where,
-      orderBy: {
-        sentAt: 'desc'
-      }
+    const allNotifications = await db.notification.findMany({
+      orderBy: { sentAt: 'desc' }
     });
 
-    res.json(notifications);
+    const userId = authReq.userId!.toString();
+
+    let notifications = allNotifications.filter(n => {
+      const ids = n.recipientIds as string[];
+      return ids.includes(userId);
+    });
+
+    if (unread === 'true') {
+      notifications = notifications.filter(n => !n.isRead);
+    }
+
+    res.json({ notifications }); 
   } catch (error) {
     console.error("Notifications error:", error);
     res.status(500).json({ error: "Failed to fetch notifications" });
