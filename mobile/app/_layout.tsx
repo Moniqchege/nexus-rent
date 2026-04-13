@@ -52,23 +52,24 @@ export default function RootLayout() {
   }, [fontsLoaded]);
 
   useEffect(() => {
-    if (!fontsLoaded) return;
+  if (!fontsLoaded) return;
 
-    const inTabsGroup = segments[0] === '(tabs)';
+  const inTabsGroup = segments[0] === '(tabs)';
+  const isAuthFlow = segments[0] === 'reset-password' 
+    || segments[0] === 'otp' 
+    || segments[0] === 'forgot-password' 
+    || segments[0] === 'login';
+  const isServicesRoute = segments[0] === 'services'; // ← add this
 
-    // Allow auth screens (login/reset-password/otp/forgot-password) during firstLogin/OTP flows
-    const isAuthFlow = segments[0] === 'reset-password' || segments[0] === 'otp' || segments[0] === 'forgot-password' || segments[0] === 'login';
+  if (!auth.token && !auth.tempToken && inTabsGroup && !isAuthFlow) {
+    router.replace('/login');
+    return;
+  }
 
-    if (!auth.token && !auth.tempToken && inTabsGroup && !isAuthFlow) {
-      router.replace('/login');
-      return;
-    }
-
-    // Skip home redirect during firstLogin (tempToken + isFirstLogin = allow reset-password flow)
-    if ((auth.token || (auth.tempToken && !auth.isFirstLogin)) && !inTabsGroup && !isAuthFlow) {
-      router.replace('/(tabs)/home');
-    }
-  }, [auth.token, auth.tempToken, segments, router, fontsLoaded]);
+  if ((auth.token || (auth.tempToken && !auth.isFirstLogin)) && !inTabsGroup && !isAuthFlow && !isServicesRoute) {
+    router.replace('/(tabs)/home');
+  }
+}, [auth.token, auth.tempToken, segments, router, fontsLoaded]);
 
   if (!fontsLoaded) return null;
 

@@ -1,6 +1,6 @@
-import { View, Text, StyleSheet, Pressable, Linking } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Linking, Image } from 'react-native';
 import { useEffect, useState } from 'react';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ServiceProvider } from '../../../../types/service';
 import { useAuthStore } from '../../../../store/authStore';
@@ -11,6 +11,7 @@ export default function ProviderDetail() {
   const [provider, setProvider] = useState<ServiceProvider | null>(null);
   const [loading, setLoading] = useState(true);
   const token = useAuthStore((state) => state.token);
+   const router = useRouter();
 
   useEffect(() => {
     if (token && providerId) {
@@ -61,12 +62,28 @@ export default function ProviderDetail() {
   return (
     <View style={styles.container}>
       <LinearGradient 
-        colors={['rgba(0,255,255,0.15)', 'rgba(124,58,237,0.15)']} 
-        style={styles.header}
-      >
-        <Text style={styles.title}>{provider.name}</Text>
-        <Text style={styles.subtitle}>{provider.bio || 'Experienced service provider'}</Text>
-      </LinearGradient>
+  colors={['rgba(0,255,255,0.15)', 'rgba(124,58,237,0.15)']} 
+  style={styles.header}
+>
+
+  {/* Row: Back + Title */}
+  <View style={styles.titleRow}>
+    <Pressable onPress={() => router.back()} style={styles.backButton}>
+      <Image
+        source={require('../../../../assets/back_icon.png')}
+        style={styles.backIcon}
+      />
+    </Pressable>
+
+    <Text style={styles.title}>{provider.name}</Text>
+  </View>
+
+  {/* Subtitle */}
+  <Text style={styles.subtitle}>
+    {provider.bio || 'Experienced service provider'}
+  </Text>
+
+</LinearGradient>
 
       <View style={styles.details}>
         <View style={styles.row}>
@@ -113,25 +130,41 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#060A14',
+    marginTop: 30,
   },
   header: {
-    padding: 30,
-    alignItems: 'center',
+    padding: 20,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(0,255,255,0.3)',
   },
+  titleRow: {
+  flexDirection: 'row',
+  alignItems: 'center', 
+  // marginBottom: 6,
+},
   title: {
-    fontSize: 28,
+    fontSize: 18,
     fontFamily: 'Orbitron',
-    color: '#fff',
+    color: '#00FFFF',
+    paddingLeft: 50,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#ccc',
     textAlign: 'center',
-    marginTop: 8,
+    // marginTop: 4,
     lineHeight: 22,
   },
+    side: {
+  width: 40, 
+  alignItems: 'center',
+  justifyContent: 'center',
+},
+backIcon: {
+  width: 22,
+  height: 22,
+  tintColor: '#00FFFF', 
+},
   details: {
     padding: 24,
     flex: 1,
@@ -165,7 +198,7 @@ const styles = StyleSheet.create({
   },
   callText: {
     color: '#16A34A',
-    fontSize: 18,
+    fontSize: 15,
     fontWeight: 'bold',
     textAlign: 'center',
     fontFamily: 'Orbitron',
@@ -179,7 +212,7 @@ const styles = StyleSheet.create({
   },
   messageText: {
     color: '#00FFFF',
-    fontSize: 18,
+    fontSize: 15,
     fontWeight: 'bold',
     textAlign: 'center',
     fontFamily: 'Orbitron',

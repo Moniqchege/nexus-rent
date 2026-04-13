@@ -19,9 +19,17 @@ export default function ServiceLendersPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
+  const [pageIndex, setPageIndex] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const pageSizeOptions = [5, 10, 20, 50];
+
   useEffect(() => {
     loadProviders();
   }, []);
+
+  useEffect(() => {
+  setPageIndex(0);
+}, [search]);
 
   const loadProviders = async () => {
     try {
@@ -67,8 +75,19 @@ export default function ServiceLendersPage() {
   };
 
   const filteredProviders = providers.filter((p) =>
-    p.name?.toLowerCase().includes(search.toLowerCase())
-  );
+  p.name?.toLowerCase().includes(search.toLowerCase())
+);
+
+const totalElements = filteredProviders.length;
+const totalPages = Math.ceil(totalElements / pageSize);
+
+const pageStart = totalElements === 0 ? 0 : pageIndex * pageSize + 1;
+const pageEnd = Math.min((pageIndex + 1) * pageSize, totalElements);
+
+const paginatedProviders = filteredProviders.slice(
+  pageIndex * pageSize,
+  pageIndex * pageSize + pageSize
+);
 
   if (loading) {
     return (
@@ -135,7 +154,7 @@ export default function ServiceLendersPage() {
           </thead>
 
           <tbody>
-            {filteredProviders.map((provider, index) => (
+            {paginatedProviders.map((provider, index) => (
               <tr
                 key={provider.id}
                 style={{
@@ -144,7 +163,7 @@ export default function ServiceLendersPage() {
                 }}
               >
                 <td style={{ padding: "12px", color: "var(--text-secondary)" }}>
-                  {index + 1}
+                  {pageIndex * pageSize + index + 1}
                 </td>
 
                 <td style={{ padding: "12px", fontSize: "12px", color: "var(--neon-secondary)" }}>
@@ -227,6 +246,147 @@ export default function ServiceLendersPage() {
           </button>
         </div>
       )}
+
+      {totalElements > 0 && (
+  <div
+    style={{
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      width: "100%",
+      padding: "12px 16px",
+      borderTop: "1px solid var(--border-glow)",
+      marginTop: "16px",
+      backgroundColor: "rgba(17,24,39,0.6)",
+      backdropFilter: "blur(10px)",
+    }}
+  >
+    {/* LEFT: Results summary */}
+    <div style={{ flex: 1 }}>
+      <span style={{ color: "var(--text-secondary)", fontSize: "12px" }}>
+        Showing{" "}
+        <span style={{ color: "var(--neon-secondary)", fontWeight: 600 }}>
+          {pageStart}
+        </span>
+        –
+        <span style={{ color: "var(--neon-secondary)", fontWeight: 600 }}>
+          {pageEnd}
+        </span>{" "}
+        of{" "}
+        <span style={{ color: "var(--neon-secondary)", fontWeight: 600 }}>
+          {totalElements}
+        </span>
+      </span>
+    </div>
+
+    {/* RIGHT: Controls */}
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "flex-end",
+        gap: "18px",
+        flex: 1,
+      }}
+    >
+      {/* Page size selector */}
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <span
+          style={{
+            color: "var(--text-secondary)",
+            fontSize: "12px",
+            whiteSpace: "nowrap",
+          }}
+        >
+          Items Per Page:
+        </span>
+
+        <select
+          value={pageSize}
+          onChange={(e) => {
+            setPageSize(Number(e.target.value));
+            setPageIndex(0);
+          }}
+          style={{
+            padding: "6px 10px",
+            borderRadius: "10px",
+            border: "1px solid var(--border-glow)",
+            backgroundColor: "rgba(17,24,39,0.8)",
+            color: "var(--text-primary)",
+            fontSize: "13px",
+            outline: "none",
+            cursor: "pointer",
+          }}
+        >
+          {pageSizeOptions.map((size) => (
+            <option key={size} value={size}>
+              {size}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Pager */}
+      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+        {/* Prev */}
+        <button
+          onClick={() => setPageIndex((p) => Math.max(0, p - 1))}
+          disabled={pageIndex === 0}
+          style={{
+            padding: "6px 15px",
+            borderRadius: "10px",
+            border: "1px solid var(--border-glow)",
+            backgroundColor: "rgba(0,0,0,0.2)",
+            color: "var(--neon-blue)",
+            cursor: pageIndex === 0 ? "not-allowed" : "pointer",
+            opacity: pageIndex === 0 ? 0.4 : 1,
+            transition: "all 0.2s ease",
+          }}
+        >
+          ‹
+        </button>
+
+        {/* Current page */}
+        <div
+          style={{
+            padding: "4px 15px",
+            borderRadius: "10px",
+            border: "1px solid var(--neon-blue)",
+            background:
+              "linear-gradient(135deg, rgba(0,212,255,0.15), rgba(168,85,247,0.15))",
+            color: "var(--neon-blue)",
+            // fontWeight: 600,
+            // minWidth: "8px",
+            textAlign: "center",
+          }}
+        >
+          {pageIndex + 1}
+        </div>
+
+        {/* Next */}
+        <button
+          onClick={() =>
+            setPageIndex((p) => Math.min(totalPages - 1, p + 1))
+          }
+          disabled={pageIndex >= totalPages - 1}
+          style={{
+            padding: "6px 15px",
+            borderRadius: "10px",
+            border: "1px solid var(--border-glow)",
+            backgroundColor: "rgba(0,0,0,0.2)",
+            color: "var(--neon-blue)",
+            cursor:
+              pageIndex >= totalPages - 1 ? "not-allowed" : "pointer",
+            opacity: pageIndex >= totalPages - 1 ? 0.4 : 1,
+            transition: "all 0.2s ease",
+          }}
+        >
+          ›
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 }

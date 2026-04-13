@@ -32,32 +32,40 @@ export default function Providers() {
   }, [token, slug]);
 
   const renderProvider = ({ item }: { item: ServiceProvider }) => (
-    <Pressable 
-      style={styles.providerCard}
-      onPress={() => router.push(`/ (tabs)/services/${slug}/${item.id}`)}
+  <Pressable
+    style={styles.providerCard}
+    onPress={() => router.push(`/services/${slug}/${item.id}`)}
+  >
+    <LinearGradient 
+      colors={['rgba(0,255,255,0.05)', 'rgba(124,58,237,0.05)']} 
+      style={styles.gradientCard}
     >
-      <LinearGradient 
-        colors={['rgba(0,255,255,0.05)', 'rgba(124,58,237,0.05)']} 
-        style={styles.gradientCard}
-      >
-        <Image 
-          source={{ uri: item.image || 'https://via.placeholder.com/80x80/00FFFF/000000?text=SP' }} 
-          style={styles.avatar}
-          defaultSource={{ uri: 'https://via.placeholder.com/80x80/00FFFF/000000?text=SP' }}
-        />
-        <View style={styles.info}>
-          <Text style={styles.name}>{item.name}</Text>
-          <Text style={styles.bio}>{item.bio || 'Experienced service provider'}</Text>
-          <View style={styles.ratingRow}>
-            <Text style={styles.rating}>{item.rating.toFixed(1)} ★</Text>
-            <Text style={styles.rate}>Ksh {item.hourlyRate?.toLocaleString() || 'Negotiable'}/hr</Text>
-          </View>
-          <Text style={styles.location}>{item.location}</Text>
-          <Text style={styles.phone}>📞 {item.phone}</Text>
+      <Image
+  source={
+    item.image
+      ? { uri: item.image }
+      : require('../../../assets/service_lenders.png')
+  }
+  style={styles.avatar}
+/>
+
+      <View style={styles.info}>
+        <Text style={styles.name}>{item.name}</Text>
+        <Text style={styles.bio}>{item.bio || 'Experienced service provider'}</Text>
+
+        <View style={styles.ratingRow}>
+          <Text style={styles.rating}>★{item.rating.toFixed(1)}</Text>
+          <Text style={styles.rate}>
+            Ksh {item.hourlyRate?.toLocaleString() || 'Negotiable'}/hr
+          </Text>
         </View>
-      </LinearGradient>
-    </Pressable>
-  );
+
+        <Text style={styles.location}>{item.location}</Text>
+        <Text style={styles.phone}>📞 {item.phone}</Text>
+      </View>
+    </LinearGradient>
+  </Pressable>
+);
 
   if (loading) {
     return (
@@ -69,11 +77,22 @@ export default function Providers() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{slug?.toUpperCase().replace('-', ' ')} SERVICES</Text>
+      <View style={styles.header}>
+        {/* Left */}
+          <Pressable onPress={() => router.back()} style={styles.side}>
+            <Image
+              source={require('../../../assets/back_icon.png')}
+              style={styles.backIcon}
+            />
+          </Pressable>
+          <View style={styles.titleWrap}>
+            <Text style={styles.title}>{slug?.toUpperCase().replace('-', ' ')} SERVICES</Text>
+          </View>
+      </View>
+      
       {providers.length === 0 ? (
         <View style={styles.center}>
           <Text style={styles.noData}>No providers available yet</Text>
-          <Text style={styles.subtitle}>Landlords can add providers from dashboard</Text>
         </View>
       ) : (
         <FlatList
@@ -93,13 +112,33 @@ const styles = StyleSheet.create({
     backgroundColor: '#060A14',
     padding: 20,
   },
+    header: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  marginBottom: 20,
+  height: 50,
+},
   title: {
-    fontSize: 24,
+    fontSize: 15,
     fontFamily: 'Orbitron',
     color: '#00FFFF',
-    textAlign: 'center',
-    marginBottom: 20,
   },
+  side: {
+  width: 40, 
+  alignItems: 'center',
+  justifyContent: 'center',
+},
+backIcon: {
+  width: 22,
+  height: 22,
+  tintColor: '#00FFFF', 
+},
+titleWrap: {
+  flex: 1,
+  alignItems: 'flex-start',
+  justifyContent: 'center',
+  paddingLeft: 65, 
+},
   center: {
     flex: 1,
     justifyContent: 'center',
@@ -139,7 +178,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   name: {
-    fontSize: 18,
+    fontSize: 16,
     fontFamily: 'Orbitron',
     color: '#fff',
     marginBottom: 4,
@@ -156,12 +195,12 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   rating: {
-    fontSize: 16,
+    fontSize: 15,
     fontFamily: 'monospace',
     color: '#FFD700',
   },
   rate: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#00FFFF',
     fontFamily: 'monospace',
   },

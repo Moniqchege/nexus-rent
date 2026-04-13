@@ -199,10 +199,17 @@ export default function Home() {
               key={i} 
               style={{ alignItems: "center" }}
               onPress={() => {
-                if (item.label === 'Services') {
-                  router.push('/services');
-                }
-              }}
+  console.log('Pressed item:', item.label);
+  if (item.label === 'Services') {
+    console.log('Navigating to /services...');
+    try {
+      router.push('/services');
+      console.log('router.push called successfully');
+    } catch (e) {
+      console.error('Navigation error:', e);
+    }
+  }
+}}
             >
               <View style={[{ width: 56, height: 56, borderRadius: 16, alignItems: "center", justifyContent: "center" }, colorMap[item.color].box]}> 
                 <Text>{item.icon}</Text>

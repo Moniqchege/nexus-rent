@@ -31,7 +31,7 @@ export default function Sidebar() {
   { label: "Roles", icon: "/roles_icon.png", to: "/roles", type: "image" },
   { label: "Users", icon: "/users_icon.png", to: "/users", type: "image" },
   { label: "Alerts", icon: "/notifications_icon.png", to: "/notifications", type: "image", badge: unreadCount,  },
-{ label: "Service Lenders", icon: "/service_lenders.png", to: "/services", type: "image" },
+{ label: "Service Providers", icon: "/service_lenders.png", to: "/services", type: "image" },
 
 ];
 
