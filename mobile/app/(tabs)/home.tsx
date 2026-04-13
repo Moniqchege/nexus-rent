@@ -198,16 +198,13 @@ export default function Home() {
             <Pressable 
               key={i} 
               style={{ alignItems: "center" }}
-              onPress={() => {
-  console.log('Pressed item:', item.label);
+             onPress={() => {
   if (item.label === 'Services') {
-    console.log('Navigating to /services...');
-    try {
-      router.push('/services');
-      console.log('router.push called successfully');
-    } catch (e) {
-      console.error('Navigation error:', e);
-    }
+    router.push('/services');
+  }
+
+  if (item.label === 'Contact') {
+    router.push('/contacts'); 
   }
 }}
             >

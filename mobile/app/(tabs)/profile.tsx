@@ -9,7 +9,6 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import MaskedView from "@react-native-masked-view/masked-view";
 import { useNavigation } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from "../../store/authStore";
 import { useRouter } from "expo-router";
 import { useNotificationsStore } from "../../store/notificationsStore";

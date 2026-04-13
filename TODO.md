@@ -1,13 +1,23 @@
-# Fixing Service Lenders Navigation Issue
+# Contacts Implementation TODO
 
-**Status: In Progress**
+## Completed ✅
+1. Backend route: `backend/src/routes/contacts.ts`
+2. Backend index.ts updated ✅
+3. Frontend types: `frontend/types/contact.ts` ✅
+4. Frontend API helpers ✅
+5. Mobile types: `mobile/types/contact.ts` ✅
+6. Frontend layout & pages: `frontend/app/contacts/**` ✅
 
-## Steps:
-- [x] 1. Create missing routes: `/services/new/page.tsx` and `/services/edit/[id]/page.tsx`
-- [x] 2. Update `frontend/app/services/page.tsx`: Add useRouter, implement handleAddProvider (navigate to /services/new), add Edit/Delete handlers (navigate to edit or API delete)
-- [x] 3. Refactor page to import and use ServiceLenders component with proper callbacks
-- [x] 4. Test navigation and APIs
-- [x] 5. Mark complete
+## Pending
+7. Fix mobile api.ts (syntax error)
+8. Create mobile pages: `mobile/app/contacts/**`
+9. Prisma generate (none needed)
+10. Test APIs
+11. Add sidebar nav links
+12. Demo: `cd frontend && npm run dev`
 
-**Root cause:** Empty handlers and missing form pages.
-
+**Backend API ready: /api/contacts/categories, /api/contacts?propertyId=1**
+**Frontend ready at /contacts (sidebar link added)**
+**Mobile ready at /contacts**
+**Contact buttons (SMS) in mobile detail pages**
+**Test with real propertyId from tenant data**

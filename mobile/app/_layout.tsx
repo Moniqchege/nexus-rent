@@ -59,14 +59,15 @@ export default function RootLayout() {
     || segments[0] === 'otp' 
     || segments[0] === 'forgot-password' 
     || segments[0] === 'login';
-  const isServicesRoute = segments[0] === 'services'; // ← add this
+  const isServicesRoute = segments[0] === 'services';
+  const isContactsRoute = segments[0] === 'contacts';
 
   if (!auth.token && !auth.tempToken && inTabsGroup && !isAuthFlow) {
     router.replace('/login');
     return;
   }
 
-  if ((auth.token || (auth.tempToken && !auth.isFirstLogin)) && !inTabsGroup && !isAuthFlow && !isServicesRoute) {
+  if ((auth.token || (auth.tempToken && !auth.isFirstLogin)) && !inTabsGroup && !isAuthFlow && !isServicesRoute && !isContactsRoute) {
     router.replace('/(tabs)/home');
   }
 }, [auth.token, auth.tempToken, segments, router, fontsLoaded]);

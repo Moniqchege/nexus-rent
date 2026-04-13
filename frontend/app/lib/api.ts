@@ -9,7 +9,7 @@ const api = axios.create({
 // ── Request interceptor: attach token ─────────────────────
 api.interceptors.request.use(
   (config) => {
-    const token = sessionStorage.getItem('token') 
+    const token = sessionStorage.getItem('token')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
@@ -30,5 +30,9 @@ api.interceptors.response.use(
     return Promise.reject(error)
   }
 )
+
+// Contact API methods
+export const getContactCategories = () => api.get('/api/contacts/categories');
+export const getContacts = (propertyId: number) => api.get(`/api/contacts?propertyId=${propertyId}`);
 
 export default api

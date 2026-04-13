@@ -68,7 +68,7 @@ export default function ProviderDetail() {
 
   {/* Row: Back + Title */}
   <View style={styles.titleRow}>
-    <Pressable onPress={() => router.back()} style={styles.backButton}>
+    <Pressable onPress={() => router.back()} style={styles.side}>
       <Image
         source={require('../../../../assets/back_icon.png')}
         style={styles.backIcon}
@@ -130,10 +130,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#060A14',
-    marginTop: 30,
+    // marginTop: 30,
   },
   header: {
-    padding: 20,
+    paddingVertical: 20,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(0,255,255,0.3)',
   },

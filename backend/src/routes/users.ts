@@ -170,6 +170,77 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
+// GET /api/users/contacts - Get caretakers & property managers from same properties
+router.get('/contacts', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const currentUserId = (req as any).user.id; // adjust to match your auth middleware
+
+    // 1️⃣ Get the current user's property IDs
+    const currentUserProperties = await db.userProperty.findMany({
+      where: { userId: currentUserId },
+      select: { propertyId: true },
+    });
+
+    const propertyIds = currentUserProperties.map((up) => up.propertyId);
+
+    if (propertyIds.length === 0) {
+      return res.json([]);
+    }
+
+    // 2️⃣ Find users on the same properties with caretaker/manager roles
+    const contacts = await db.userProperty.findMany({
+      where: {
+        propertyId: { in: propertyIds },
+        userId: { not: currentUserId }, // exclude self
+        role: {
+  name: { in: ['Caretaker', 'Property Manager'] },
+},
+      },
+      select: {
+        propertyId: true,
+        role: { select: { id: true, name: true } },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+          },
+        },
+        property: {
+          select: {
+            id: true,
+            title: true,
+            location: true,
+          },
+        },
+      },
+    });
+
+    // 3️⃣ Deduplicate users (a user might share multiple properties with you)
+    const seen = new Set<number>();
+    const unique = contacts
+      .filter(({ user }) => {
+        if (seen.has(user.id)) return false;
+        seen.add(user.id);
+        return true;
+      })
+      .map(({ user, role, property }) => ({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role,
+        property, 
+      }));
+
+    res.json(unique);
+  } catch (error) {
+    console.error('Failed to fetch contacts:', error);
+    res.status(500).json({ error: 'Failed to fetch contacts' });
+  }
+});
+
 // GET /api/users/:id
 router.get('/:id', requireAuth, async (req: Request, res: Response) => {
   try {

@@ -32,6 +32,7 @@ export default function Sidebar() {
   { label: "Users", icon: "/users_icon.png", to: "/users", type: "image" },
   { label: "Alerts", icon: "/notifications_icon.png", to: "/notifications", type: "image", badge: unreadCount,  },
 { label: "Service Providers", icon: "/service_lenders.png", to: "/services", type: "image" },
+{ label: "Contacts", icon: "/message-icon.png", to: "/contacts", type: "image" },
 
 ];
 
