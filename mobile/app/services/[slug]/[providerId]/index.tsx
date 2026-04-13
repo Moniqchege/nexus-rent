@@ -1,10 +1,10 @@
 import { View, Text, StyleSheet, Pressable, Linking } from 'react-native';
 import { useEffect, useState } from 'react';
 import { useLocalSearchParams } from 'expo-router';
-import { useAuthStore } from '../../../../../store/authStore';
-import api from '../../../../../lib/api';
-import { ServiceProvider } from '../../../../../types/service';
 import { LinearGradient } from 'expo-linear-gradient';
+import { ServiceProvider } from '../../../../types/service';
+import { useAuthStore } from '../../../../store/authStore';
+import api from '../../../../lib/api';
 
 export default function ProviderDetail() {
   const { slug, providerId } = useLocalSearchParams<{ slug: string; providerId: string }>();

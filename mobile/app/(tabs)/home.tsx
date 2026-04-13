@@ -82,7 +82,7 @@ function GradientTitle({ text }: { text: string }) {
           style={{
             fontSize: 32,
             fontFamily: "Orbitron",
-            color: "transparent", // Gradient shows through
+            color: "transparent", 
             textAlign: "left",
           }}
         >
@@ -200,7 +200,7 @@ export default function Home() {
               style={{ alignItems: "center" }}
               onPress={() => {
                 if (item.label === 'Services') {
-                  router.push('/(tabs)/services');
+                  router.push('/services');
                 }
               }}
             >

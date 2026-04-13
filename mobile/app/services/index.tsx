@@ -1,10 +1,10 @@
 import { View, Text, FlatList, Pressable, StyleSheet } from 'react-native';
 import { useEffect, useState } from 'react';
-import { useAuthStore } from '../../../store/authStore';
-import api, { API_BASE } from '../../../lib/api';
-import { ServiceCategory } from '../../../types/service';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import { ServiceCategory } from '../../types/service';
+import { useAuthStore } from '../../store/authStore';
+import api from '../../lib/api';
 
 export default function Services() {
   const [categories, setCategories] = useState<ServiceCategory[]>([]);
@@ -24,7 +24,7 @@ export default function Services() {
   const renderCategory = ({ item }: { item: ServiceCategory }) => (
     <Pressable 
       style={styles.categoryCard}
-      onPress={() => router.push(`services/${item.slug}`)}
+      onPress={() => router.push(`/services/${item.slug}`)}
     >
       <LinearGradient 
         colors={['rgba(0,255,255,0.1)', 'rgba(124,58,237,0.1)']} 
