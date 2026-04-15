@@ -61,13 +61,14 @@ export default function RootLayout() {
     || segments[0] === 'login';
   const isServicesRoute = segments[0] === 'services';
   const isContactsRoute = segments[0] === 'contacts';
+  const isChatbotRoute = segments[0] === 'chatbot';
 
   if (!auth.token && !auth.tempToken && inTabsGroup && !isAuthFlow) {
     router.replace('/login');
     return;
   }
 
-  if ((auth.token || (auth.tempToken && !auth.isFirstLogin)) && !inTabsGroup && !isAuthFlow && !isServicesRoute && !isContactsRoute) {
+  if ((auth.token || (auth.tempToken && !auth.isFirstLogin)) && !inTabsGroup && !isAuthFlow && !isServicesRoute && !isContactsRoute && !isChatbotRoute) {
     router.replace('/(tabs)/home');
   }
 }, [auth.token, auth.tempToken, segments, router, fontsLoaded]);

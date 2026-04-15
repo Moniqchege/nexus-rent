@@ -5,13 +5,19 @@ import {
   StyleSheet,
   TouchableOpacity,
   Image,
+  FlatList,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { useAuthStore } from "../../store/authStore";
 import { LinearGradient } from "expo-linear-gradient";
 import MaskedView from "@react-native-masked-view/masked-view";
 import { useNavigation } from '@react-navigation/native';
-import { useAuthStore } from "../../store/authStore";
 import { useRouter } from "expo-router";
 import { useNotificationsStore } from "../../store/notificationsStore";
+import { FloatingBotButton } from "../profilebot";
 
 function GradientTitle({ text }: { text: string }) {
   return (
@@ -34,10 +40,73 @@ function GradientTitle({ text }: { text: string }) {
 }
 
 export default function Profile() {
-const logout = useAuthStore((state) => state.logout);
-const router = useRouter();
-const navigation = useNavigation<any>();
- const handleSignOut = async () => {
+  const user = useAuthStore((state) => state.user);
+  const logout = useAuthStore((state) => state.logout);
+  const router = useRouter();
+  const navigation = useNavigation<any>();
+  
+  type Message = {
+  role: "user" | "bot";
+  text: string;
+};
+  const [messages, setMessages] = useState<Message[]>([
+  {
+    role: "bot",
+    text: "Hi! 👋 Ask me simple questions about your rent, lease, property, payments, or tenant score.",
+  },
+]);
+  const [inputText, setInputText] = useState('');
+  const flatListRef = useRef<FlatList>(null);
+
+  const scrollToEnd = useCallback(() => {
+    flatListRef.current?.scrollToEnd({ animated: true });
+  }, []);
+
+  useEffect(() => {
+    scrollToEnd();
+  }, [messages, scrollToEnd]);
+
+  const getBotResponse = (question: string) => {
+    const q = question.toLowerCase();
+    const property = user?.userProperties?.[0]?.property;
+
+    if (q.includes('rent') || q.includes('due') || q.includes('payment')) {
+      const price = property?.price ? `Ksh${property.price.toLocaleString()}/mo` : 'N/A';
+      return `Your rent is ${price}. Next due: Jul 1. On-time rate: 98.4%.`;
+    }
+    if (q.includes('lease') || q.includes('contract')) {
+      const leaseDoc = user?.leaseDocument;
+      const link = leaseDoc ? `View lease` : 'Upload lease first';
+      return `Your lease is active. ${link}.`;
+    }
+    if (q.includes('property') || q.includes('home') || q.includes('apartment')) {
+      const p = property;
+      if (p) {
+        return `${p.title || 'Your Property'}, ${p.location || 'N/A'}. ${p.beds || 0} beds, ${p.baths || 0} baths.`;
+      }
+      return 'No property assigned yet.';
+    }
+    if (q.includes('score') || q.includes('rating')) {
+      return 'Your tenant score is 94/100. Great job!';
+    }
+    return "I can help with rent, lease, property, payments, or scores. Ask something simple!";
+  };
+
+  const handleSend = () => {
+    if (!inputText.trim()) return;
+
+    const userMsg = { role: 'user' as const, text: inputText };
+    setMessages(prev => [...prev, userMsg]);
+    setInputText('');
+
+    // Simulate bot response delay
+    setTimeout(() => {
+      const botMsg = { role: 'bot' as const, text: getBotResponse(inputText) };
+      setMessages(prev => [...prev, botMsg]);
+    }, 800);
+  };
+
+  const handleSignOut = async () => {
     logout(); // clear user state
     router.replace('/login'); 
   };
@@ -49,7 +118,7 @@ const navigation = useNavigation<any>();
     routerPush('/(tabs)/notifications');
   };
 
-  const user = useAuthStore((state) => state.user);
+  // const user = useAuthStore((state) => state.user);
   const isHydrated = useAuthStore.persist.hasHydrated();
 
   if (!isHydrated) return null;
@@ -59,9 +128,15 @@ const navigation = useNavigation<any>();
       {/* Ambient */}
       <View style={styles.ambient} />
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
-        {/* Header */}
-        <View style={styles.header}>
+      <FlatList
+      data={[]}
+  keyExtractor={() => "dummy"}
+  renderItem={null}
+   contentContainerStyle={{ paddingBottom: 140, flexGrow: 1 }}
+  ListHeaderComponent={() => (
+    <>
+    {/* Header */}
+    <View style={styles.header}>
           <View>
             <Text style={styles.pageGreeting}>ACCOUNT</Text>
             <GradientTitle text="Profile" />
@@ -72,7 +147,7 @@ const navigation = useNavigation<any>();
           </View>
         </View>
 
-        {/* Profile Hero */}
+         {/* Profile Hero */}
         <View style={styles.profileCard}>
           <Image
               source={require("../../assets/profile.png")} 
@@ -118,7 +193,7 @@ const navigation = useNavigation<any>();
           </View>
         </View>
 
- {/* MY PROPERTY */}
+         {/* MY PROPERTY */}
 <Text style={styles.sectionTitle}>MY PROPERTY</Text>
 
 {user?.userProperties?.length ? (() => {
@@ -186,7 +261,7 @@ const navigation = useNavigation<any>();
   <Text style={{ marginHorizontal: 20, color: "#888", fontSize: 12 }}>No properties available.</Text>
 )}
 
-        {/* SETTINGS */}
+{/* SETTINGS */}
         <Text style={styles.sectionTitle}>ACCOUNT SETTINGS</Text>
 
         <View style={styles.group}>
@@ -219,7 +294,6 @@ const navigation = useNavigation<any>();
   </View>
 ))}
         </View>
-
         <View style={styles.group}>
   <Text style={styles.groupTitle}>Account</Text>
   <View style={styles.preferencesDivider} />
@@ -244,8 +318,11 @@ const navigation = useNavigation<any>();
     </View>
   ))}
 </View>
-
-        {/* Logout */}
+        </>
+  )}
+   ListFooterComponent={() => (
+    <>
+                      {/* Logout */}
     <View style={styles.group}>
   <TouchableOpacity
     onPress={handleSignOut}
@@ -264,14 +341,23 @@ const navigation = useNavigation<any>();
   </TouchableOpacity>
 </View>
 
-        {/* Footer */}
+         {/* Footer */}
         <View style={styles.footer}>
           <GradientTitle text="NEXUS RENT" />
           <Text style={styles.version}>
             v2.4.1 · Rental Platform
           </Text>
         </View>
-      </ScrollView>
+    </>
+   )}
+       />
+
+       {/* Floating Bot Button */}
+  <View style={styles.floatingBotWrapper}>
+    <FloatingBotButton />
+  </View>
+
+ 
     </View>
   );
 }
@@ -369,11 +455,11 @@ icon: {
   statLabel: { fontSize: 10, color: "#888" },
 
   sectionTitle: {
-    marginTop: 10,
-    marginBottom: 10,
-    marginHorizontal: 20,
-    fontSize: 10,
-    color: "#888",
+    marginTop: 1,
+    marginBottom: 1,
+    marginHorizontal: 10,
+    fontSize: 13,
+    color: "#fff",
     fontFamily: "Orbitron",
   },
 
@@ -593,4 +679,115 @@ preferencesDivider: {
     color: "#888",
     marginTop: 4,
   },
+  messageContainer: {
+  maxWidth: "80%",
+  paddingVertical: 10,
+  paddingHorizontal: 12,
+  borderRadius: 14,
+  marginVertical: 4,
+},
+
+botMessage: {
+  alignSelf: "flex-start",
+  backgroundColor: "#111827",
+  borderWidth: 1,
+  borderColor: "#1F2937",
+  borderTopLeftRadius: 4,
+},
+
+userMessage: {
+  alignSelf: "flex-end",
+  backgroundColor: "rgba(0,240,255,0.12)",
+  borderWidth: 1,
+  borderColor: "rgba(0,240,255,0.25)",
+  borderTopRightRadius: 4,
+},
+
+messageText: {
+  fontSize: 12,
+  lineHeight: 18,
+},
+
+botText: {
+  color: "#E5E7EB",
+},
+
+userText: {
+  color: "#00F0FF",
+  fontWeight: "500",
+},
+
+chatList: {
+  maxHeight: 260,
+  backgroundColor: "#0B1220",
+},
+
+chatContent: {
+  padding: 12,
+  paddingBottom: 20,
+},
+
+inputContainer: {
+  position: "relative",
+  borderTopWidth: 1,
+  borderTopColor: "#1F2937",
+  paddingVertical: 10,
+  paddingHorizontal: 5,
+  backgroundColor: "#0B1220",
+},
+
+input: {
+  flex: 1,
+  minHeight: 40,
+  maxHeight: 100,
+  paddingHorizontal: 12,
+  paddingRight: 48,        
+  paddingVertical: 8,
+  borderRadius: 12,
+  backgroundColor: "#111827",
+  color: "#fff",
+  fontSize: 12,
+  borderWidth: 1,
+  borderColor: "#1F2937",
+},
+
+sendIconContainer: {
+  position: "absolute",
+  right: 18,               
+  bottom: 18,              
+  justifyContent: "center",
+  alignItems: "center",
+},
+
+sendIcon: {
+  width: 24,
+  height: 24,
+  tintColor: "#00F0FF",
+},
+
+sendButton: {
+  marginLeft: 8,
+  paddingHorizontal: 14,
+  paddingVertical: 10,
+  borderRadius: 12,
+  backgroundColor: "rgba(0,240,255,0.15)",
+  borderWidth: 1,
+  borderColor: "rgba(0,240,255,0.35)",
+  justifyContent: "center",
+  alignItems: "center",
+},
+
+sendText: {
+  color: "#00F0FF",
+  fontSize: 12,
+  fontWeight: "600",
+  letterSpacing: 0.5,
+},
+floatingBotWrapper: {
+  position: "absolute",
+  bottom: 65,
+  right: 10,
+  zIndex: 999,
+  elevation: 10,
+},
 });
