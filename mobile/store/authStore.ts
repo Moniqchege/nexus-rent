@@ -10,6 +10,7 @@ interface User {
     username?: string;
     phone?: string;
     plan?: string;
+    leaseDocument?: string;
     userProperties: UserProperty[];
 }
 
@@ -50,10 +51,11 @@ const normalizeUser = (user: any): User => ({
             baths: up.property.baths,
             sqft: up.property.sqft,
             status: up.property.status,
+            leaseDocument: up.property.leaseDocument,
             amenities: up.property.amenities,
             image: up.property.image,
         },
-        role: up.role, // keep as is
+        role: up.role, 
         propertyId: up.propertyId,
     })),
 });
@@ -66,7 +68,7 @@ interface AuthState {
     needsOtp: boolean;
     isLoading: boolean;
     error: string | null;
-    
+
 
     login: (email: string, password: string) => Promise<void>;
     logout: () => void;
@@ -124,7 +126,7 @@ export const useAuthStore = create<AuthState>()(
                 try {
                     const data = await api.verifyOtp(userId, code);
                     const normalizedUser = normalizeUser(data.user);
-                   console.log("OTP verification - user object:", JSON.stringify(normalizedUser, null, 2));
+                    console.log("OTP verification - user object:", JSON.stringify(normalizedUser, null, 2));
                     set({ token: data.token, user: normalizedUser, tempToken: null, isFirstLogin: false, needsOtp: false, isLoading: false });
                 } catch (err: any) {
                     set({ error: err.message, isLoading: false });

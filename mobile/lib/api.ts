@@ -24,6 +24,7 @@ const api = {
     },
 
     async login(email: string, password: string): Promise<any> {
+         console.log("🔥 LOGIN FUNCTION CALLED");
         const response = await fetch(`${API_BASE}/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -191,37 +192,38 @@ const api = {
         const data = await response.json();
         return data.providers || [];
     },
-        async getContactCategories(token: string): Promise < ServiceCategory[] > {
-    const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-};
 
-const response = await fetch(`${API_BASE}/api/contacts/categories`, { headers });
+    async getContactCategories(token: string): Promise<ServiceCategory[]> {
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        };
 
-if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${await response.text()}`);
-}
+        const response = await fetch(`${API_BASE}/api/contacts/categories`, { headers });
 
-const data = await response.json();
-return data.categories || [];
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+        }
+
+        const data = await response.json();
+        return data.categories || [];
     },
 
-   async getContacts(token: string): Promise<any[]> {
-    const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-    };
+    async getContacts(token: string): Promise<any[]> {
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        };
 
-    const response = await fetch(`${API_BASE}/api/users/contacts`, { headers });
+        const response = await fetch(`${API_BASE}/api/users/contacts`, { headers });
 
-    if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${await response.text()}`);
-    }
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+        }
 
-    const data = await response.json();
-    return data || [];
-},
+        const data = await response.json();
+        return data || [];
+    },
 };
 
 export default api;

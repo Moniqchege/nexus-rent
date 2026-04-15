@@ -123,13 +123,17 @@ export const useAdminStore = create<AdminState>()(
         }
       },
 
-      createUser: async (userData: any) => {
+      createUser: async (userData: FormData) => {
         set({ loading: true });
+
         try {
-          const res = await api.post('/api/users', userData);
+          const res = await api.post('/api/users', userData, {
+            headers: {
+              "Content-Type": "multipart/form-data"
+            }
+          });
+
           set(state => ({ users: [...state.users, res.data] }));
-        } catch {
-          // 
         } finally {
           set({ loading: false });
         }

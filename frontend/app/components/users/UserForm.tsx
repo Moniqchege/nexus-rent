@@ -20,6 +20,8 @@ interface PropertyAssignment {
 
 export default function UserForm({ onSubmit, onCancel, editingUser, isEdit = false }: UserFormProps) {
   const { roles, properties, fetchRoles, fetchProperties } = useAdminStore();
+  const [leaseDocument, setLeaseDocument] = useState<File | null>(null);
+  const [fileError, setFileError] = useState("");
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -81,15 +83,27 @@ export default function UserForm({ onSubmit, onCancel, editingUser, isEdit = fal
 }, [editingUser, roles, properties]);
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const submitData = {
-      ... (isEdit && !formData.password 
-        ? { name: formData.name, phone: formData.phone, plan: formData.plan, username: formData.username }
-        : formData),
-      propertyAssignments,
-    };
-    onSubmit(submitData);
-  };
+  e.preventDefault();
+
+  const formDataToSend = new FormData();
+
+  formDataToSend.append("name", formData.name);
+  formDataToSend.append("email", formData.email);
+  formDataToSend.append("phone", formData.phone);
+  formDataToSend.append("plan", formData.plan);
+  formDataToSend.append("username", formData.username);
+
+  if (leaseDocument) {
+    formDataToSend.append("leaseDocument", leaseDocument);
+  }
+
+  formDataToSend.append(
+    "propertyAssignments",
+    JSON.stringify(propertyAssignments)
+  );
+
+  onSubmit(formDataToSend);
+};
 
   const addPropertyAssignment = () => {
     setPropertyAssignments([...propertyAssignments, { propertyId: 0, roleId: 0 }]);
@@ -174,7 +188,7 @@ export default function UserForm({ onSubmit, onCancel, editingUser, isEdit = fal
             }}
             placeholder="Enter email address"
             required
-            disabled={isEdit} // Can't change email on edit
+            disabled={isEdit} 
           />
         </div>
         </div>
@@ -232,7 +246,57 @@ export default function UserForm({ onSubmit, onCancel, editingUser, isEdit = fal
     }}
   />
 </div>
-        </div>     
+        </div>   
+
+        <div>
+  <label style={{
+    display: "block",
+    fontWeight: 600,
+    fontSize: "14px",
+    marginBottom: "8px",
+    color: "var(--neon-blue)"
+  }}>
+    Lease Document (PDF or DOCX)
+  </label>
+
+  <input
+    type="file"
+    accept=".pdf,.doc,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    onChange={(e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      const allowedTypes = [
+        "application/pdf",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/msword"
+      ];
+
+      if (!allowedTypes.includes(file.type)) {
+        setFileError("Only PDF or DOCX files are allowed");
+        setLeaseDocument(null);
+        return;
+      }
+
+      setFileError("");
+      setLeaseDocument(file);
+    }}
+    style={{
+      width: "100%",
+      backgroundColor: "rgba(17,24,39,0.5)",
+      border: "1px solid var(--border-glow)",
+      borderRadius: "12px",
+      padding: "12px",
+      color: "var(--text-primary)"
+    }}
+  />
+
+  {fileError && (
+    <p style={{ color: "#ef4444", fontSize: "12px", marginTop: "6px" }}>
+      {fileError}
+    </p>
+  )}
+</div>  
 
         {/* New Property Assignments Section */}
         <div style={{ marginTop: "24px" }}>

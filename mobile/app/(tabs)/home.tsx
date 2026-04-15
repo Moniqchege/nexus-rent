@@ -4,6 +4,7 @@ import MaskedView from "@react-native-masked-view/masked-view";
 import { useRouter } from 'expo-router';
 import { Pressable } from 'react-native';
 import { useAuthStore } from "../../store/authStore";
+import * as Linking from 'expo-linking';
 
 type ColorKey = "neon" | "purple" | "success" | "danger" | "warn";
 
@@ -198,13 +199,48 @@ export default function Home() {
             <Pressable 
               key={i} 
               style={{ alignItems: "center" }}
-             onPress={() => {
-  if (item.label === 'Services') {
-    router.push('/services');
-  }
+            onPress={() => {
+  console.log("🟣 QUICK ACTION PRESSED:", item.label);
 
-  if (item.label === 'Contact') {
-    router.push('/contacts'); 
+  if (item.label === 'Pay Rent') {
+    console.log("💳 Pay Rent clicked");
+    // TODO: Navigate to payments
+  } 
+  
+  else if (item.label === 'My Lease') {
+    console.log("📄 My Lease clicked");
+
+    const leaseDoc = user?.leaseDocument;
+
+    console.log("📄 Raw user object:", user);
+    console.log("📄 Lease document value:", leaseDoc);
+
+    if (!leaseDoc) {
+      console.log("❌ No lease document found");
+      alert('No lease document found. Please upload during onboarding.');
+      return;
+    }
+
+    console.log("🚀 Attempting to open lease document:", leaseDoc);
+
+    Linking.openURL(leaseDoc)
+      .then(() => {
+        console.log("✅ Lease document opened successfully");
+      })
+      .catch((err) => {
+        console.log("❌ Failed to open lease document:", err);
+      });
+
+  } 
+  
+  else if (item.label === 'Services') {
+    console.log("🛠️ Services clicked");
+    router.push('/services');
+  } 
+  
+  else if (item.label === 'Contact') {
+    console.log("📞 Contact clicked");
+    router.push('/contacts');
   }
 }}
             >

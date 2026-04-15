@@ -90,9 +90,7 @@ export const useNotificationsStore = create<NotificationsState>()(
                 unreadCount: state.unreadCount
             }),
             onRehydrateStorage: () => (state, error) => {
-                console.log('💧 [Store] rehydration complete, error?', error);
                 if (error) {
-                    console.log('🔴 [Store] rehydration error:', error);
                 }
                 state?.setHasHydrated(true);
             }

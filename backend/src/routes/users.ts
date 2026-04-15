@@ -5,6 +5,7 @@ import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 import { transporter } from '../services/mailer';
+import { upload } from '../middleware/upload';
 
 const router = Router();
 function generatePassword(length = 10) {
@@ -19,6 +20,7 @@ interface CreateUserInput {
   role: string;
   phone: string;
   plan?: string;
+  leaseDocument?: string;
 }
 
 interface UpdateUserInput {
@@ -50,6 +52,7 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
         // role: true,
         phone: true,
         plan: true,
+        leaseDocument: true,
         createdAt: true,
         userProperties: {
           select: {
@@ -87,88 +90,102 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
 });
 
 // POST /api/users - Create user
-router.post('/', requireAuth, async (req: Request, res: Response) => {
-  try {
-    const { name, email, username, phone, plan = 'FREE', propertyAssignments = [] } = req.body;
-
-    if (!name || !email || !phone) {
-      return res.status(400).json({ error: 'Name, email, and phone number are required' });
-    }
-
-    const existing = await db.user.findFirst({
-      where: {
-        OR: [
-          { email },
-          ...(username ? [{ username }] : []),
-        ],
-      },
-    });
-
-    if (existing) {
-      return res.status(409).json({ error: 'User already exists' });
-    }
-
-    // 🔐 Generate password
-    const plainPassword = generatePassword();
-    const hashedPassword = await bcrypt.hash(plainPassword, 12);
-
-    // ✅ Create user
-    const user = await db.user.create({
-      data: {
+router.post(
+  '/',
+  requireAuth,
+  upload.single('leaseDocument'),
+  async (req: Request, res: Response) => {
+    try {
+      const {
         name,
         email,
-        username: username || email.split('@')[0],
-        password_hash: hashedPassword,
-        // role,
+        username,
         phone,
-        plan,
-        firstLogin: true,
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        username: true,
-        // role: true,
-        phone: true,
-        plan: true,
-        firstLogin: true,
-        createdAt: true,
-      },
-    });
+        plan = 'FREE',
+        propertyAssignments = []
+      } = req.body;
 
-    // 📦 Assign properties
-    if (propertyAssignments.length > 0) {
-      await db.userProperty.createMany({
-        data: propertyAssignments.map((item: any) => ({
-          userId: user.id,
-          propertyId: item.propertyId,
-          roleId: item.roleId,
-        })),
-        skipDuplicates: true,
+      if (!name || !email || !phone) {
+        return res.status(400).json({ error: 'Name, email, and phone number are required' });
+      }
+
+      const parsedAssignments = JSON.parse(propertyAssignments || "[]");
+
+      const existing = await db.user.findFirst({
+        where: {
+          OR: [
+            { email },
+            ...(username ? [{ username }] : []),
+          ],
+        },
       });
+
+      if (existing) {
+        return res.status(409).json({ error: 'User already exists' });
+      }
+
+      const plainPassword = generatePassword();
+      const hashedPassword = await bcrypt.hash(plainPassword, 12);
+
+      const leaseDocumentPath = req.file
+        ? `/uploads/leases/${req.file.filename}`
+        : null;
+
+      const user = await db.user.create({
+        data: {
+          name,
+          email,
+          username: username || email.split('@')[0],
+          password_hash: hashedPassword,
+          phone,
+          plan,
+          leaseDocument: leaseDocumentPath,
+          firstLogin: true,
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          username: true,
+          phone: true,
+          plan: true,
+          leaseDocument: true,
+          firstLogin: true,
+          createdAt: true,
+        },
+      });
+
+      if (parsedAssignments.length > 0) {
+        await db.userProperty.createMany({
+          data: parsedAssignments.map((item: any) => ({
+            userId: user.id,
+            propertyId: item.propertyId,
+            roleId: item.roleId,
+          })),
+          skipDuplicates: true,
+        });
+      }
+
+      await transporter.sendMail({
+        from: `"Nexus Rent" <${process.env.SMTP_USER}>`,
+        to: email,
+        subject: 'Your Nexus Rent Account',
+        html: `
+          <h3>Welcome to Nexus Rent</h3>
+          <p>Email: ${email}</p>
+          <p>Password: ${plainPassword}</p>
+          <p><strong>You will be required to change your password on first login.</strong></p>
+        `,
+      });
+
+      res.status(201).json(user);
+
+    } catch (error: any) {
+      console.error('Create user error:', error);
+      res.status(500).json({ error: error.message || 'Failed to create user' });
     }
-
-    // 📧 Send email
-    await transporter.sendMail({
-      from: `"Nexus Rent" <${process.env.SMTP_USER}>`,
-      to: email,
-      subject: 'Your Nexus Rent Account',
-      html: `
-        <h3>Welcome to Nexus Rent</h3>
-        <p>Email: ${email}</p>
-        <p>Password: ${plainPassword}</p>
-        <p><strong>You will be required to change your password on first login.</strong></p>
-      `,
-    });
-
-    res.status(201).json(user);
-
-  } catch (error: any) {
-    console.error('Create user error:', error);
-    res.status(500).json({ error: 'Failed to create user' });
   }
-});
+);
 
 // GET /api/users/contacts - Get caretakers & property managers from same properties
 router.get('/contacts', requireAuth, async (req: Request, res: Response) => {
@@ -181,7 +198,9 @@ router.get('/contacts', requireAuth, async (req: Request, res: Response) => {
       select: { propertyId: true },
     });
 
-    const propertyIds = currentUserProperties.map((up) => up.propertyId);
+    const propertyIds = currentUserProperties.map(
+      (up: { propertyId: number }) => up.propertyId
+    );
 
     if (propertyIds.length === 0) {
       return res.json([]);
@@ -193,8 +212,8 @@ router.get('/contacts', requireAuth, async (req: Request, res: Response) => {
         propertyId: { in: propertyIds },
         userId: { not: currentUserId }, // exclude self
         role: {
-  name: { in: ['Caretaker', 'Property Manager'] },
-},
+          name: { in: ['Caretaker', 'Property Manager'] },
+        },
       },
       select: {
         propertyId: true,
@@ -220,19 +239,31 @@ router.get('/contacts', requireAuth, async (req: Request, res: Response) => {
     // 3️⃣ Deduplicate users (a user might share multiple properties with you)
     const seen = new Set<number>();
     const unique = contacts
-      .filter(({ user }) => {
-        if (seen.has(user.id)) return false;
-        seen.add(user.id);
-        return true;
-      })
-      .map(({ user, role, property }) => ({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        role,
-        property, 
-      }));
+      .filter(
+        ({ user }: { user: { id: number } }) => {
+          if (seen.has(user.id)) return false;
+          seen.add(user.id);
+          return true;
+        }
+      )
+      .map(
+        ({
+          user,
+          role,
+          property,
+        }: {
+          user: { id: number; name: string; email: string; phone: string | null };
+          role: { id: number; name: string };
+          property: { id: number; title: string; location: string };
+        }) => ({
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          phone: user.phone,
+          role,
+          property,
+        })
+      );
 
     res.json(unique);
   } catch (error) {
@@ -256,6 +287,7 @@ router.get('/:id', requireAuth, async (req: Request, res: Response) => {
         // role: true,
         phone: true,
         plan: true,
+        leaseDocument: true,
         createdAt: true,
         userProperties: {
           select: {

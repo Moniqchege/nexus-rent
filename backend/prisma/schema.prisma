@@ -21,6 +21,7 @@ model User {
   plan          String?  @default("FREE")
   firstLogin    Boolean  @default(true)
   createdAt     DateTime @default(now())
+  leaseDocument  String?
   updatedAt     DateTime @updatedAt
 
   userProperties UserProperty[]

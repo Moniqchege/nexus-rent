@@ -6,6 +6,7 @@ import express from "express";
 import session from "express-session";
 import passport from "passport";
 import path from "path";
+import fs from "fs"; 
 import { fileURLToPath } from "url";
 import authRoutes from "./routes/auth.js";
 import notificationsRoutes from "./routes/notifications.js";
@@ -26,6 +27,11 @@ console.log("DATABASE_URL:", process.env.DATABASE_URL);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+const uploadsDir = path.join(__dirname, "../uploads/leases");
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
 
 const app = express();
 

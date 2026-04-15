@@ -1,23 +1,24 @@
-# Contacts Implementation TODO
+# Lease Document Feature Implementation
 
-## Completed ✅
-1. Backend route: `backend/src/routes/contacts.ts`
-2. Backend index.ts updated ✅
-3. Frontend types: `frontend/types/contact.ts` ✅
-4. Frontend API helpers ✅
-5. Mobile types: `mobile/types/contact.ts` ✅
-6. Frontend layout & pages: `frontend/app/contacts/**` ✅
+## Step 1: Update Prisma Schema [✅ DONE]
+- Add `leaseDocument String?` to User model in backend/prisma/schema.prisma
 
-## Pending
-7. Fix mobile api.ts (syntax error)
-8. Create mobile pages: `mobile/app/contacts/**`
-9. Prisma generate (none needed)
-10. Test APIs
-11. Add sidebar nav links
-12. Demo: `cd frontend && npm run dev`
+## Step 2: Prisma Migration [PENDING]
+- Run `cd backend && npx prisma migrate dev --name add_lease_document`
 
-**Backend API ready: /api/contacts/categories, /api/contacts?propertyId=1**
-**Frontend ready at /contacts (sidebar link added)**
-**Mobile ready at /contacts**
-**Contact buttons (SMS) in mobile detail pages**
-**Test with real propertyId from tenant data**
+## Step 3: Update Backend users.ts [✅ DONE]
+- Extend GET /users and /:id to select leaseDocument
+- Update POST /users: Accept leaseDocument, validate required if any propertyAssignment role.name === 'Tenant'
+
+## Step 4: Update mobile/lib/api.ts [PENDING]
+- No new endpoint, but ensure user fetch includes leaseDocument (reuse authStore fetch)
+
+## Step 5: Update mobile/app/(tabs)/home.tsx [✅ DONE]
+- Access user.leaseDocument from authStore
+- On 'My Lease' press: if exists, Linking.openURL(leaseDocument); else alert/upload
+
+## Step 6: Test & Cleanup [PENDING]
+- Backend: Create tenant user with/without lease
+- Mobile: Login tenant, check home button opens lease doc
+- Mark TODO complete
+

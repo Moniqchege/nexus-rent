@@ -325,6 +325,7 @@ router.post("/verify-otp", async (req: Request, res: Response) => {
         email: true,
         image: true,
         plan: true,
+        leaseDocument: true,
         firstLogin: true,
         userProperties: {
           select: {

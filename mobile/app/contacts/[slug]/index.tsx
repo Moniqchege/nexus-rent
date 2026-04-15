@@ -98,7 +98,6 @@ export default function ContactDetail() {
       </View>
     </View>
 
-    {/* 👇 Always at bottom */}
     <View style={styles.buttons}>
       {!!contact.phone && (
         <>
