@@ -1,130 +1,215 @@
-import { View, Text, FlatList, Pressable, StyleSheet, Linking } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Linking, Image } from 'react-native';
 import { useEffect, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Contact } from '../../../types/contact';
 import { useAuthStore } from '../../../store/authStore';
+import { Contact } from '../../../types/contact';
 import api from '../../../lib/api';
 
-export default function ContactsDetail() {
-  const { slug } = useLocalSearchParams();
-  const [contacts, setContacts] = useState<Contact[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function ContactDetail() {
+  const { slug } = useLocalSearchParams<{ slug: string }>();
   const token = useAuthStore((state) => state.token);
   const router = useRouter();
 
-useEffect(() => {
-  if (!token) return;
+  const [contact, setContact] = useState<Contact | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const propertyId = 1; 
-
-  setLoading(true);
-
-  api.getContacts(token)
-    .then((contacts) => {
-      const filtered = contacts.filter(
-        (c: Contact) => c.type === slug
-      );
-      setContacts(filtered);
-    })
-    .catch(console.error)
-    .finally(() => setLoading(false));
-
+  useEffect(() => {
+  if (token && slug) {
+    api.getContacts(token)
+      .then((data) => {
+        const found = data.find((c: any) => c.id === parseInt(slug));
+        if (found) {
+          setContact({
+            id: found.id,
+            name: found.name,
+            email: found.email ?? '',
+            phone: found.phone ?? '',
+            role: found.role?.name ?? '',
+            propertyId: found.property?.id,
+            propertyName: found.property?.title ?? '',
+            propertyLocation: found.property?.location ?? '',
+          });
+        } else {
+          setContact(null);
+        }
+      })
+      .finally(() => setLoading(false));
+  }
 }, [token, slug]);
 
-  const renderContact = ({ item }: { item: Contact }) => (
-    <Pressable style={styles.providerCard} onPress={() => {
-      if (item.phone) {
-        Linking.openURL(`sms:${item.phone}?body=Hi, regarding property maintenance...`);
-      }
-    }}>
-      <LinearGradient 
-        colors={['rgba(0,255,255,0.1)', 'rgba(124,58,237,0.1)']} 
-        style={styles.cardGradient}
-      >
-        <View style={styles.cardContent}>
-          <Text style={styles.name}>{item.name}</Text>
-          <Text style={styles.role}>{item.role}</Text>
-          {item.phone && (
-            <Text style={styles.phone}>{item.phone}</Text>
-          )}
-          {item.email && (
-            <Text style={styles.email}>{item.email}</Text>
-          )}
-        </View>
-      </LinearGradient>
-    </Pressable>
-  );
+  const callContact = () => {
+    if (contact?.phone) {
+      Linking.openURL(`tel:${contact.phone}`);
+    }
+  };
+
+  const messageContact = () => {
+    if (contact?.phone) {
+      Linking.openURL(`sms:${contact.phone}?body=Hi`);
+    }
+  };
+
+  const emailContact = () => {
+    if (contact?.email) {
+      Linking.openURL(`mailto:${contact.email}`);
+    }
+  };
 
   if (loading) {
     return (
       <View style={styles.center}>
-        <Text>Loading {slug} contacts...</Text>
+        <Text>Loading contact...</Text>
+      </View>
+    );
+  }
+
+  if (!contact) {
+    return (
+      <View style={styles.center}>
+        <Text>Contact not found</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <FlatList
-        data={contacts}
-        renderItem={renderContact}
-        keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={styles.list}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-      />
+  <View style={styles.container}>
+    <View style={styles.content}>
+      <LinearGradient
+        colors={['rgba(0,255,255,0.15)', 'rgba(124,58,237,0.15)']}
+        style={styles.header}
+      >
+        <Text style={styles.title}>{contact.name}</Text>
+        <Text style={styles.subtitle}>{contact.role}</Text>
+      </LinearGradient>
+
+      <View style={styles.details}>
+        <View style={styles.row}>
+          <Text style={styles.label}>Phone:</Text>
+          <Text style={styles.value}>{contact.phone}</Text>
+        </View>
+
+        {contact.email && (
+          <View style={styles.row}>
+            <Text style={styles.label}>Email:</Text>
+            <Text style={styles.value}>{contact.email}</Text>
+          </View>
+        )}
+      </View>
     </View>
-  );
+
+    {/* 👇 Always at bottom */}
+    <View style={styles.buttons}>
+      {!!contact.phone && (
+        <>
+          <Pressable style={styles.callButton} onPress={callContact}>
+            <Text style={styles.callText}>📞 CALL NOW</Text>
+          </Pressable>
+
+          <Pressable style={styles.messageButton} onPress={messageContact}>
+            <Text style={styles.messageText}>💬 MESSAGE</Text>
+          </Pressable>
+        </>
+      )}
+
+      {!!contact.email && (
+        <Pressable style={styles.emailButton} onPress={emailContact}>
+          <Text style={styles.emailText}>✉️ EMAIL</Text>
+        </Pressable>
+      )}
+    </View>
+  </View>
+);
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#060A14',
-  },
-  list: {
-    paddingBottom: 100,
-  },
-  providerCard: {
-    margin: 12,
-    borderRadius: 20,
-    overflow: 'hidden',
-  },
-  cardGradient: {
-    padding: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(0,255,255,0.3)',
-  },
-  cardContent: {
-    alignItems: 'center',
-    gap: 8,
-  },
-  name: {
-    fontSize: 20,
-    fontFamily: 'Orbitron',
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  role: {
-    fontSize: 14,
-    color: '#00FFFF',
-    fontFamily: 'Orbitron',
-  },
-  phone: {
-    fontSize: 14,
-    color: '#ccc',
-    textAlign: 'center',
-  },
-  email: {
-    fontSize: 12,
-    color: '#888',
-  },
-  separator: {
-    height: 12,
-  },
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  content: {
+  flex: 1,
+},
+container: {
+  flex: 1,
+  backgroundColor: '#060A14',
+},
+
+header: {
+  padding: 20,
+  borderBottomWidth: 1,
+  borderBottomColor: 'rgba(0,255,255,0.3)',
+},
+
+title: {
+  fontSize: 18,
+  color: '#00FFFF',
+  fontFamily: 'Orbitron',
+},
+
+subtitle: {
+  color: '#ccc',
+  marginTop: 4,
+},
+
+details: {
+  padding: 24,
+},
+
+row: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  paddingVertical: 12,
+  borderBottomWidth: 1,
+  borderBottomColor: 'rgba(255,255,255,0.1)',
+},
+
+label: {
+  color: '#888',
+},
+
+value: {
+  color: '#fff',
+  fontFamily: 'monospace',
+},
+
+buttons: {
+  padding: 20,
+  gap: 12,
+},
+
+callButton: {
+  backgroundColor: 'rgba(22,163,74,0.2)',
+  padding: 16,
+  borderRadius: 12,
+},
+
+messageButton: {
+  backgroundColor: 'rgba(0,255,255,0.1)',
+  padding: 16,
+  borderRadius: 12,
+},
+
+emailButton: {
+  backgroundColor: 'rgba(124,58,237,0.15)',
+  padding: 16,
+  borderRadius: 12,
+},
+
+callText: {
+  color: '#16A34A',
+  textAlign: 'center',
+},
+
+messageText: {
+  color: '#00FFFF',
+  textAlign: 'center',
+},
+
+emailText: {
+  color: '#7C3AED',
+  textAlign: 'center',
+},
+
+center: {
+  flex: 1,
+  justifyContent: 'center',
+  alignItems: 'center',
+},
 });

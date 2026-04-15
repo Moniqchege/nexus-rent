@@ -9,8 +9,8 @@ export interface ContactCategory {
 export interface Contact {
     id: number;
     name: string;
-    phone?: string;
-    email?: string;
+    phone: string;
+    email: string;
     // type: string;
     role: string;
     propertyId: string;
