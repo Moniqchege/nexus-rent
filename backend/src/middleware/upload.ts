@@ -19,13 +19,14 @@ type DestinationCallback = (error: Error | null, destination: string) => void;
 type FilenameCallback = (error: Error | null, filename: string) => void;
 
 const storage: StorageEngine = multer.diskStorage({
- destination: (_req: Request, _file: Express.Multer.File, cb: DestinationCallback) => {
-  const normalizedDir = uploadDir.replace(/\\/g, "/");
-  console.log("multer destination:", normalizedDir);
-  cb(null, normalizedDir);
-},
-  filename: (_req: Request, file: Express.Multer.File, cb: FilenameCallback) => {
-    cb(null, Date.now() + "-" + file.originalname);
+  destination: (_req: Request, _file: Express.Multer.File, cb: DestinationCallback) => {
+    const normalizedDir = uploadDir.replace(/\\/g, "/");
+    console.log("multer destination:", normalizedDir);
+    cb(null, normalizedDir);
+  },
+  filename: (_req, file, cb) => {
+    const safeName = Date.now() + "-" + path.basename(file.originalname);
+    cb(null, safeName);
   },
 });
 

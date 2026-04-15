@@ -6,6 +6,7 @@ import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 import { transporter } from '../services/mailer';
 import { upload } from '../middleware/upload';
+import path from 'path';
 
 const router = Router();
 function generatePassword(length = 10) {
@@ -128,7 +129,7 @@ router.post(
       const hashedPassword = await bcrypt.hash(plainPassword, 12);
 
       const leaseDocumentPath = req.file
-        ? `/uploads/leases/${req.file.filename}`
+        ? `/uploads/leases/${path.basename(req.file.filename)}`
         : null;
 
       const user = await db.user.create({

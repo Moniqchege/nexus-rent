@@ -216,14 +216,16 @@ export default function Home() {
     console.log("📄 Lease document value:", leaseDoc);
 
     if (!leaseDoc) {
-      console.log("❌ No lease document found");
       alert('No lease document found. Please upload during onboarding.');
       return;
     }
 
     console.log("🚀 Attempting to open lease document:", leaseDoc);
 
-    Linking.openURL(leaseDoc)
+    const BASE_URL = 'https://lavenia-pronounceable-radically.ngrok-free.dev';
+    const fullUrl = leaseDoc.startsWith('http') ? leaseDoc : `${BASE_URL}${leaseDoc}`;
+
+    Linking.openURL(fullUrl)
       .then(() => {
         console.log("✅ Lease document opened successfully");
       })
