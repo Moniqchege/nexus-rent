@@ -6,7 +6,7 @@ import express from "express";
 import session from "express-session";
 import passport from "passport";
 import path from "path";
-import fs from "fs"; 
+import fs from "fs";
 import { fileURLToPath } from "url";
 import authRoutes from "./routes/auth.js";
 import notificationsRoutes from "./routes/notifications.js";
@@ -16,6 +16,7 @@ import propertiesRoutes from "./routes/properties.js";
 import adminRoutes from "./routes/admin.js";
 import servicesRoutes from "./routes/services.js";
 import contactsRoutes from "./routes/contacts.js";
+import auditRoutes from "./routes/audit-trails.js";
 
 import { setupOAuth } from "./services/oauthStrategies.js";
 
@@ -101,6 +102,7 @@ app.use("/api/properties", propertiesRoutes);
 app.use("/api/services", servicesRoutes);
 app.use("/api/contacts", contactsRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/audit-trails", auditRoutes);
 app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));
 
 

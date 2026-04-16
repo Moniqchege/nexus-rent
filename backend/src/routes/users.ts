@@ -248,23 +248,23 @@ router.get('/contacts', requireAuth, async (req: Request, res: Response) => {
         }
       )
       .map(
-        ({
-          user,
-          role,
-          property,
-        }: {
-          user: { id: number; name: string; email: string; phone: string | null };
-          role: { id: number; name: string };
-          property: { id: number; title: string; location: string };
-        }) => ({
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          phone: user.phone,
-          role,
-          property,
-        })
-      );
+  ({
+    user,
+    role,
+    property,
+  }: {
+    user: { id: number; name: string; email: string; phone: string | null };
+    role: { id: number; name: string };
+    property: { id: number; title: string; location: string } | null;
+  }) => ({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    phone: user.phone,
+    role,
+    property, // now allowed to be null
+  })
+);
 
     res.json(unique);
   } catch (error) {

@@ -5,6 +5,8 @@ import { useRouter } from 'expo-router';
 import { Pressable } from 'react-native';
 import { useAuthStore } from "../../store/authStore";
 import * as Linking from 'expo-linking';
+import { useEffect, useState } from 'react';
+import { useAuditTrailsStore } from "../../store/auditTrailsStore";
 
 type ColorKey = "neon" | "purple" | "success" | "danger" | "warn";
 
@@ -97,6 +99,14 @@ function GradientTitle({ text }: { text: string }) {
 export default function Home() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
+  const token = useAuthStore((state) => state.token);
+  const { auditTrails, fetchAuditTrails, loading } = useAuditTrailsStore();
+
+  useEffect(() => {
+    if (token) {
+      fetchAuditTrails(token);
+    }
+  }, [token]);
 
   const firstName = user?.name?.split(" ").slice(0, 2).join(" ") || "User";
 
@@ -107,6 +117,29 @@ export default function Home() {
   if (hour < 17) return "Good afternoon 🌤️";
   return "Good evening 🌙";
 };
+
+  // Map backend data to UI format
+  const recentActivities = auditTrails.slice(0, 3).map(trail => ({
+    icon: trail.status === 'SUCCESS' ? '✓' : '✗',
+    color: trail.status === 'SUCCESS' ? 'success' : 'danger' as ColorKey,
+    title: trail.title,
+    subtitle: trail.subtitle || new Date(trail.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+    amount: trail.metadata?.amount ? `Ksh${Number(trail.metadata.amount).toLocaleString()}` : trail.status === 'SUCCESS' ? 'Done' : 'Failed',
+    amountColor: trail.status === 'SUCCESS' ? 'success' : 'danger' as any,
+  }));
+
+  // Fallback to hardcoded if no data
+  const displayActivities = recentActivities.length > 0 ? recentActivities : [
+    {
+      icon: "✓",
+      color: "success" as ColorKey,
+      title: "No recent activity",
+      subtitle: "Your activity will appear here",
+      amount: "Soon",
+      amountColor: "warn" as any,
+    }
+  ];
+
   return (
     <View style={styles.container}>
       {/* Ambient Glow */}
@@ -286,33 +319,8 @@ export default function Home() {
         {/* recent activity */}
 <Text style={styles.sectionTitle}>RECENT ACTIVITY</Text>
 <View style={styles.timeline}>
-  {[
-    {
-      icon: "✓",
-      color: "success" as ColorKey,
-      title: "February Rent Paid",
-      subtitle: "Feb 1, 2025 · On time · M-Pesa",
-      amount: "Ksh2,400",
-      amountColor: "success" as ColorKey,
-    },
-    {
-      icon: "📄",
-      color: "neon" as ColorKey,
-      title: "Lease Renewed",
-      subtitle: "Jan 15, 2025 · 6 months extension",
-      amount: "↑ Done",
-      amountColor: "neon" as ColorKey,
-    },
-    {
-      icon: "🔧",
-      color: "danger" as ColorKey,
-      title: "AC Maintenance Request",
-      subtitle: "Jan 8, 2025 · Resolved in 48h",
-      amount: "Closed",
-      amountColor: "muted" as any, 
-    },
-  ].map((item, i) => (
-    <View key={i} style={styles.timelineItem}>
+  {displayActivities.map((item, i) => (
+    <View key={i || 'empty'} style={styles.timelineItem}>
       <View style={[styles.tlDot, colorMap[item.color]?.box]}>
         <Text style={[{ fontSize: 14 }, colorMap[item.color]?.text]}>{item.icon}</Text>
       </View>
@@ -333,6 +341,14 @@ export default function Home() {
     </View>
   ))}
 </View>
+
+{/* See All Button */}
+<Pressable 
+  style={styles.seeAllButton}
+  onPress={() => router.push('/(tabs)/audit-trails')}
+>
+  <Text style={styles.seeAllText}>See all activity →</Text>
+</Pressable>
       </ScrollView>
     </View>
   );
@@ -448,8 +464,24 @@ statChangePill: {
   borderRadius: 6,
   borderWidth: 1,
 },
-statChangeText: {
+  statChangeText: {
   fontSize: 9,
   fontFamily: "Sora",
 },
+  seeAllButton: {
+    alignSelf: 'center',
+    marginHorizontal: 20,
+    marginBottom: 24,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(0,255,255,0.3)',
+  },
+  seeAllText: {
+    fontSize: 11,
+    fontFamily: 'Orbitron',
+    color: '#00FFFF',
+    letterSpacing: 0.5,
+  },
 });

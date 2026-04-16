@@ -33,6 +33,8 @@ model User {
   otpCodes       OtpCode[]
   surveys        Survey[]
   surveyResponses SurveyResponse[]
+  auditTrails     AuditTrail[]
+
 }
 
 model Session {
@@ -230,4 +232,21 @@ model ServiceProvider {
   @@index([categoryId])
   @@index([isActive])
 }
+
+model AuditTrail {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  action    String   // e.g. "rent_paid", "lease_renewed", "service_request"
+  status    String   // "SUCCESS" | "FAILED"
+  title     String
+  subtitle  String?
+  metadata  Json?    // optional details {amount: 2400, method: "M-Pesa"}
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
 
