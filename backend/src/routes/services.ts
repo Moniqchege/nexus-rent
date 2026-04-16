@@ -60,7 +60,7 @@ router.get(
         subtitle: (req, res) => {
             const category = res.locals.categoryName;
             return category
-                ? `Viewed ${category} Services`
+                ? `${category} Services`
                 : 'Viewed Service Providers';
         },
         metadata: (req) => ({
@@ -212,11 +212,6 @@ router.post(
 router.get(
     '/providers/:id',
     requireAuth,
-    audit({
-        action: 'view_service_provider',
-        title: 'Service Provider',
-        subtitle: (req) => `Viewed Provider #${req.params.id}`,
-    }),
     async (req: Request, res: Response) => {
         try {
             const rawId = req.params.id;

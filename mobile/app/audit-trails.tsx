@@ -2,8 +2,9 @@ import { View, Text, FlatList, StyleSheet, Pressable } from "react-native";
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuthStore } from "../../store/authStore";
-import { useAuditTrailsStore } from "../../store/auditTrailsStore";
+import { useAuditTrailsStore } from "../store/auditTrailsStore";
+import { useAuthStore } from "../store/authStore";
+import { Image } from "react-native";
 
 type ColorKey = "neon" | "purple" | "success" | "danger" | "warn";
 
@@ -59,7 +60,10 @@ const AuditTrailsPage = () => {
     <View style={styles.container}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#00FFFF" />
+          <Image
+                  source={require('../assets/back_icon.png')}
+                  style={styles.backIcon}
+                />
         </Pressable>
         <Text style={styles.headerTitle}>Activity History</Text>
         <View style={styles.placeholder} />
@@ -93,8 +97,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 50,
-    paddingBottom: 20,
+    paddingBottom: 15,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255,255,255,0.1)',
   },
@@ -106,7 +109,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 20,
     fontFamily: 'Orbitron',
-    color: '#fff',
+    color: '#00FFFF',
   },
   placeholder: {
     width: 24,
@@ -176,6 +179,11 @@ const styles = StyleSheet.create({
     color: '#888',
     textAlign: 'center',
   },
+  backIcon: {
+  width: 22,
+  height: 22,
+  tintColor: '#00FFFF', 
+},
 });
 
 export default AuditTrailsPage;

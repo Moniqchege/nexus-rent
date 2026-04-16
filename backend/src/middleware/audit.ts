@@ -8,6 +8,9 @@ interface AuditOptions {
     metadata?: (req: Request, res: Response) => Record<string, unknown>;
 }
 
+const recentAudits = new Map<string, number>();
+const DEDUP_WINDOW_MS = 10_000;
+
 function formatTimestamp(date: Date) {
     return new Intl.DateTimeFormat('en-US', {
         month: 'short',
@@ -24,7 +27,6 @@ function formatTimestamp(date: Date) {
 
 export function audit(options: AuditOptions) {
     return (req: Request, res: Response, next: NextFunction) => {
-        // Intercept res.json to know the final status
         const originalJson = res.json.bind(res);
 
         res.json = function (body: any) {
@@ -32,27 +34,34 @@ export function audit(options: AuditOptions) {
             const userId = (req as any).user?.id;
 
             if (userId) {
-                let subtitle =
-                    typeof options.subtitle === 'function'
-                        ? options.subtitle(req, res)
-                        : options.subtitle;
+                const metadata = options.metadata?.(req, res);
 
-                const timestamp = formatTimestamp(new Date());
+                const dedupKey = `${userId}:${options.action}:${JSON.stringify(metadata ?? {})}`;
+                const now = Date.now();
+                const lastLogged = recentAudits.get(dedupKey);
 
-                subtitle = subtitle
-                    ? `${subtitle} · ${timestamp}`
-                    : timestamp;
+                if (!lastLogged || now - lastLogged > DEDUP_WINDOW_MS) {
+                    recentAudits.set(dedupKey, now);
 
-                logAuditTrail({
-                    userId: Number(userId),
-                    action: options.action,
-                    title: options.title,
-                    status,
-                    subtitle,
-                    metadata: options.metadata?.(req, res),
-                }).catch((err) =>
-                    console.error('Audit log failed silently:', err)
-                );
+                    let subtitle =
+                        typeof options.subtitle === 'function'
+                            ? options.subtitle(req, res)
+                            : options.subtitle;
+
+                    const timestamp = formatTimestamp(new Date());
+                    subtitle = subtitle ? `${subtitle} · ${timestamp}` : timestamp;
+
+                    logAuditTrail({
+                        userId: Number(userId),
+                        action: options.action,
+                        title: options.title,
+                        status,
+                        subtitle,
+                        metadata,
+                    }).catch((err) =>
+                        console.error('Audit log failed silently:', err)
+                    );
+                }
             }
 
             return originalJson(body);

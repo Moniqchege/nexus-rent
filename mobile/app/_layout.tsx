@@ -62,13 +62,14 @@ export default function RootLayout() {
   const isServicesRoute = segments[0] === 'services';
   const isContactsRoute = segments[0] === 'contacts';
   const isChatbotRoute = segments[0] === 'chatbot';
+  const isAuditRoute = segments[0] === 'audit-trails';
 
   if (!auth.token && !auth.tempToken && inTabsGroup && !isAuthFlow) {
     router.replace('/login');
     return;
   }
 
-  if ((auth.token || (auth.tempToken && !auth.isFirstLogin)) && !inTabsGroup && !isAuthFlow && !isServicesRoute && !isContactsRoute && !isChatbotRoute) {
+  if ((auth.token || (auth.tempToken && !auth.isFirstLogin)) && !inTabsGroup && !isAuthFlow && !isServicesRoute && !isContactsRoute && !isChatbotRoute && !isAuditRoute) {
     router.replace('/(tabs)/home');
   }
 }, [auth.token, auth.tempToken, segments, router, fontsLoaded]);

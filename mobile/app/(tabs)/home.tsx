@@ -5,7 +5,8 @@ import { useRouter } from 'expo-router';
 import { Pressable } from 'react-native';
 import { useAuthStore } from "../../store/authStore";
 import * as Linking from 'expo-linking';
-import { useEffect, useState } from 'react';
+import { useFocusEffect } from "@react-navigation/native";
+import { useCallback, useEffect, useState } from 'react';
 import { useAuditTrailsStore } from "../../store/auditTrailsStore";
 
 type ColorKey = "neon" | "purple" | "success" | "danger" | "warn";
@@ -53,13 +54,6 @@ const stats: {  label: string; value: string; color: ColorKey; change: string }[
   { label: "ON-TIME PAYMENT RATE", value: "98.4%",  color: "purple",  change: "↑ Great" },
 ];
 
-// Forecast
-const forecast: { month: string; price: string; color: ColorKey }[] = [
-  { month: "MAR", price: "Ksh2,400", color: "neon" },
-  { month: "APR", price: "Ksh2,640", color: "warn" },
-  { month: "MAY", price: "Ksh2,880", color: "danger" },
-];
-
 function GradientTitle({ text }: { text: string }) {
   return (
     <MaskedView
@@ -102,11 +96,19 @@ export default function Home() {
   const token = useAuthStore((state) => state.token);
   const { auditTrails, fetchAuditTrails, loading } = useAuditTrailsStore();
 
-  useEffect(() => {
-    if (token) {
+useFocusEffect(
+  useCallback(() => {
+    if (!token) return;
+
+    fetchAuditTrails(token);
+
+    const interval = setInterval(() => {
       fetchAuditTrails(token);
-    }
-  }, [token]);
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [token])
+);
 
   const firstName = user?.name?.split(" ").slice(0, 2).join(" ") || "User";
 
@@ -317,7 +319,16 @@ export default function Home() {
 </View>
 
         {/* recent activity */}
-<Text style={styles.sectionTitle}>RECENT ACTIVITY</Text>
+<View style={styles.sectionHeader}>
+  <Text style={styles.sectionTitle}>RECENT ACTIVITY</Text>
+
+  <Pressable
+    style={styles.seeAllButton}
+    onPress={() => router.push('/audit-trails')}
+  >
+    <Text style={styles.seeAllText}>See all</Text>
+  </Pressable>
+</View>
 <View style={styles.timeline}>
   {displayActivities.map((item, i) => (
     <View key={i || 'empty'} style={styles.timelineItem}>
@@ -341,14 +352,6 @@ export default function Home() {
     </View>
   ))}
 </View>
-
-{/* See All Button */}
-<Pressable 
-  style={styles.seeAllButton}
-  onPress={() => router.push('/(tabs)/audit-trails')}
->
-  <Text style={styles.seeAllText}>See all activity →</Text>
-</Pressable>
       </ScrollView>
     </View>
   );
@@ -471,8 +474,7 @@ statChangePill: {
   seeAllButton: {
     alignSelf: 'center',
     marginHorizontal: 20,
-    marginBottom: 24,
-    paddingVertical: 8,
+    paddingVertical: 6,
     paddingHorizontal: 16,
     borderRadius: 20,
     borderWidth: 1,
@@ -484,4 +486,10 @@ statChangePill: {
     color: '#00FFFF',
     letterSpacing: 0.5,
   },
+  sectionHeader: {
+  flexDirection: "row",
+  justifyContent: "space-between",
+  alignItems: "center",
+  // paddingHorizontal: 5,
+},
 });
