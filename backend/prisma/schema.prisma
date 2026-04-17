@@ -10,8 +10,8 @@ datasource db {
 model User {
   id            Int      @id @default(autoincrement())
   email         String   @unique
-  username      String?   @unique
-  phone         String?   @unique
+  username      String?  @unique
+  phone         String?  @unique
   password_hash String
   name          String
   image         String?
@@ -21,20 +21,19 @@ model User {
   plan          String?  @default("FREE")
   firstLogin    Boolean  @default(true)
   createdAt     DateTime @default(now())
-  leaseDocument  String?
+  leaseDocument String?
   updatedAt     DateTime @updatedAt
 
-  userProperties UserProperty[]
-  sessions       Session[]
-  properties     Property[]     @relation("LandlordProperties")
-  Tenant         Tenant?
-  Notification   Notification[]
+  userProperties      UserProperty[]
+  sessions            Session[]
+  properties          Property[]           @relation("LandlordProperties")
+  Tenant              Tenant?
+  Notification        Notification[]
   passwordResetTokens PasswordResetToken[]
-  otpCodes       OtpCode[]
-  surveys        Survey[]
-  surveyResponses SurveyResponse[]
-  auditTrails     AuditTrail[]
-
+  otpCodes            OtpCode[]
+  surveys             Survey[]
+  surveyResponses     SurveyResponse[]
+  auditTrails         AuditTrail[]
 }
 
 model Session {
@@ -58,57 +57,60 @@ model PasswordResetToken {
 }
 
 model OtpCode {
-  id        Int      @id @default(autoincrement())
-  userId    Int?
-  identifier String  // email or userId
-  codeHash  String
-  expiresAt DateTime
-  used      Boolean  @default(false)
-  attempts  Int      @default(0)
-  createdAt DateTime @default(now())
+  id         Int      @id @default(autoincrement())
+  userId     Int?
+  identifier String // email or userId
+  codeHash   String
+  expiresAt  DateTime
+  used       Boolean  @default(false)
+  attempts   Int      @default(0)
+  createdAt  DateTime @default(now())
 
   user User? @relation(fields: [userId], references: [id])
-  
+
   @@index([identifier])
   @@index([expiresAt])
 }
 
-
 model Property {
-  id         Int       @id @default(autoincrement())
-  landlordId Int?
-  landlord   User?     @relation("LandlordProperties", fields: [landlordId], references: [id])
-  title      String
-  location   String
-  price      Float
-  beds       Int
-  baths      Int
-  sqft       Int
-  status     String    @default("active")
-  amenities  Json?   
-  rating     Float?
-  score      Float?
-  users      UserProperty[]
-  Tenant     Tenant[]
-  Review     Review[]
-  image      String?
-  floor      String?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  id            Int            @id @default(autoincrement())
+  landlordId    Int?
+  landlord      User?          @relation("LandlordProperties", fields: [landlordId], references: [id])
+  title         String
+  location      String
+  price         Float
+  beds          Int
+  baths         Int
+  sqft          Int
+  status        String         @default("active")
+  amenities     Json?
+  rating        Float?
+  score         Float?
+  users         UserProperty[]
+  Tenant        Tenant[]
+  Review        Review[]
+  image         String?
+  floor         String?
+  payments      Payment[]
+  rentSchedules RentSchedule[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 }
 
 model Tenant {
-  id         Int      @id @default(autoincrement())
-  name       String
-  email      String   @unique
-  phone      String?
-  userId     Int?     @unique
-  propertyId Int
-  moveInDate DateTime
-  createdAt  DateTime @default(now())
-  property   Property @relation(fields: [propertyId], references: [id])
-  user       User?    @relation(fields: [userId], references: [id])
-  reviews    Review[]
+  id            Int            @id @default(autoincrement())
+  name          String
+  email         String         @unique
+  phone         String?
+  userId        Int?           @unique
+  propertyId    Int
+  moveInDate    DateTime
+  createdAt     DateTime       @default(now())
+  property      Property       @relation(fields: [propertyId], references: [id])
+  user          User?          @relation(fields: [userId], references: [id])
+  reviews       Review[]
+  payments      Payment[]
+  rentSchedules RentSchedule[]
 }
 
 model Review {
@@ -123,14 +125,14 @@ model Review {
 }
 
 model Notification {
-  id         Int      @id @default(autoincrement())
-  title        String 
-  message    String
-  landlordId Int?
+  id           Int      @id @default(autoincrement())
+  title        String
+  message      String
+  landlordId   Int?
   recipientIds Json
-  isRead     Boolean  @default(false)
-  sentAt     DateTime @default(now())
-  landlord   User?    @relation(fields: [landlordId], references: [id])
+  isRead       Boolean  @default(false)
+  sentAt       DateTime @default(now())
+  landlord     User?    @relation(fields: [landlordId], references: [id])
 }
 
 model Permission {
@@ -138,7 +140,7 @@ model Permission {
   key       String   @unique
   label     String
   category  String
-  group     String   @default("UNCATEGORIZED")      
+  group     String   @default("UNCATEGORIZED")
   createdAt DateTime @default(now())
 }
 
@@ -179,9 +181,9 @@ model Amenity {
 model Survey {
   id           Int      @id @default(autoincrement())
   title        String
-  questions    Json     /// Array of {question: string, type: "text"|"multiple"|"rating"}
+  questions    Json /// Array of {question: string, type: "text"|"multiple"|"rating"}
   landlordId   Int?
-  recipientIds Json    /// Array of user IDs as strings
+  recipientIds Json /// Array of user IDs as strings
   sentAt       DateTime @default(now())
   landlord     User?    @relation(fields: [landlordId], references: [id])
 
@@ -189,15 +191,15 @@ model Survey {
 }
 
 model SurveyResponse {
-  id           Int      @id @default(autoincrement())
-  surveyId     Int
-  userId       Int
-  answers      Json     /// Array of responses matching questions
-  submittedAt  DateTime @default(now())
-  
-  survey Survey  @relation(fields: [surveyId], references: [id], onDelete: Cascade)
-  user   User    @relation(fields: [userId], references: [id])
-  
+  id          Int      @id @default(autoincrement())
+  surveyId    Int
+  userId      Int
+  answers     Json /// Array of responses matching questions
+  submittedAt DateTime @default(now())
+
+  survey Survey @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id])
+
   @@unique([surveyId, userId])
 }
 
@@ -205,30 +207,30 @@ model ServiceCategory {
   id          Int      @id @default(autoincrement())
   name        String
   slug        String   @unique
-  icon        String   // emoji
+  icon        String // emoji
   description String?
   createdAt   DateTime @default(now())
-  
-  providers   ServiceProvider[]
+
+  providers ServiceProvider[]
 }
 
 model ServiceProvider {
-  id            Int            @id @default(autoincrement())
-  name          String
-  phone         String
-  email         String?
-  categoryId    Int
-  hourlyRate    Float?
-  location      String?
-  rating        Float?         @default(0)
-  isActive      Boolean        @default(true)
-  bio           String?
-  image         String?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  
-  category      ServiceCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  
+  id         Int      @id @default(autoincrement())
+  name       String
+  phone      String
+  email      String?
+  categoryId Int
+  hourlyRate Float?
+  location   String?
+  rating     Float?   @default(0)
+  isActive   Boolean  @default(true)
+  bio        String?
+  image      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  category ServiceCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
   @@index([categoryId])
   @@index([isActive])
 }
@@ -236,11 +238,11 @@ model ServiceProvider {
 model AuditTrail {
   id        Int      @id @default(autoincrement())
   userId    Int
-  action    String   // e.g. "rent_paid", "lease_renewed", "service_request"
-  status    String   // "SUCCESS" | "FAILED"
+  action    String // e.g. "rent_paid", "lease_renewed", "service_request"
+  status    String // "SUCCESS" | "FAILED"
   title     String
   subtitle  String?
-  metadata  Json?    // optional details {amount: 2400, method: "M-Pesa"}
+  metadata  Json? // optional details {amount: 2400, method: "M-Pesa"}
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -249,4 +251,48 @@ model AuditTrail {
   @@index([createdAt])
 }
 
+model Payment {
+  id          Int       @id @default(autoincrement())
+  tenantId    Int
+  propertyId  Int
+  amount      Float
+  method      String
+  status      String
+ referenceId String? @unique
+  metadata    Json?
+  lateFee     Float?
+  paidAt      DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  rentSchedule RentSchedule? @relation()
+
+  @@index([tenantId])
+  @@index([status])
+  @@index([paidAt])
+}
+
+model RentSchedule {
+  id            Int      @id @default(autoincrement())
+  propertyId    Int
+  tenantId      Int
+  dueDate       DateTime
+  amount        Float
+  lateFeeAmount Float?   @default(0)
+  status        String
+  period        String
+  paymentId     Int?     @unique
+  createdAt     DateTime @default(now())
+
+  property Property @relation(fields: [propertyId], references: [id])
+  tenant   Tenant   @relation(fields: [tenantId], references: [id])
+  payment  Payment? @relation(fields: [paymentId], references: [id])
+
+  @@index([propertyId])
+  @@index([tenantId])
+  @@index([dueDate])
+  @@index([status])
+}

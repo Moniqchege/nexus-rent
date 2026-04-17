@@ -240,7 +240,53 @@ const api = {
         const data = await response.json();
         return data.auditTrails || [];
     },
+
+    async getPayments(token: string, params?: { propertyId?: number; status?: string }): Promise<{ payments: Payment[] }> {
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        };
+        const query = new URLSearchParams();
+        if (params) {
+            Object.entries(params).forEach(([k,v]) => v && query.append(k, v.toString()));
+        }
+        const response = await fetch(`${API_BASE}/api/payments?${query}`, { headers });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.json();
+    },
+
+    async getPaymentSchedules(token: string, params?: { status?: string }): Promise<{ schedules: RentSchedule[] }> {
+        const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
+        const query = new URLSearchParams(params || {});
+        const response = await fetch(`${API_BASE}/api/payments/schedules?${query}`, { headers });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.json();
+    },
+
+    async initiateMpesaSTK(token: string, data: { phone: string; amount: number; propertyId: number; tenantId: number; accountRef: string; description: string }): Promise<PaymentResult> {
+        const response = await fetch(`${API_BASE}/api/payments/mpesa`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify(data),
+        });
+        if (!response.ok) throw new Error(await response.text());
+        return response.json();
+    },
+
+    async createCardSession(token: string, data: { propertyId: number; tenantId: number; amount: number; accountRef: string }): Promise<{ clientSecret: string; id: string }> {
+        const response = await fetch(`${API_BASE}/api/payments/card/session`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify(data),
+        });
+        if (!response.ok) throw new Error(await response.text());
+        return response.json();
+    },
 };
 
 export default api;
+
+import { Payment, RentSchedule } from '../types/payment';
+type PaymentResult = { success: boolean; data?: any; error?: string };
+
 

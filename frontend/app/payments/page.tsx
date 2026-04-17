@@ -1,41 +1,53 @@
 "use client";
 import React from "react";
-
-interface Payment {
-  id: number;
-  date: string;
-  amount: string;
-  status: "paid" | "pending" | "failed";
-  method: string;
-  invoice: string;
-  tenant?: string;
-  type: "rent" | "electricity" | "water" | "maintenance";
-}
-
-interface UpcomingBill {
-  id: number;
-  due: string;
-  amount: string;
-  property: string;
-  status: "due" | "scheduled" | "forecast";
-  type: "electricity" | "water" | "maintenance" | "rent";
-}
-
-const samplePayments: Payment[] = [
-  { id: 1, date: "2025-02-15", amount: "KSh 24,000", status: "paid", method: "M-Pesa", invoice: "INV-001", type: "rent", tenant: "John Doe" },
-  { id: 2, date: "2025-01-20", amount: "KSh 3,200", status: "paid", method: "Visa ****1234", invoice: "UTL-002", type: "electricity", tenant: "Jane Smith" },
-  { id: 3, date: "2024-12-18", amount: "KSh 1,800", status: "paid", method: "M-Pesa", invoice: "UTL-003", type: "water", tenant: "John Doe" },
-  { id: 4, date: "2024-11-22", amount: "KSh 5,500", status: "paid", method: "Card", invoice: "MNT-001", type: "maintenance", tenant: "Jane Smith" },
-  { id: 5, date: "2024-10-15", amount: "KSh 24,000", status: "paid", method: "M-Pesa", invoice: "INV-004", type: "rent", tenant: "John Doe" },
-];
-
-const upcomingBills: UpcomingBill[] = [
-  { id: 1, due: "Mar 15, 2025", amount: "KSh 3,500", property: "Sky Vista #101", status: "due", type: "electricity" },
-  { id: 2, due: "Mar 20, 2025", amount: "KSh 2,100", property: "Sky Vista #101", status: "due", type: "water" },
-  { id: 3, due: "Apr 15, 2025", amount: "KSh 24,500", property: "Sky Vista #101", status: "scheduled", type: "rent" },
-];
+import { useEffect, useState } from 'react';
+import { Payment, RentSchedule } from '@/types/payment';
 
 export default function PaymentsPage() {
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [schedules, setSchedules] = useState<RentSchedule[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadData();
+    const es = new EventSource('/api/payments/sse'); 
+    es.onmessage = (event) => {
+      console.log('Payment alert:', event.data);
+      loadData();
+    };
+    return () => es.close();
+  }, []);
+
+  const [upcomingBills, setUpcomingBills] = useState([
+  { id: 1, due: 'Apr 20', status: 'due', amount: 'KSh 2,400', property: 'Unit 3A', type: 'electricity' },
+  { id: 2, due: 'Apr 22', status: 'upcoming', amount: 'KSh 1,800', property: 'Unit 5B', type: 'water' },
+]);
+
+  const loadData = async () => {
+    try {
+      const [pRes, sRes] = await Promise.all([
+        fetch('/api/payments'),
+        fetch('/api/payments/schedules?status=overdue,due'),
+      ]);
+      setPayments(await pRes.json());
+      setSchedules(await sRes.json());
+    } catch {}
+    setLoading(false);
+  };
+
+  if (loading) return <div>Loading...</div>;
+
+  const handleExport = () => {
+    fetch('/api/payments/export-csv')
+      .then(res => res.blob())
+      .then(blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'payments.csv';
+        a.click();
+      });
+  };
   return (
     <div className="dashboard-content">
       <div className="page-tag">💳 PAYMENTS DASHBOARD</div>
@@ -150,11 +162,11 @@ export default function PaymentsPage() {
               </tr>
             </thead>
             <tbody>
-              {samplePayments.map((payment) => (
+             {payments.map((payment) => (
                 <tr key={payment.id} style={{ borderBottom: '1px solid var(--border-glow)' }}>
                   <td style={{ padding: '16px 20px', fontSize: '14px' }}>{payment.date}</td>
-                  <td style={{ padding: '16px 20px', fontSize: '14px' }}>{payment.tenant}</td>
-                  <td style={{ padding: '16px 20px', fontSize: '14px', textTransform: 'uppercase', color: 'var(--neon-purple)' }}>{payment.type}</td>
+                  <td style={{ padding: '16px 20px', fontSize: '14px' }}>{payment.tenant.name}</td>
+                  <td style={{ padding: '16px 20px', fontSize: '14px', textTransform: 'uppercase', color: 'var(--neon-purple)' }}>{payment.method}</td>
                   <td style={{ padding: '16px 20px', textAlign: 'right', fontWeight: 600, color: 'var(--accent-success)' }}>{payment.amount}</td>
                   <td style={{ padding: '16px 20px' }}>
                     <span style={{

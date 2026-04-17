@@ -1,24 +1,31 @@
-# Lease Document Feature Implementation
+# Payment Implementation - Nexus Rent
 
-## Step 1: Update Prisma Schema [✅ DONE]
-- Add `leaseDocument String?` to User model in backend/prisma/schema.prisma
+## Current Progress
+✅ Plan approved with real-time, late fees, unified UI, accounting export
 
-## Step 2: Prisma Migration [PENDING]
-- Run `cd backend && npx prisma migrate dev --name add_lease_document`
+## TODO Steps (Phase 1: Backend)
 
-## Step 3: Update Backend users.ts [✅ DONE]
-- Extend GET /users and /:id to select leaseDocument
-- Update POST /users: Accept leaseDocument, validate required if any propertyAssignment role.name === 'Tenant'
+### 1. Database Schema
+- [x] Update schema.prisma with Payment + RentSchedule models
+- [ ] npx prisma migrate dev --name add_payments_reminders
+- [ ] npx prisma generate
 
-## Step 4: Update mobile/lib/api.ts [PENDING]
-- No new endpoint, but ensure user fetch includes leaseDocument (reuse authStore fetch)
+### 2. Backend Services & Routes
+- [ ] Create backend/src/services/paymentService.ts (Stripe/M-Pesa)
+- [ ] Create backend/src/routes/payments.ts
+- [ ] Edit backend/src/index.ts (mount routes, cron job)
+- [ ] Edit backend/src/routes/notifications.ts (reminders/SSE)
 
-## Step 5: Update mobile/app/(tabs)/home.tsx [✅ DONE]
-- Access user.leaseDocument from authStore
-- On 'My Lease' press: if exists, Linking.openURL(leaseDocument); else alert/upload
+### 3. Frontend & Mobile
+- [ ] Edit mobile/lib/api.ts + create mobile/app/(tabs)/pay.tsx
+- [ ] Edit frontend/app/payments/page.tsx + types
+- [ ] Add SSE listeners (unified real-time)
 
-## Step 6: Test & Cleanup [PENDING]
-- Backend: Create tenant user with/without lease
-- Mobile: Login tenant, check home button opens lease doc
-- Mark TODO complete
+### 4. Testing & Polish
+- [ ] User provides API keys (M-Pesa/STRIPE)
+- [ ] Test payments, cron reminders, late fees (5% after 7d)
+- [ ] CSV export for accounting
+- [ ] Full e2e test
+
+**Next: Schema update → migrate**
 
