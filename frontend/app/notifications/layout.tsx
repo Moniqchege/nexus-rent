@@ -2,7 +2,6 @@
 import type { ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Sidebar from "@/app/components/layout/Sidebar";
-import type { ReactNode } from "react";
 import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
 
