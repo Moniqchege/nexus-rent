@@ -59,7 +59,7 @@ model PasswordResetToken {
 model OtpCode {
   id         Int      @id @default(autoincrement())
   userId     Int?
-  identifier String // email or userId
+  identifier String 
   codeHash   String
   expiresAt  DateTime
   used       Boolean  @default(false)
@@ -93,6 +93,7 @@ model Property {
   floor         String?
   payments      Payment[]
   rentSchedules RentSchedule[]
+  expenses      Expense[]
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 }
@@ -105,6 +106,7 @@ model Tenant {
   userId        Int?           @unique
   propertyId    Int
   moveInDate    DateTime
+  creditBalance Float    @default(0)
   createdAt     DateTime       @default(now())
   property      Property       @relation(fields: [propertyId], references: [id])
   user          User?          @relation(fields: [userId], references: [id])
@@ -181,9 +183,9 @@ model Amenity {
 model Survey {
   id           Int      @id @default(autoincrement())
   title        String
-  questions    Json /// Array of {question: string, type: "text"|"multiple"|"rating"}
+  questions    Json 
   landlordId   Int?
-  recipientIds Json /// Array of user IDs as strings
+  recipientIds Json 
   sentAt       DateTime @default(now())
   landlord     User?    @relation(fields: [landlordId], references: [id])
 
@@ -194,7 +196,7 @@ model SurveyResponse {
   id          Int      @id @default(autoincrement())
   surveyId    Int
   userId      Int
-  answers     Json /// Array of responses matching questions
+  answers     Json 
   submittedAt DateTime @default(now())
 
   survey Survey @relation(fields: [surveyId], references: [id], onDelete: Cascade)
@@ -207,7 +209,7 @@ model ServiceCategory {
   id          Int      @id @default(autoincrement())
   name        String
   slug        String   @unique
-  icon        String // emoji
+  icon        String 
   description String?
   createdAt   DateTime @default(now())
 
@@ -238,11 +240,11 @@ model ServiceProvider {
 model AuditTrail {
   id        Int      @id @default(autoincrement())
   userId    Int
-  action    String // e.g. "rent_paid", "lease_renewed", "service_request"
-  status    String // "SUCCESS" | "FAILED"
+  action    String 
+  status    String 
   title     String
   subtitle  String?
-  metadata  Json? // optional details {amount: 2400, method: "M-Pesa"}
+  metadata  Json? 
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -256,6 +258,7 @@ model Payment {
   tenantId    Int
   propertyId  Int
   amount      Float
+  allocated   Float     @default(0)
   method      String
   status      String
  referenceId String? @unique
@@ -268,7 +271,9 @@ model Payment {
   tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
-  rentSchedule RentSchedule? @relation()
+  rentSchedules  RentSchedule[]
+
+  allocations PaymentAllocation[]
 
   @@index([tenantId])
   @@index([status])
@@ -282,10 +287,13 @@ model RentSchedule {
   dueDate       DateTime
   amount        Float
   lateFeeAmount Float?   @default(0)
+  allocatedAmount Float    @default(0)
   status        String
   period        String
   paymentId     Int?     @unique
   createdAt     DateTime @default(now())
+
+  allocations PaymentAllocation[]
 
   property Property @relation(fields: [propertyId], references: [id])
   tenant   Tenant   @relation(fields: [tenantId], references: [id])
@@ -295,4 +303,46 @@ model RentSchedule {
   @@index([tenantId])
   @@index([dueDate])
   @@index([status])
+}
+
+model Expense {
+  id          Int      @id @default(autoincrement())
+  propertyId  Int
+  amount      Float
+  category    String 
+  date        DateTime @default(now())
+  description String?
+  createdAt   DateTime @default(now())
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId])
+  @@index([date])
+}
+
+model PaymentAllocation {
+  id         Int      @id @default(autoincrement())
+  paymentId  Int
+  scheduleId Int
+  amount     Float
+  createdAt  DateTime @default(now())
+
+  payment  Payment      @relation(fields: [paymentId], references: [id])
+  schedule RentSchedule @relation(fields: [scheduleId], references: [id])
+
+  @@index([paymentId])
+  @@index([scheduleId])
+}
+
+model Lease {
+  id             Int    @id @default(autoincrement())
+  lateFeePercent Float
+  graceDays      Int
+}
+
+model PaymentReference {
+  id         Int @id @default(autoincrement())
+  reference  String @unique
+  tenantId   Int
+  propertyId Int
 }

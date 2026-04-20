@@ -2,8 +2,11 @@ import Stripe from 'stripe';
 import axios from 'axios';
 import { db } from '../db/prisma.js';
 import crypto from 'crypto';
+import { transporter } from './mailer';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2024-06-20' });
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2026-03-25.dahlia',
+});
 
 export interface InitiateMpesaSTK {
   phone: string; // 2547xxxxxxxx
@@ -103,8 +106,10 @@ export async function confirmStripePayment(piId: string, tenantId: number, prope
       where: { referenceId: piId },
       data: { status: 'paid', paidAt: new Date() },
     });
-    // Update RentSchedule if linked
-    // Trigger notification/audit
+    const payment = await db.payment.findUnique({ where: { referenceId: piId } });
+    if (payment) {
+      await allocatePayment(payment.id);
+    }
     return true;
   }
   return false;
@@ -146,10 +151,270 @@ export async function generateMonthlySchedules() {
         dueDate: nextMonth,
         amount: tenant.property.price,
         status: 'scheduled',
-        period: nextMonth.toISOString().slice(0,7),
+        period: nextMonth.toISOString().slice(0, 7),
       },
     });
   }
+}
+
+// Auto-reconciliation helpers
+export async function handleMpesaCallback(body: any): Promise<PaymentResult> {
+  try {
+    const { Body } = body;
+    if (!Body || !Body.stkCallback) return { success: false, error: 'Invalid callback' };
+    const cb = Body.stkCallback;
+    if (cb.ResultCode !== '0') return { success: false, error: cb.ResultDesc };
+
+    const checkoutId = cb.CheckoutRequestID;
+    const amount = cb.CallbackMetadata?.Item?.[0]?.Value;
+
+    const payment = await db.payment.findUnique({ where: { referenceId: checkoutId } });
+    if (!payment) return { success: false, error: 'Payment not found' };
+
+    const existingMetadata = (payment.metadata && typeof payment.metadata === 'object')
+      ? payment.metadata
+      : {};
+
+    await db.payment.update({
+      where: { referenceId: checkoutId },
+      data: {
+        status: 'paid',
+        paidAt: new Date(),
+        metadata: { ...existingMetadata, callback: cb }
+      },
+    });
+
+
+    await allocatePayment(payment.id);
+    return { success: true, data: { checkoutId, amount } };
+  } catch (e) {
+    console.error('M-Pesa callback error:', e);
+    return { success: false, error: 'Processing failed' };
+  }
+}
+
+// export async function reconcilePayment(paymentId: number) {
+//   try {
+//     const payment = await db.payment.findUnique({
+//       where: { id: paymentId },
+//       include: { tenant: true, property: true },
+//     });
+//     if (!payment || payment.status !== 'paid') return false;
+
+//     const schedule = await db.rentSchedule.findFirst({
+//       where: {
+//         tenantId: payment.tenantId,
+//         propertyId: payment.propertyId,
+//         status: { in: ['scheduled', 'overdue'] },
+//       },
+//       orderBy: { dueDate: 'desc' },
+//     });
+
+//     if (schedule) {
+//       await db.$transaction([
+//         db.payment.update({
+//           where: { id: paymentId },
+//           data: { lateFee: schedule.lateFeeAmount || 0 },
+//         }),
+//         db.rentSchedule.update({
+//           where: { id: schedule.id },
+//           data: { status: 'paid', paymentId: payment.id },
+//         }),
+//       ]);
+//       await sendReceipt(paymentId);
+//       return true;
+//     }
+//   } catch (e) {
+//     console.error('Reconcile failed', e);
+//   }
+//   return false;
+// }
+
+export async function allocatePayment(paymentId: number) {
+  return db.$transaction(async (tx) => {
+    const payment = await tx.payment.findUnique({ where: { id: paymentId } });
+    if (!payment || payment.status !== 'paid') return;
+
+    // ✅ Idempotency guard
+    if (payment.allocated >= payment.amount) return;
+
+    let remaining = payment.amount - payment.allocated;
+
+    const schedules = await tx.rentSchedule.findMany({
+      where: {
+        tenantId: payment.tenantId,
+        propertyId: payment.propertyId,
+        status: { in: ['scheduled', 'overdue', 'partial'] },
+      },
+      orderBy: { dueDate: 'asc' }, // ✅ FIXED FIFO
+    });
+
+    for (const sched of schedules) {
+      if (remaining <= 0) break;
+
+      const totalDue = sched.amount + (sched.lateFeeAmount || 0);
+      const balance = totalDue - sched.allocatedAmount;
+
+      if (balance <= 0) continue;
+
+      const allocation = Math.min(balance, remaining);
+
+      await tx.paymentAllocation.create({
+        data: {
+          paymentId: payment.id,
+          scheduleId: sched.id,
+          amount: allocation,
+        },
+      });
+
+      await tx.rentSchedule.update({
+        where: { id: sched.id },
+        data: {
+          allocatedAmount: { increment: allocation },
+          status:
+            allocation === balance
+              ? 'paid'
+              : 'partial',
+        },
+      });
+
+      remaining -= allocation;
+    }
+
+    await tx.payment.update({
+      where: { id: payment.id },
+      data: {
+        allocated: payment.amount - remaining,
+      },
+    });
+
+    // Optional: store overpayment as credit
+    if (remaining > 0) {
+      await tx.tenant.update({
+        where: { id: payment.tenantId },
+        data: { creditBalance: { increment: remaining } },
+      });
+    }
+  });
+}
+
+export async function ensureNotProcessed(referenceId: string) {
+  const existing = await db.payment.findUnique({ where: { referenceId } });
+  if (existing?.status === 'paid') {
+    throw new Error('Already processed');
+  }
+}
+
+export async function sendReceipt(paymentId: number) {
+  try {
+    const payment = await db.payment.findUnique({
+      where: { id: paymentId },
+      include: { tenant: { select: { name: true, email: true } }, property: { select: { title: true } } },
+    });
+    if (!payment?.tenant?.email) return;
+
+    const mailOptions = {
+      from: `"Nexus Rent" <${process.env.SMTP_USER}>`,
+      to: payment.tenant.email,
+      subject: `Rent Receipt #${payment.referenceId}`,
+      html: `
+<!DOCTYPE html>
+<html>
+<head><title>Rent Receipt</title></head>
+<body>
+  <h1>Rent Payment Receipt</h1>
+  <p><strong>Tenant:</strong> ${payment.tenant.name}</p>
+  <p><strong>Property:</strong> ${payment.property.title}</p>
+  <p><strong>Amount:</strong> KES ${payment.amount.toLocaleString()}</p>
+  <p><strong>Late Fee:</strong> KES ${(payment.lateFee || 0).toLocaleString()}</p>
+  <p><strong>Total Paid:</strong> KES ${(payment.amount + (payment.lateFee || 0)).toLocaleString()}</p>
+  <p><strong>Method:</strong> ${payment.method.toUpperCase()}</p>
+  <p><strong>Date:</strong> ${payment.paidAt?.toLocaleString()}</p>
+  <p><strong>Ref:</strong> ${payment.referenceId}</p>
+  <hr>
+  <p>Thank you for your payment!</p>
+</body>
+</html>      
+      `,
+    };
+    await transporter.sendMail(mailOptions);
+    console.log(`Receipt sent to ${payment.tenant.email}`);
+  } catch (e) {
+    console.error('Receipt failed', e);
+  }
+}
+
+export async function sendDueReminders() {
+  const threeDaysFromNow = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+  const schedules = await db.rentSchedule.findMany({
+    where: {
+      status: 'scheduled',
+      dueDate: {
+        lt: threeDaysFromNow,
+        gt: new Date(),
+      },
+    },
+    include: { tenant: { select: { email: true, name: true, userId: true } } },
+  });
+
+  for (const sched of schedules) {
+    if (sched.tenant.email) {
+      transporter.sendMail({
+        from: `"Nexus Rent" <${process.env.SMTP_USER}>`,
+        to: sched.tenant.email,
+        subject: 'Rent Payment Reminder',
+        html: `
+          <h2>Rent Due Soon</h2>
+          <p>Dear ${sched.tenant.name},</p>
+          <p>Your rent of KES ${sched.amount.toLocaleString()} is due on ${sched.dueDate.toLocaleDateString()}.</p>
+          <p>Please make payment to avoid late fees (5% after 7 days).</p>
+          <p>Pay via M-Pesa, Card or Bank Transfer.</p>
+        `,
+      }).catch(console.error);
+    }
+    // Notification
+    await db.notification.create({
+      data: {
+        title: 'Rent Reminder',
+        message: `KES ${sched.amount} due ${sched.dueDate.toLocaleDateString()}`,
+        recipientIds: [sched.tenant.userId?.toString() || ''],
+      },
+    });
+  }
+}
+
+// Bank Transfers
+export async function initiateBankTransfer(propertyId: number, tenantId: number, amount: number, accountRef: string) {
+  const ref = `NEXUS-BANK-${propertyId}-${tenantId}-${Math.floor(Date.now() / 1000).toString().slice(-6)}`;
+  await db.payment.create({
+    data: {
+      tenantId,
+      propertyId,
+      amount,
+      method: 'bank',
+      status: 'pending',
+      referenceId: ref,
+      metadata: {
+        instructions: `Pay KES ${amount.toLocaleString()} to Equity Bank Acc #0123456789. Reference: ${ref}`,
+        accountRef,
+      },
+    },
+  });
+  return { success: true, ref, instructions: `Reference: ${ref}` };
+}
+
+export async function resolveFromReference(ref: string) {
+  return db.paymentReference.findUnique({
+    where: { reference: ref },
+  });
+}
+
+// Airtel Money (placeholder - integrate Airtel API)
+export async function initiateAirtelSTK(params: InitiateMpesaSTK): Promise<PaymentResult> {
+  // TODO: https://africa.airtel.com/business/api-documentation/money
+  // Similar to M-Pesa
+  console.log('Airtel STK placeholder', params);
+  return { success: false, error: 'Airtel integration coming soon' };
 }
 
 // Cron helper

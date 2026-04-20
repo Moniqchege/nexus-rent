@@ -17,12 +17,9 @@ import adminRoutes from "./routes/admin.js";
 import servicesRoutes from "./routes/services.js";
 import contactsRoutes from "./routes/contacts.js";
 import auditRoutes from "./routes/audit-trails.js";
-import paymentRoutes from "./routes/payments.js";
+import paymentRoutes, { stripeWebhookHandler } from "./routes/payments.js";
 
 import { setupOAuth } from "./services/oauthStrategies.js";
-
-
-
 
 console.log('INDEX.TS LOADED AT:', new Date().toISOString());
 console.log("DATABASE_URL:", process.env.DATABASE_URL);
@@ -38,6 +35,12 @@ if (!fs.existsSync(uploadsDir)) {
 const app = express();
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 4000;
+
+app.post(
+  "/api/payments/webhooks/stripe",
+  express.raw({ type: "application/json" }),
+  stripeWebhookHandler
+);
 
 app.use(express.json());
 app.use(cors({
