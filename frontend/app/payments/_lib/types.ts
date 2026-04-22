@@ -47,6 +47,7 @@ export interface Tenant {
   name: string;
   unit: string;
   property: string;
+  propertyId: number;
   phone: string;
   email: string;
   since: string;

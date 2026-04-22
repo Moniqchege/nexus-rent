@@ -1,12 +1,26 @@
-# Payments Admin Dashboard Implementation Plan
+# Payments API Integration (Frontend)
 
-## Completed:
-- [x] Step 1: Installed frontend dependencies (Recharts, date-fns, lucide-react)
-- [x] Step 2: Rewrote frontend/app/payments/page.tsx with 4-tab admin dashboard (Overview charts, Collections SSE/table/verify, Payments filters/table/receipt/audit, Payouts mock)
+✅ Created `docs/payments-api.md` - Full API docs + curl examples  
+✅ Created `frontend/app/lib/payments.ts` - React hooks/utils for all endpoints  
 
-## Remaining:
-- [ ] Step 3: Test all features
-- [ ] Step 4: Minor responsive tweaks if needed
-- [ ] Step 5: Complete task
+## Next Steps
+- [ ] Add to `frontend/app/payments/page.tsx` using `getPayments()`, `getRentSchedules()`
+- [ ] Stripe Elements integration in payment form
+- [ ] Test: `cd frontend && npm run dev`
+- [ ] Backend test: Ensure server running `cd backend && npm run dev`
 
-Current Progress: Testing (Step 3)
+## Usage Example
+```tsx
+import { getPayments, initiateMpesaSTK } from '@/app/lib/payments';
+
+const payments = await getPayments({ propertyId: 1, status: 'paid' });
+const mpesa = await initiateMpesaSTK({
+  phone: '254712345678',
+  amount: 5000,
+  propertyId: 1,
+  tenantId: 1,
+  accountRef: 'Rent May',
+  description: 'Monthly rent'
+});
+```
+

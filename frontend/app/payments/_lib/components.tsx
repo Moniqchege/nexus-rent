@@ -138,7 +138,7 @@ export function MetricCard({
     <div
       style={{
         background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)",
-        borderRadius: 16, padding: "18px 20px", flex: 1, minWidth: 140,
+        borderRadius: 16, padding: "12px 16px", flex: 1, minWidth: 140,
         position: "relative", overflow: "hidden",
       }}
     >
@@ -146,10 +146,10 @@ export function MetricCard({
       <div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", marginBottom: 8, textTransform: "uppercase", letterSpacing: ".06em" }}>{label}</div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
         <div>
-          <div style={{ fontSize: 17, fontWeight: 700, color: "#fff" }}>{value}</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{value}</div>
           {sub && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 4 }}>{sub}</div>}
         </div>
-        {sparkData && <Sparkline data={sparkData} color={sparkColor || "#6366f1"} />}
+        {/* {sparkData && <Sparkline data={sparkData} color={sparkColor || "#6366f1"} />} */}
       </div>
     </div>
   );
