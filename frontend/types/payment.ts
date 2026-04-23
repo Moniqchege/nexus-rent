@@ -4,7 +4,7 @@ export interface Payment {
   propertyId: number;
   amount: number;
   method: 'mpesa' | 'card' | 'airtel';
-  status: 'pending' | 'paid' | 'failed' | 'refunded';
+  status: PaymentStatus
   referenceId?: string;
   metadata?: any;
   lateFee?: number;
@@ -17,7 +17,23 @@ export interface Payment {
   property: {
     title: string;
   };
+  scheduleId: number;
 }
+
+type RentScheduleStatus = "scheduled" | "overdue" | "paid";
+type PaymentStatus = "pending" | "paid" | "failed" | "refunded";
+
+type DerivedStatus = "scheduled" | "partial" | "paid";
+
+export const getPaymentState = (schedule: RentSchedule, payments: Payment[]): DerivedStatus => {
+  const totalPaid = payments
+    .filter(p => p.status === "paid" && p.scheduleId === schedule.id)
+    .reduce((sum, p) => sum + p.amount, 0);
+
+  if (totalPaid === 0) return "scheduled";
+  if (totalPaid < schedule.amount) return "partial";
+  return "paid";
+};
 
 export interface RentSchedule {
   id: number;
@@ -26,8 +42,10 @@ export interface RentSchedule {
   dueDate: string;
   amount: number;
   lateFeeAmount: number;
-  status: 'scheduled' | 'paid' | 'overdue';
+  status: RentScheduleStatus;
   period: string;
-  tenant: { name: string };
+  tenant: { name: string, phone: string };
   property: { title: string };
+  allocatedAmount: number;
+  unit: string;
 }

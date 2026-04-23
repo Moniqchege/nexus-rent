@@ -23,24 +23,59 @@ export interface PaymentResult {
   error?: string;
 }
 
+const getMpesaAccessToken = async (): Promise<string> => {
+  const auth = Buffer.from(
+    `${process.env.MPESA_CONSUMER_KEY}:${process.env.MPESA_CONSUMER_SECRET}`
+  ).toString('base64');
+
+  console.log("🔐 MPESA AUTH BASE64:", auth);
+
+  try {
+    const response = await axios.get(
+      'https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials',
+      {
+        headers: {
+          Authorization: `Basic ${auth}`,
+        },
+        timeout: 10000,
+      }
+    );
+
+    console.log("✅ MPESA TOKEN RESPONSE:", response.data);
+
+    return response.data.access_token;
+  } catch (error: any) {
+    console.log("❌ MPESA OAUTH ERROR:");
+    console.log(error.response?.data || error.message);
+    throw error;
+  }
+};
+
 // M-Pesa Daraja API - Lipa na M-Pesa STK Push
 export async function initiateMpesaSTK(params: InitiateMpesaSTK): Promise<PaymentResult> {
   try {
     const { phone, amount, accountRef, propertyId, tenantId, description } = params;
 
-    // 1. Get OAuth token
-    const auth = Buffer.from(`${process.env.MPESA_CONSUMER_KEY}:${process.env.MPESA_CONSUMER_SECRET}`).toString('base64');
-    const tokenRes = await axios.post('https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials', {}, {
-      headers: { Authorization: `Basic ${auth}` },
-      timeout: 10000,
-    });
-    const accessToken = tokenRes.data.access_token;
+    console.log("📦 STK REQUEST INPUT:", params);
 
-    // 2. STK Push
-    const timestamp = new Date().toISOString().replace(/[^0-9]/g, '').slice(0, -3);
-    const password = Buffer.from(`${process.env.MPESA_SHORTCODE}${process.env.MPESA_PASSKEY}${timestamp}`).toString('base64');
+    const accessToken = await getMpesaAccessToken();
 
-    const stkRes = await axios.post('https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest', {
+    console.log("🔑 ACCESS TOKEN:", accessToken);
+
+    const timestamp = new Date()
+      .toISOString()
+      .replace(/[^0-9]/g, '')
+      .slice(0, 14);
+
+    console.log("⏱ TIMESTAMP:", timestamp);
+
+    const password = Buffer.from(
+      `${process.env.MPESA_SHORTCODE}${process.env.MPESA_PASSKEY}${timestamp}`
+    ).toString('base64');
+
+    console.log("🔒 PASSWORD GENERATED:", password);
+
+    const payload = {
       BusinessShortCode: process.env.MPESA_SHORTCODE!,
       Password: password,
       Timestamp: timestamp,
@@ -52,12 +87,23 @@ export async function initiateMpesaSTK(params: InitiateMpesaSTK): Promise<Paymen
       CallBackURL: `${process.env.MPESA_CALLBACK_URL}/api/payments/mpesa/callback`,
       AccountReference: accountRef,
       TransactionDesc: description,
-    }, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
+    };
+
+    console.log("🚀 STK PAYLOAD:", payload);
+
+    const stkRes = await axios.post(
+      'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest',
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+    console.log("📩 STK RESPONSE:", stkRes.data);
 
     if (stkRes.data.ResponseCode === '0') {
-      // Create pending Payment
       await db.payment.create({
         data: {
           tenantId,
@@ -69,11 +115,21 @@ export async function initiateMpesaSTK(params: InitiateMpesaSTK): Promise<Paymen
           metadata: { phone, description },
         },
       });
+
       return { success: true, data: stkRes.data };
     }
+
+    console.log("❌ STK FAILED:", stkRes.data);
+
     return { success: false, error: stkRes.data.errorMessage };
   } catch (error: any) {
-    return { success: false, error: error.response?.data?.errorMessage || error.message };
+    console.log("🔥 STK EXCEPTION:");
+    console.log(error.response?.data || error.message);
+
+    return {
+      success: false,
+      error: error.response?.data?.errorMessage || error.message,
+    };
   }
 }
 
