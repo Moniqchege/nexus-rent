@@ -3,6 +3,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import api from '../lib/api';
+import { Lease } from '../../types/lease';
 
 
 export interface Permission {
@@ -57,6 +58,7 @@ interface AdminState {
   roles: Role[];
   users: User[];
   properties: Property[];
+  leases: Lease[];
   loading: boolean;
   amenities: { id: number; key: string; label: string; category: string }[];
   fetchUsers: (search?: string) => Promise<void>;
@@ -75,6 +77,11 @@ interface AdminState {
   deleteProperty: (id: number) => Promise<void>;
   fetchAmenities: () => Promise<void>;
   fetchPermissionsFromDb: () => Promise<void>;
+  fetchLeases: () => Promise<void>;
+  createLease: (data: any) => Promise<void>;
+  updateLease: (id: number, data: any) => Promise<void>;
+  deleteLease: (id: number) => Promise<void>;
+  uploadSignedLease: (id: number, formData: FormData) => Promise<void>;
 }
 
 export const useAdminStore = create<AdminState>()(
@@ -228,6 +235,77 @@ export const useAdminStore = create<AdminState>()(
       },
 
       rentals: [],
+      leases: [],
+
+      fetchLeases: async () => {
+        set({ loading: true });
+        try {
+          const res = await api.get('/api/leases');
+          set({ leases: res.data.leases || [], loading: false });
+        } catch {
+          set({ loading: false });
+        }
+      },
+
+      createLease: async (data) => {
+        set({ loading: true });
+        try {
+          const res = await api.post('/api/leases', data);
+          set((state) => ({
+            leases: [...state.leases, res.data.lease],
+            loading: false,
+          }));
+        } catch {
+          set({ loading: false });
+        }
+      },
+
+      updateLease: async (id, data) => {
+        set({ loading: true });
+        try {
+          const res = await api.patch(`/api/leases/${id}`, data);
+          set((state) => ({
+            leases: state.leases.map((l) =>
+              l.id === id ? res.data.lease : l
+            ),
+            loading: false,
+          }));
+        } catch {
+          set({ loading: false });
+        }
+      },
+
+      deleteLease: async (id) => {
+        set({ loading: true });
+        try {
+          await api.delete(`/api/leases/${id}`);
+          set((state) => ({
+            leases: state.leases.filter((l) => l.id !== id),
+            loading: false,
+          }));
+        } catch {
+          set({ loading: false });
+        }
+      },
+
+      uploadSignedLease: async (id, formData) => {
+        set({ loading: true });
+        try {
+          const res = await api.post(`/api/leases/${id}/sign`, formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          });
+          set((state) => ({
+            leases: state.leases.map((l) =>
+              l.id === id ? res.data.lease : l
+            ),
+            loading: false,
+          }));
+        } catch {
+          set({ loading: false });
+        }
+      },
 
       fetchProperties: async () => {
         set({ loading: true });

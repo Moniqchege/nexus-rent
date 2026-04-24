@@ -1,9 +1,29 @@
 import { db } from "../db/prisma.js";
 import { STANDARD_PERMISSIONS, STANDARD_AMENITIES } from "../services/seedData.js";
+import bcrypt from "bcrypt";
 
 async function main() {
-  console.log("🌱 Seeding started...");
+   const adminEmail = "monicah.tech@gmail.com";
+  const existingAdmin = await db.user.findFirst({ where: { email: adminEmail } });
 
+  if (!existingAdmin) {
+    const hashedPassword = await bcrypt.hash("Admin@1234", 12);
+    await db.user.create({
+      data: {
+        name: "Super Admin",
+        email: adminEmail,
+        username: "admin",
+        password_hash: hashedPassword,
+        phone: "+254700000000",
+        plan: "FREE",
+        role: "Admin", 
+        firstLogin: false, 
+      },
+    });
+    console.log(`✅ Default admin created — email: ${adminEmail} | password: Admin@1234`);
+  } else {
+    console.log(`ℹ️  Admin user already exists: ${adminEmail}`);
+  }
   // Seed permissions
   const permissionCount = await db.permission.count();
   if (permissionCount === 0) {
@@ -28,7 +48,7 @@ async function main() {
   if (amenityCount === 0) {
     const amenityData = STANDARD_AMENITIES.map(a => ({
       key: a,
-      label: a.replace(/_/g, " "), // GYM -> GYM, SWIMMING_POOL -> SWIMMING POOL
+      label: a.replace(/_/g, " "), 
       category: "AMENITY"
     }));
 

@@ -27,6 +27,7 @@ export default function Sidebar() {
   { label: "Overview", icon: "/overview.png", to: "/dashboard", type: "image" },
   { label: "Apartments", icon: "/apartment_icon.png", to: "/my-rentals", type: "image" },
   { label: "Payments", icon: "/payments_icon.png", to: "/payments", type: "image" },
+  { label: "Leases", icon: "/apartment_icon.png", to: "/leases", type: "image" },
   // { label: "AI Insights", icon: "🤖", to: "/ai-insights" },
   { label: "Roles", icon: "/roles_icon.png", to: "/roles", type: "image" },
   { label: "Users", icon: "/users_icon.png", to: "/users", type: "image" },

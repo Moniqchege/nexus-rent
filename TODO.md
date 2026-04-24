@@ -1,26 +1,36 @@
-# Payments API Integration (Frontend)
+# Lease CRUD Implementation
 
-✅ Created `docs/payments-api.md` - Full API docs + curl examples  
-✅ Created `frontend/app/lib/payments.ts` - React hooks/utils for all endpoints  
+## Database
+- [x] Update `backend/prisma/schema.prisma` - Expand Lease model
+- [x] Create migration SQL file
 
-## Next Steps
-- [ ] Add to `frontend/app/payments/page.tsx` using `getPayments()`, `getRentSchedules()`
-- [ ] Stripe Elements integration in payment form
-- [ ] Test: `cd frontend && npm run dev`
-- [ ] Backend test: Ensure server running `cd backend && npm run dev`
+## Backend
+- [x] Create `backend/src/routes/leases.ts` - CRUD + signed doc upload
+- [x] Register routes in `backend/src/index.ts`
 
-## Usage Example
-```tsx
-import { getPayments, initiateMpesaSTK } from '@/app/lib/payments';
+## Frontend Types
+- [x] Create `frontend/types/lease.ts`
 
-const payments = await getPayments({ propertyId: 1, status: 'paid' });
-const mpesa = await initiateMpesaSTK({
-  phone: '254712345678',
-  amount: 5000,
-  propertyId: 1,
-  tenantId: 1,
-  accountRef: 'Rent May',
-  description: 'Monthly rent'
-});
-```
+## Frontend Store
+- [x] Update `frontend/app/store/adminStore.ts` - Add lease methods
+
+## Frontend Components
+- [x] Create `frontend/app/components/leases/LeaseForm.tsx`
+- [x] Create `frontend/app/components/leases/LeaseTable.tsx`
+- [x] Create `frontend/app/components/leases/LeaseAgreementTemplate.tsx`
+
+## Frontend Pages
+- [x] Create `frontend/app/leases/page.tsx`
+- [x] Create `frontend/app/leases/new/page.tsx`
+- [x] Create `frontend/app/leases/[id]/page.tsx`
+- [x] Create `frontend/app/leases/[id]/print/page.tsx`
+- [x] Create `frontend/app/leases/layout.tsx`
+
+## Navigation
+- [x] Update `frontend/app/components/layout/Sidebar.tsx`
+
+## Followup
+- [x] Run `npx prisma db push` (succeeded — DB is in sync)
+- [ ] Stop backend server, run `npx prisma generate`, then restart backend
+- [ ] Test full flow
 

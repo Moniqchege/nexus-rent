@@ -94,6 +94,7 @@ model Property {
   payments      Payment[]
   rentSchedules RentSchedule[]
   expenses      Expense[]
+  leases        Lease[]
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 }
@@ -113,6 +114,7 @@ model Tenant {
   reviews       Review[]
   payments      Payment[]
   rentSchedules RentSchedule[]
+  leases        Lease[]
 }
 
 model Review {
@@ -335,9 +337,26 @@ model PaymentAllocation {
 }
 
 model Lease {
-  id             Int    @id @default(autoincrement())
-  lateFeePercent Float
-  graceDays      Int
+  id                Int      @id @default(autoincrement())
+  propertyId        Int
+  tenantId          Int
+  startDate         DateTime
+  endDate           DateTime
+  rentAmount        Float
+  billingCycle      String   @default("monthly") 
+  status            String   @default("active")  
+  lateFeePercent    Float    @default(0)
+  graceDays         Int      @default(0)
+  signedDocumentUrl String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId])
+  @@index([tenantId])
+  @@index([status])
 }
 
 model PaymentReference {
