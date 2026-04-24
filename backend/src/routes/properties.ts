@@ -119,8 +119,10 @@ router.post('/', requireAuth, async (req, res) => {
     }
 
     // Validate amenities against enum
-    const validAmenities = ["GYM", "SWIMMING_POOL", "YOGA_STUDIO", "STEAM_ROOM", "SAUNA"];
-    const sanitizedAmenities = amenities.filter(a => validAmenities.includes(a));
+    const validAmenities = await db.amenity.findMany({ select: { key: true } });
+    const validKeys = validAmenities.map(a => a.key);
+
+    const sanitizedAmenities = (amenities || []).filter(a => validKeys.includes(a));
 
     const property = await db.property.create({
       data: {

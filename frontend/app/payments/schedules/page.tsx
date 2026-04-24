@@ -42,13 +42,13 @@ export default function SchedulesPage() {
   // ── Filter / sort / page state ──────────────────────────────────────────────
   const [search, setSearch]                 = useState("");
   const [statusFilter, setStatusFilter]     = useState<SchedStatus | "all">("all");
-  const [propertyFilter, setPropertyFilter] = useState<string>("all");
   const [sortBy, setSortBy]                 = useState<"tenantName" | "amount" | "daysOverdue" | "propertyTitle">("amount");
   const [sortDir, setSortDir]               = useState<"asc" | "desc">("desc");
   const [page, setPage]                     = useState(1);
   const [selected, setSelected]             = useState<Set<number>>(new Set());
   const [bulkAction, setBulkAction]         = useState("");
   const [bulkDone, setBulkDone]             = useState(false);
+  const [propertyFilter, setPropertyFilter] = useState("all");
 
   // ── Per-row action state ────────────────────────────────────────────────────
   const receipt = useRowAction();
@@ -107,17 +107,23 @@ export default function SchedulesPage() {
   };
 
   // ── Derived data ─────────────────────────────────────────────────────────────
-  const properties = useMemo(() => {
-    const seen = new Set<string>();
-    const list: { id: number; title: string }[] = [];
-    schedules.forEach((s) => {
-      if (s.property && !seen.has(s.property.title)) {
-        seen.add(s.property.title);
-        list.push({ id: s.propertyId, title: s.property.title });
-      }
-    });
-    return list;
-  }, [schedules]);
+ const properties = useMemo(() => {
+  const seen = new Set<string>();
+  const list: { id: number; title: string; location: string }[] = [];
+
+  schedules.forEach((s) => {
+    if (s.property && !seen.has(s.property.title)) {
+      seen.add(s.property.title);
+      list.push({
+        id: s.propertyId,
+        title: s.property.title,
+        location: s.property.location ?? "",
+      });
+    }
+  });
+
+  return list;
+}, [schedules]);
 
   const tenantName  = (s: RentSchedule) => s.tenant?.name  ?? `Tenant ${s.tenantId}`;
   const propTitle   = (s: RentSchedule) => s.property?.title ?? `Property ${s.propertyId}`;
@@ -255,13 +261,13 @@ const counts = useMemo(() => ({
     { status: "paid"      as SchedStatus, label: "Paid",      icon: "🟢", color: "#00ff87", count: counts.paid,      total: totals.paid },
   ];
 
-  const propertyOptions = [
+  const propertyOptions = useMemo(() => [
   { label: "All Properties", value: "all" },
   ...properties.map((p) => ({
     label: p.title,
     value: String(p.id),
   })),
-];
+], [properties]);
 
 const bulkOptions = [
   { label: `Bulk Action (${selected.size})`, value: "" },
@@ -269,6 +275,17 @@ const bulkOptions = [
   { label: "Waive Late Fees", value: "waivefee" },
   { label: "Export Selected", value: "export" },
 ];
+
+const filteredProperties = properties.filter((p) => {
+  const matchesSearch =
+    p.title.toLowerCase().includes(search.toLowerCase()) ||
+    p.location.toLowerCase().includes(search.toLowerCase());
+
+  const matchesProperty =
+    propertyFilter === "all" || String(p.id) === propertyFilter;
+
+  return matchesSearch && matchesProperty;
+});
 
   // ── Error state ──────────────────────────────────────────────────────────────
   if (error) {
@@ -321,16 +338,13 @@ const bulkOptions = [
               style={{ flex: 1, minWidth: 200, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10, padding: "8px 12px", color: "#fff", fontSize: 13, outline: "none" }} />
 
            <CustomDropdown
-             options={propertyOptions}
-             value={propertyFilter}
-             onChange={(val) => {
-             setPropertyFilter(val);
-             setPage(1);
-             }}
-             labelKey="label"
-             valueKey="value"
-             minWidth="200px"
-           />
+  options={propertyOptions}
+  value={propertyFilter}
+  onChange={(val) => setPropertyFilter(val)}
+  labelKey="label"
+  valueKey="value"
+  minWidth="200px"
+/>
 
             <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
               {selected.size > 0 && (

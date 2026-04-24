@@ -45,7 +45,7 @@ export interface RentSchedule {
   status: RentScheduleStatus;
   period: string;
   tenant: { name: string, phone: string };
-  property: { title: string };
+  property: { title: string, location?: string; };
   allocatedAmount: number;
   unit: string;
 }
