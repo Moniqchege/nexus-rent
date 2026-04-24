@@ -50,12 +50,12 @@ export function CustomDropdown<T>({
       <div
         onClick={() => setOpen(!open)}
         style={{
-          padding: "12px",
+          padding: "8px 12px",
           borderRadius: "12px",
           border: "1px solid var(--border-glow)",
           background: "rgba(255,255,255,0.03)",
           color: "var(--text-primary)",
-          fontSize: "14px",
+          fontSize: "13px",
           fontWeight: 500,
           cursor: "pointer",
           display: "flex",

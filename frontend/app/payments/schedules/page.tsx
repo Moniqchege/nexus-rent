@@ -6,6 +6,7 @@ import { GlassPanel, SectionTag, NeonButton, StatusBadge, Checkbox } from "../_l
 import { getRentSchedules, resendReceipt, verifyPayment } from "../../lib/payments";
 import { getPaymentState, Payment, type RentSchedule } from "../../../types/payment";
 import type { SchedStatus } from "../_lib/types";
+import { CustomDropdown } from "@/app/components/ui/CustomDropdown";
 
 const PAGE_SIZE = 20;
 
@@ -254,6 +255,21 @@ const counts = useMemo(() => ({
     { status: "paid"      as SchedStatus, label: "Paid",      icon: "🟢", color: "#00ff87", count: counts.paid,      total: totals.paid },
   ];
 
+  const propertyOptions = [
+  { label: "All Properties", value: "all" },
+  ...properties.map((p) => ({
+    label: p.title,
+    value: String(p.id),
+  })),
+];
+
+const bulkOptions = [
+  { label: `Bulk Action (${selected.size})`, value: "" },
+  { label: "Send Reminders", value: "remind" },
+  { label: "Waive Late Fees", value: "waivefee" },
+  { label: "Export Selected", value: "export" },
+];
+
   // ── Error state ──────────────────────────────────────────────────────────────
   if (error) {
     return (
@@ -304,37 +320,33 @@ const counts = useMemo(() => ({
               placeholder="🔍  Search tenant, unit or phone…"
               style={{ flex: 1, minWidth: 200, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10, padding: "8px 12px", color: "#fff", fontSize: 13, outline: "none" }} />
 
-            <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value as SchedStatus | "all"); setPage(1); }}
-              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "8px 10px", color: "rgba(255,255,255,0.7)", fontSize: 12 }}>
-              <option value="all"       style={{ background: "#1a1a2e" }}>All Statuses ({counts.all})</option>
-              <option value="overdue"   style={{ background: "#1a1a2e" }}>Overdue ({counts.overdue})</option>
-              <option value="partial"   style={{ background: "#1a1a2e" }}>Partial ({counts.partial})</option>
-              <option value="scheduled" style={{ background: "#1a1a2e" }}>Scheduled ({counts.scheduled})</option>
-              <option value="paid"      style={{ background: "#1a1a2e" }}>Paid ({counts.paid})</option>
-            </select>
-
-            <select value={propertyFilter} onChange={(e) => { setPropertyFilter(e.target.value); setPage(1); }}
-              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "8px 10px", color: "rgba(255,255,255,0.7)", fontSize: 12 }}>
-              <option value="all" style={{ background: "#1a1a2e" }}>All Properties</option>
-              {properties.map((p) => (
-                <option key={p.id} value={String(p.id)} style={{ background: "#1a1a2e" }}>{p.title}</option>
-              ))}
-            </select>
+           <CustomDropdown
+             options={propertyOptions}
+             value={propertyFilter}
+             onChange={(val) => {
+             setPropertyFilter(val);
+             setPage(1);
+             }}
+             labelKey="label"
+             valueKey="value"
+             minWidth="200px"
+           />
 
             <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
               {selected.size > 0 && (
                 <>
-                  <select value={bulkAction} onChange={(e) => setBulkAction(e.target.value)}
-                    style={{ background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.3)", borderRadius: 8, padding: "7px 10px", color: "#a78bfa", fontSize: 12 }}>
-                    <option value=""         style={{ background: "#1a1a2e" }}>Bulk Action ({selected.size})</option>
-                    <option value="remind"   style={{ background: "#1a1a2e" }}>Send Reminders</option>
-                    <option value="waivefee" style={{ background: "#1a1a2e" }}>Waive Late Fees</option>
-                    <option value="export"   style={{ background: "#1a1a2e" }}>Export Selected</option>
-                  </select>
+              <CustomDropdown
+                options={bulkOptions}
+                value={bulkAction}
+                onChange={(val) => setBulkAction(val)}
+                labelKey="label"
+                valueKey="value"
+                minWidth="200px"
+              />
                   <NeonButton variant="primary" onClick={handleBulk} disabled={!bulkAction}>Apply →</NeonButton>
                 </>
               )}
-              <NeonButton variant="ghost">Generate May ↗</NeonButton>
+              <NeonButton variant="ghost" style={{ minWidth: 165, color: 'var(--neon-blue)', border: "0.2px solid var(--neon-blue)" }}>Generate May ↗</NeonButton>
             </div>
           </div>
           {bulkDone && (
