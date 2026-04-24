@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useAdminStore } from "@/app/store/adminStore";
 import api from "@/app/lib/api";
 import { Lease, BillingCycle, LeaseStatus } from "@/types/lease";
+import DatePickerPopup from "../ui/Datepickerpopup";
 
 interface LeaseFormProps {
   initialData?: Partial<Lease>;
@@ -49,21 +50,32 @@ export default function LeaseForm({
 
   useEffect(() => {
     fetchProperties();
-    fetchAllTenants();
+    fetchUsers();
   }, []);
 
-  const fetchAllTenants = async () => {
-    try {
-      const res = await api.get('/api/notifications/tenants');
-      setAllTenants(res.data || []);
-    } catch {
-      setAllTenants([]);
-    }
-  };
+const fetchUsers = async () => {
+  try {
+    const res = await api.get('/api/users');
+    const users = res.data || [];
 
-  const filteredTenants = allTenants.filter(
-    (t) => t.propertyId === data.propertyId
-  );
+    // Filter users who have a Tenant role
+    const tenants = users.filter((user: any) =>
+      user.userProperties?.some(
+        (up: any) => up.role?.name === "Tenant"
+      )
+    );
+
+    setAllTenants(tenants);
+  } catch {
+    setAllTenants([]);
+  }
+};
+
+  const filteredTenants = allTenants.filter((user) =>
+  user.userProperties?.some(
+    (up: any) => up.property?.id === data.propertyId
+  )
+);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -172,7 +184,7 @@ export default function LeaseForm({
               </option>
               {filteredTenants.map((tenant: any) => (
                 <option key={tenant.id} value={tenant.id}>
-                  {tenant.name} {tenant.phone ? `- ${tenant.phone}` : ""}
+                  {tenant.name}
                 </option>
               ))}
             </select>
@@ -182,24 +194,20 @@ export default function LeaseForm({
         {/* Start Date + End Date */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
           <div>
-            <label style={labelStyle}>Start Date *</label>
-            <input
-              type="date"
-              value={data.startDate}
-              onChange={(e) => setData({ ...data, startDate: e.target.value })}
-              style={inputStyle}
-              required
-            />
+           <DatePickerPopup
+  label="Start Date"
+  required
+  value={data.startDate}
+  onChange={(val) => setData({ ...data, startDate: val })}
+/>
           </div>
           <div>
-            <label style={labelStyle}>End Date *</label>
-            <input
-              type="date"
-              value={data.endDate}
-              onChange={(e) => setData({ ...data, endDate: e.target.value })}
-              style={inputStyle}
-              required
-            />
+            <DatePickerPopup
+  label="End Date"
+  required
+  value={data.endDate}
+  onChange={(val) => setData({ ...data, endDate: val })}
+/>
           </div>
         </div>
 

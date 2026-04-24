@@ -86,8 +86,18 @@ router.post("/", requireAuth, async (req: Request, res: Response) => {
         }
 
         // Verify tenant belongs to property
-        const tenant = await db.tenant.findFirst({
-            where: { id: tenantIdNum, propertyId: propertyIdNum },
+        const tenant = await db.user.findFirst({
+            where: {
+                id: tenantIdNum,
+                userProperties: {
+                    some: {
+                        propertyId: propertyIdNum,
+                        role: {
+                            name: "Tenant",
+                        },
+                    },
+                },
+            },
         });
         if (!tenant) {
             return res.status(404).json({ error: "Tenant not found for this property" });
