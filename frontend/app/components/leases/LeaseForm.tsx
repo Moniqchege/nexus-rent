@@ -5,6 +5,7 @@ import { useAdminStore } from "@/app/store/adminStore";
 import api from "@/app/lib/api";
 import { Lease, BillingCycle, LeaseStatus } from "@/types/lease";
 import DatePickerPopup from "../ui/Datepickerpopup";
+import { CustomDropdown } from "../ui/CustomDropdown";
 
 interface LeaseFormProps {
   initialData?: Partial<Lease>;
@@ -108,7 +109,7 @@ const fetchUsers = async () => {
   const inputStyle = {
     width: "100%",
     backgroundColor: "rgba(17,24,39,0.5)",
-    border: "1px solid var(--border-glow)",
+    border: "0.5px solid var(--border-glow)",
     borderRadius: "12px",
     padding: "14px 20px",
     fontSize: "14px",
@@ -156,58 +157,57 @@ const fetchUsers = async () => {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
           <div>
             <label style={labelStyle}>Property *</label>
-            <select
-              value={data.propertyId}
-              onChange={(e) => setData({ ...data, propertyId: Number(e.target.value), tenantId: 0 })}
-              style={inputStyle}
-              required
-            >
-              <option value={0}>Select Property</option>
-              {properties.map((prop: any) => (
-                <option key={prop.id} value={prop.id}>
-                  {prop.title} - {prop.location}
-                </option>
-              ))}
-            </select>
+            <CustomDropdown
+  options={properties.map((prop: any) => ({
+    label: `${prop.title} - ${prop.location}`,
+    value: prop.id,
+  }))}
+  value={data.propertyId}
+  onChange={(val) =>
+    setData({ ...data, propertyId: Number(val), tenantId: 0 })
+  }
+  labelKey="label"
+  valueKey="value"
+  placeholder="Select Property"
+/>
           </div>
           <div>
             <label style={labelStyle}>Tenant *</label>
-            <select
-              value={data.tenantId}
-              onChange={(e) => setData({ ...data, tenantId: Number(e.target.value) })}
-              style={inputStyle}
-              required
-              disabled={!data.propertyId}
-            >
-              <option value={0}>
-                {data.propertyId ? "Select Tenant" : "Select Property First"}
-              </option>
-              {filteredTenants.map((tenant: any) => (
-                <option key={tenant.id} value={tenant.id}>
-                  {tenant.name}
-                </option>
-              ))}
-            </select>
+           <CustomDropdown
+  options={filteredTenants.map((tenant: any) => ({
+    label: tenant.name,
+    value: tenant.id,
+  }))}
+  value={data.tenantId}
+  onChange={(val) =>
+    setData({ ...data, tenantId: Number(val) })
+  }
+  labelKey="label"
+  valueKey="value"
+  placeholder={
+    data.propertyId ? "Select Tenant" : "Select Property First"
+  }
+/>
           </div>
         </div>
 
         {/* Start Date + End Date */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-          <div>
+        <div>
            <DatePickerPopup
-  label="Start Date"
-  required
-  value={data.startDate}
-  onChange={(val) => setData({ ...data, startDate: val })}
-/>
-          </div>
+             label="Start Date"
+             required
+             value={data.startDate}
+             onChange={(val) => setData({ ...data, startDate: val })}
+           />
+        </div>
           <div>
             <DatePickerPopup
-  label="End Date"
-  required
-  value={data.endDate}
-  onChange={(val) => setData({ ...data, endDate: val })}
-/>
+             label="End Date"
+             required
+             value={data.endDate}
+             onChange={(val) => setData({ ...data, endDate: val })}
+           />
           </div>
         </div>
 
@@ -226,18 +226,15 @@ const fetchUsers = async () => {
           </div>
           <div>
             <label style={labelStyle}>Billing Cycle *</label>
-            <select
-              value={data.billingCycle}
-              onChange={(e) => setData({ ...data, billingCycle: e.target.value as BillingCycle })}
-              style={inputStyle}
-              required
-            >
-              {BILLING_CYCLE_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+            <CustomDropdown
+  options={BILLING_CYCLE_OPTIONS}
+  value={data.billingCycle}
+  onChange={(val) =>
+    setData({ ...data, billingCycle: val as BillingCycle })
+  }
+  labelKey="label"
+  valueKey="value"
+/>
           </div>
         </div>
 
@@ -245,18 +242,15 @@ const fetchUsers = async () => {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
           <div>
             <label style={labelStyle}>Status *</label>
-            <select
-              value={data.status}
-              onChange={(e) => setData({ ...data, status: e.target.value as LeaseStatus })}
-              style={inputStyle}
-              required
-            >
-              {STATUS_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+            <CustomDropdown
+  options={STATUS_OPTIONS}
+  value={data.status}
+  onChange={(val) =>
+    setData({ ...data, status: val as LeaseStatus })
+  }
+  labelKey="label"
+  valueKey="value"
+/>
           </div>
           <div>
             <label style={labelStyle}>Grace Days</label>

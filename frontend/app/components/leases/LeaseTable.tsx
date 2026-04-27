@@ -49,7 +49,7 @@ export default function LeaseTable({ leases, onDeleteClick }: LeaseTableProps) {
           )}
           {leases.map((lease) => (
             <tr key={lease.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-              <td style={{ padding: "12px", fontSize: "14px" }}>
+              <td style={{ padding: "12px", fontSize: "14px", whiteSpace: "nowrap", }}>
                 {lease.property?.title || "—"}
                 <div style={{ fontSize: "11px", color: "var(--text-secondary)" }}>{lease.property?.location}</div>
               </td>
@@ -77,43 +77,19 @@ export default function LeaseTable({ leases, onDeleteClick }: LeaseTableProps) {
                 <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
                   <button
                     onClick={() => router.push(`/leases/${lease.id}`)}
-                    style={{
-                      background: "rgba(17,24,39,0.5)",
-                      color: "var(--neon-blue)",
-                      border: "1px solid var(--border-glow)",
-                      borderRadius: "8px",
-                      padding: "6px 12px",
-                      fontSize: "12px",
-                      cursor: "pointer",
-                    }}
+                    className="action-btn"
                   >
                     Edit
                   </button>
                   <button
                     onClick={() => router.push(`/leases/${lease.id}/print`)}
-                    style={{
-                      background: "rgba(17,24,39,0.5)",
-                      color: "var(--neon-purple)",
-                      border: "1px solid var(--border-glow)",
-                      borderRadius: "8px",
-                      padding: "6px 12px",
-                      fontSize: "12px",
-                      cursor: "pointer",
-                    }}
+                    className="action-btn"
                   >
                     Print
                   </button>
                   <button
                     onClick={() => onDeleteClick(lease.id)}
-                    style={{
-                      background: "rgba(239,68,68,0.2)",
-                      color: "#ef4444",
-                      border: "1px solid rgba(239,68,68,0.3)",
-                      borderRadius: "8px",
-                      padding: "6px 12px",
-                      fontSize: "12px",
-                      cursor: "pointer",
-                    }}
+                    className="action-btn"
                   >
                     Delete
                   </button>

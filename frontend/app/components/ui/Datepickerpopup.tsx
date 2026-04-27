@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 
 interface DatePickerPopupProps {
-  value: string; // "YYYY-MM-DD"
+  value: string;
   onChange: (value: string) => void;
   label?: string;
   required?: boolean;
@@ -24,33 +25,51 @@ export default function DatePickerPopup({
   placeholder = "Select date",
 }: DatePickerPopupProps) {
   const today = new Date();
-  const parsed = value ? new Date(value + "T00:00:00") : null;
+  const [parsed, setParsed] = useState<Date | null>(
+  value ? new Date(value + "T00:00:00") : null
+);
 
   const [open, setOpen] = useState(false);
-  const [openUpward, setOpenUpward] = useState(false);
+  const [popupStyle, setPopupStyle] = useState<React.CSSProperties>({});
   const [viewYear, setViewYear] = useState(parsed?.getFullYear() ?? today.getFullYear());
   const [viewMonth, setViewMonth] = useState(parsed?.getMonth() ?? today.getMonth());
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLDivElement>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
 
   // Close on outside click
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
+  const handler = (e: MouseEvent) => {
+    const target = e.target as Node;
 
-  // Sync view when value changes externally
+    if (
+      containerRef.current &&
+      !containerRef.current.contains(target) &&
+      popupRef.current &&
+      !popupRef.current.contains(target)
+    ) {
+      setOpen(false);
+    }
+  };
+
+  document.addEventListener("click", handler);
+  return () => document.removeEventListener("click", handler);
+}, []);
+
   useEffect(() => {
     if (parsed) {
       setViewYear(parsed.getFullYear());
       setViewMonth(parsed.getMonth());
     }
   }, [value]);
+
+  useEffect(() => {
+  if (value) {
+    setParsed(new Date(value + "T00:00:00"));
+  } else {
+    setParsed(null);
+  }
+}, [value]);
 
   const prevMonth = () => {
     if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1); }
@@ -63,11 +82,14 @@ export default function DatePickerPopup({
   };
 
   const selectDay = (day: number, month: number, year: number) => {
-    const mm = String(month + 1).padStart(2, "0");
-    const dd = String(day).padStart(2, "0");
-    onChange(`${year}-${mm}-${dd}`);
-    setOpen(false);
-  };
+  const mm = String(month + 1).padStart(2, "0");
+  const dd = String(day).padStart(2, "0");
+  const newDate = `${year}-${mm}-${dd}`;
+
+  setParsed(new Date(newDate + "T00:00:00")); 
+  onChange(newDate);
+  setOpen(false);
+};
 
   const clearDate = () => {
     onChange("");
@@ -79,7 +101,6 @@ export default function DatePickerPopup({
     setViewMonth(today.getMonth());
   };
 
-  // Build calendar grid
   const firstDay = new Date(viewYear, viewMonth, 1).getDay();
   const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
   const daysInPrev = new Date(viewYear, viewMonth, 0).getDate();
@@ -115,6 +136,60 @@ export default function DatePickerPopup({
     ? `${MONTHS[parsed.getMonth()].slice(0, 3)} ${parsed.getDate()}, ${parsed.getFullYear()}`
     : null;
 
+  const popup = (
+    <div ref={popupRef} style={{ ...styles.popup, ...popupStyle }}>
+      {/* Header */}
+      <div style={styles.header}>
+        <button type="button" onClick={prevMonth} style={styles.navBtn}>&#8249;</button>
+        <span style={styles.monthLabel}>
+          {MONTHS[viewMonth]} {viewYear}
+        </span>
+        <button type="button" onClick={nextMonth} style={styles.navBtn}>&#8250;</button>
+      </div>
+
+      {/* Weekdays */}
+      <div style={styles.weekdayGrid}>
+        {WEEKDAYS.map(d => (
+          <div key={d} style={styles.weekday}>{d}</div>
+        ))}
+      </div>
+
+      {/* Days */}
+      <div style={styles.daysGrid}>
+        {cells.map(({ day, month, year, type }, i) => {
+          const sel = isSelected(day, month, year);
+          const tod = isToday(day, month, year);
+          const faded = type !== "current";
+
+          return (
+            <div
+              key={i}
+              onClick={() => !faded && selectDay(day, month, year)}
+              style={{
+                ...styles.dayCell,
+                opacity: faded ? 0.2 : 1,
+                cursor: faded ? "default" : "pointer",
+                background: sel
+                  ? "linear-gradient(135deg, #3b82f6, #8b5cf6)"
+                  : tod
+                  ? "rgba(139,92,246,0.15)"
+                  : undefined,
+                color: sel ? "#fff" : tod ? "#8b5cf6" : "var(--text-primary, #f1f5f9)",
+                fontWeight: sel || tod ? 700 : 400,
+                boxShadow: sel ? "0 2px 12px rgba(139,92,246,0.4)" : "none",
+              }}
+            >
+              {day}
+              {tod && !sel && (
+                <span style={styles.todayDot} />
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+
   return (
     <div ref={containerRef} style={{ position: "relative", width: "100%" }}>
       {/* Label */}
@@ -130,9 +205,16 @@ export default function DatePickerPopup({
         onClick={() => {
           if (!open && triggerRef.current) {
             const rect = triggerRef.current.getBoundingClientRect();
+            const POPUP_HEIGHT = 340;
             const spaceBelow = window.innerHeight - rect.bottom;
-            const POPUP_HEIGHT = 340; // approx height of the calendar popup
-            setOpenUpward(spaceBelow < POPUP_HEIGHT);
+            const above = spaceBelow < POPUP_HEIGHT;
+            setPopupStyle({
+              position: "fixed",
+              left: rect.left + window.scrollX,
+              ...(above
+                ? { bottom: window.innerHeight - rect.top + 8, top: "auto" }
+                : { top: rect.bottom + 8, bottom: "auto" }),
+            });
           }
           setOpen(o => !o);
         }}
@@ -154,65 +236,8 @@ export default function DatePickerPopup({
         )}
       </div>
 
-      {/* Popup */}
-      {open && (
-        <div style={{
-          ...styles.popup,
-          ...(openUpward
-            ? { top: "auto", bottom: "100%"}
-            : { top: "calc(100% + 8px)", bottom: "auto" }),
-        }}>
-          {/* Header */}
-          <div style={styles.header}>
-            <button type="button" onClick={prevMonth} style={styles.navBtn}>&#8249;</button>
-            <span style={styles.monthLabel}>
-              {MONTHS[viewMonth]} {viewYear}
-            </span>
-            <button type="button" onClick={nextMonth} style={styles.navBtn}>&#8250;</button>
-          </div>
-
-          {/* Weekdays */}
-          <div style={styles.weekdayGrid}>
-            {WEEKDAYS.map(d => (
-              <div key={d} style={styles.weekday}>{d}</div>
-            ))}
-          </div>
-
-          {/* Days */}
-          <div style={styles.daysGrid}>
-            {cells.map(({ day, month, year, type }, i) => {
-              const sel = isSelected(day, month, year);
-              const tod = isToday(day, month, year);
-              const faded = type !== "current";
-
-              return (
-                <div
-                  key={i}
-                  onClick={() => !faded && selectDay(day, month, year)}
-                  style={{
-                    ...styles.dayCell,
-                    opacity: faded ? 0.2 : 1,
-                    cursor: faded ? "default" : "pointer",
-                    background: sel
-                      ? "linear-gradient(135deg, #3b82f6, #8b5cf6)"
-                      : tod
-                      ? "rgba(139,92,246,0.15)"
-                      : undefined,
-                    color: sel ? "#fff" : tod ? "#8b5cf6" : "var(--text-primary, #f1f5f9)",
-                    fontWeight: sel || tod ? 700 : 400,
-                    boxShadow: sel ? "0 2px 12px rgba(139,92,246,0.4)" : "none",
-                  }}
-                >
-                  {day}
-                  {tod && !sel && (
-                    <span style={styles.todayDot} />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      {/* Popup rendered in a portal to escape parent stacking contexts */}
+      {open && createPortal(popup, document.body)}
     </div>
   );
 }
@@ -264,14 +289,12 @@ const styles: Record<string, React.CSSProperties> = {
   },
   valueText: {
     fontSize: "14px",
-    background: "linear-gradient(to right, #3b82f6, #8b5cf6)",
+    background: "var(--text-secondary, #94a3b8)",
     WebkitBackgroundClip: "text",
     WebkitTextFillColor: "transparent",
     fontWeight: 600,
   },
   popup: {
-    position: "absolute",
-    left: 0,
     zIndex: 99999,
     background: "rgba(11,17,32,0.98)",
     border: "1px solid rgba(59,130,246,0.3)",
