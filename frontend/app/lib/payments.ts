@@ -15,9 +15,17 @@ export const getPayments = (params?: {
     return api.get(`/api/payments?${query.toString()}`).then(res => res.data.payments as Payment[]);
 };
 
-export const getRentSchedules = (status?: string) => {
-    const query = status ? `?status=${status}` : '';
-    return api.get(`/api/payments/schedules${query}`).then(res => res.data.schedules as RentSchedule[]);
+// export const getRentSchedules = (status?: string) => {
+//     const query = status ? `?status=${status}` : '';
+//     return api.get(`/api/payments/schedules${query}`).then(res => res.data.schedules as RentSchedule[]);
+// };
+
+export const getRentSchedules = (status?: string, leaseId?: number): Promise<RentSchedule[]> => {
+  const params = new URLSearchParams();
+  if (status) params.set('status', status);
+  if (leaseId) params.set('leaseId', String(leaseId));
+
+  return api.get(`/api/payments/schedules?${params}`).then(res => res.data.schedules as RentSchedule[]);
 };
 
 export const getTenantStatement = (tenantId: number) => {

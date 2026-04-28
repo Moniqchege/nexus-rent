@@ -26,6 +26,14 @@ export interface Lease {
         email: string;
         phone?: string | null;
     };
+    tenantRecord?: {
+        id: number;
+        name: string;
+        email: string;
+        phone?: string | null;
+        creditBalance: number;
+        moveInDate: string;
+    } | null;
 }
 
 export interface CreateLeaseInput {
@@ -49,4 +57,3 @@ export interface UpdateLeaseInput {
     lateFeePercent?: number;
     graceDays?: number;
 }
-

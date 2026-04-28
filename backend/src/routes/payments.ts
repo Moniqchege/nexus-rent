@@ -35,23 +35,51 @@ router.get('/', audit({ action: 'view_payments', title: 'Payments' }), async (re
   }
 });
 
-// GET /api/payments/schedules?status=overdue
+// GET /api/payments/schedules?status=overdue&leaseId=
 router.get('/schedules', async (req: Request, res: Response) => {
   try {
     const authReq = req as AuthRequest;
-    const { status } = req.query;
+    const { status, leaseId, propertyId } = req.query;
+
     const where: any = {
       property: { landlordId: authReq.userId! }
     };
+
+    // If fetching by leaseId, resolve the Tenant record first
+    if (leaseId) {
+      const lease = await db.lease.findFirst({
+        where: {
+          id: Number(leaseId),
+          property: { landlordId: authReq.userId! }
+        },
+        select: { tenantId: true, propertyId: true }
+      });
+
+      if (!lease) {
+        return res.status(404).json({ error: 'Lease not found' });
+      }
+
+      where.tenantId = lease.tenantId;
+      where.propertyId = lease.propertyId;
+    }
+
+    if (propertyId) where.propertyId = Number(propertyId);
     if (status) where.status = status;
 
     const schedules = await db.rentSchedule.findMany({
       where,
-      include: { tenant: true, property: { select: { title: true } }, payment: true },
+      include: {
+        tenant: true,
+        property: { select: { id: true, title: true, location: true } },
+        payment: true,
+        allocations: true,          // ← needed for partial payment calc
+      },
       orderBy: { dueDate: 'asc' },
     });
+
     res.json({ schedules });
   } catch (error) {
+    console.error('Failed to fetch schedules:', error);
     res.status(500).json({ error: 'Failed to fetch schedules' });
   }
 });

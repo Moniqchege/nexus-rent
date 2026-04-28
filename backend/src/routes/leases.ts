@@ -43,7 +43,29 @@ router.get("/", requireAuth, async (req: Request, res: Response) => {
             orderBy: { createdAt: "desc" },
         });
 
-        res.json({ leases });
+        // Map each lease to include the corresponding Tenant record
+        // (needed because Payment/RentSchedule APIs use Tenant.id, not User.id)
+        const leasesWithTenantRecord = await Promise.all(
+            leases.map(async (lease) => {
+                const tenantRecord = await db.tenant.findFirst({
+                    where: {
+                        userId: lease.tenantId,
+                        propertyId: lease.propertyId,
+                    },
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                        phone: true,
+                        creditBalance: true,
+                        moveInDate: true,
+                    },
+                });
+                return { ...lease, tenantRecord };
+            })
+        );
+
+        res.json({ leases: leasesWithTenantRecord });
     } catch (error) {
         console.error("Failed to fetch leases:", error);
         res.status(500).json({ error: "Failed to fetch leases" });
@@ -155,7 +177,23 @@ router.get("/:id", requireAuth, async (req: Request, res: Response) => {
             return res.status(404).json({ error: "Lease not found or access denied" });
         }
 
-        res.json({ lease });
+        // Include tenant record for payment API compatibility
+        const tenantRecord = await db.tenant.findFirst({
+            where: {
+                userId: lease.tenantId,
+                propertyId: lease.propertyId,
+            },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true,
+                creditBalance: true,
+                moveInDate: true,
+            },
+        });
+
+        res.json({ lease: { ...lease, tenantRecord } });
     } catch (error) {
         console.error("Fetch lease error:", error);
         res.status(500).json({ error: "Failed to fetch lease" });
@@ -292,4 +330,3 @@ router.post(
 );
 
 export default router;
-

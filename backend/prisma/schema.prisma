@@ -25,6 +25,8 @@ model User {
 
   userProperties      UserProperty[]
   leases        Lease[]
+  rentSchedules RentSchedule[] @relation("UserRentSchedules")
+  payments      Payment[]      @relation("UserPayments")
   sessions            Session[]
   properties          Property[]           @relation("LandlordProperties")
   Tenant              Tenant?
@@ -112,8 +114,6 @@ model Tenant {
   property      Property       @relation(fields: [propertyId], references: [id])
   user          User?          @relation(fields: [userId], references: [id])
   reviews       Review[]
-  payments      Payment[]
-  rentSchedules RentSchedule[]
 }
 
 model Review {
@@ -256,24 +256,22 @@ model AuditTrail {
 
 model Payment {
   id          Int       @id @default(autoincrement())
-  tenantId    Int
+  tenantId    Int                              
   propertyId  Int
   amount      Float
   allocated   Float     @default(0)
   method      String
   status      String
- referenceId String? @unique
+  referenceId String?   @unique
   metadata    Json?
   lateFee     Float?
   paidAt      DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-
-  rentSchedules  RentSchedule[]
-
+  tenant      User      @relation("UserPayments", fields: [tenantId], references: [id])  
+  property    Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  rentSchedules       RentSchedule[]
   allocations PaymentAllocation[]
 
   @@index([tenantId])
@@ -282,23 +280,22 @@ model Payment {
 }
 
 model RentSchedule {
-  id            Int      @id @default(autoincrement())
-  propertyId    Int
-  tenantId      Int
-  dueDate       DateTime
-  amount        Float
-  lateFeeAmount Float?   @default(0)
+  id              Int      @id @default(autoincrement())
+  propertyId      Int
+  tenantId        Int                        
+  dueDate         DateTime
+  amount          Float
+  lateFeeAmount   Float?   @default(0)
   allocatedAmount Float    @default(0)
-  status        String
-  period        String
-  paymentId     Int?     @unique
-  createdAt     DateTime @default(now())
+  status          String
+  period          String
+  paymentId       Int?     @unique
+  createdAt       DateTime @default(now())
 
   allocations PaymentAllocation[]
-
-  property Property @relation(fields: [propertyId], references: [id])
-  tenant   Tenant   @relation(fields: [tenantId], references: [id])
-  payment  Payment? @relation(fields: [paymentId], references: [id])
+  property    Property  @relation(fields: [propertyId], references: [id])
+  tenant      User      @relation("UserRentSchedules", fields: [tenantId], references: [id]) 
+  payment     Payment?  @relation(fields: [paymentId], references: [id])
 
   @@index([propertyId])
   @@index([tenantId])

@@ -171,45 +171,105 @@ export async function confirmStripePayment(piId: string, tenantId: number, prope
   return false;
 }
 
-// Late Fee Automation
+// Late Fee Automation — uses Lease.graceDays and Lease.lateFeePercent
 export async function applyLateFees() {
-  const overdue = await db.rentSchedule.findMany({
+  const now = new Date();
+
+  // Find all scheduled schedules that are past their due date
+  const candidates = await db.rentSchedule.findMany({
     where: {
       status: 'scheduled',
-      dueDate: { lt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }, // >7 days
+      dueDate: { lt: now },
     },
+    include: { tenant: true },
   });
-  for (const sched of overdue) {
-    const fee = sched.amount * 0.05; // 5%
-    await db.rentSchedule.update({
-      where: { id: sched.id },
-      data: { status: 'overdue', lateFeeAmount: fee },
+
+  for (const sched of candidates) {
+    // Find the active lease for this property + tenant (via Tenant.userId)
+    const lease = await db.lease.findFirst({
+      where: {
+        propertyId: sched.propertyId,
+        tenantId: sched.tenant.userId ?? undefined,
+        status: 'active',
+      },
     });
-    // Notify tenant/landlord
+
+    const graceDays = lease?.graceDays ?? 7;
+    const lateFeePercent = lease?.lateFeePercent ?? 5;
+
+    const graceDeadline = new Date(sched.dueDate);
+    graceDeadline.setDate(graceDeadline.getDate() + graceDays);
+
+    if (now > graceDeadline) {
+      const fee = sched.amount * (lateFeePercent / 100);
+      await db.rentSchedule.update({
+        where: { id: sched.id },
+        data: { status: 'overdue', lateFeeAmount: fee },
+      });
+      // TODO: Notify tenant/landlord
+    }
   }
 }
 
-// Generate Schedules (cron)
+// Generate Schedules (cron) — uses Lease.rentAmount and Lease.billingCycle
 export async function generateMonthlySchedules() {
-  const nextMonth = new Date();
-  nextMonth.setMonth(nextMonth.getMonth() + 1);
-  nextMonth.setDate(1);
+  const now = new Date();
 
-  const activeTenants = await db.tenant.findMany({
-    include: { property: true },
+  // Find all active leases
+  const activeLeases = await db.lease.findMany({
+    where: {
+      status: 'active',
+      endDate: { gte: now },
+    },
   });
 
-  for (const tenant of activeTenants) {
-    await db.rentSchedule.create({
-      data: {
-        propertyId: tenant.propertyId,
-        tenantId: tenant.id,
-        dueDate: nextMonth,
-        amount: tenant.property.price,
-        status: 'scheduled',
-        period: nextMonth.toISOString().slice(0, 7),
+  for (const lease of activeLeases) {
+    // Find the Tenant record linked to this lease's user
+    const tenant = await db.tenant.findFirst({
+      where: {
+        userId: lease.tenantId,
+        propertyId: lease.propertyId,
       },
     });
+
+    if (!tenant) {
+      console.warn(`No Tenant record found for lease ${lease.id} (tenantId=${lease.tenantId}, propertyId=${lease.propertyId})`);
+      continue;
+    }
+
+    // Determine next due date based on billingCycle
+    let dueDate: Date;
+    if (lease.billingCycle === 'weekly') {
+      dueDate = new Date(now);
+      dueDate.setDate(dueDate.getDate() + 7);
+    } else {
+      // monthly (default)
+      dueDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    }
+
+    const period = dueDate.toISOString().slice(0, 7); // YYYY-MM
+
+    // Check if schedule already exists for this period
+    const existing = await db.rentSchedule.findFirst({
+      where: {
+        tenantId: tenant.id,
+        propertyId: lease.propertyId,
+        period,
+      },
+    });
+
+    if (!existing) {
+      await db.rentSchedule.create({
+        data: {
+          propertyId: lease.propertyId,
+          tenantId: tenant.id,
+          dueDate,
+          amount: lease.rentAmount,
+          status: 'scheduled',
+          period,
+        },
+      });
+    }
   }
 }
 
@@ -479,4 +539,3 @@ export async function startCronJobs() {
   cron.schedule('0 9 * * *', applyLateFees); // Daily late fees
   cron.schedule('0 0 1 * *', generateMonthlySchedules); // Monthly schedules
 }
-

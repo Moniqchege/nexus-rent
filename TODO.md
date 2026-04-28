@@ -1,36 +1,17 @@
-# Lease CRUD Implementation
+# Update Rent Schedule & Payments to Use Lease Data
 
-## Database
-- [x] Update `backend/prisma/schema.prisma` - Expand Lease model
-- [x] Create migration SQL file
+## Plan
+- [ ] Step 1: Update `backend/src/services/paymentService.ts` - `generateMonthlySchedules()` & `applyLateFees()` to use Lease model
+- [ ] Step 2: Update `backend/src/routes/leases.ts` - include mapped Tenant record in lease responses
+- [ ] Step 3: Update `frontend/types/lease.ts` - add `tenantRecord` field
+- [ ] Step 4: Update `frontend/app/payments/initiate/page.tsx` - use real lease data instead of MOCK_TENANTS
+- [ ] Step 5: Update `frontend/app/payments/schedules/page.tsx` - fix status handling for real data
+- [ ] Step 6: Restart backend and verify
 
-## Backend
-- [x] Create `backend/src/routes/leases.ts` - CRUD + signed doc upload
-- [x] Register routes in `backend/src/index.ts`
-
-## Frontend Types
-- [x] Create `frontend/types/lease.ts`
-
-## Frontend Store
-- [x] Update `frontend/app/store/adminStore.ts` - Add lease methods
-
-## Frontend Components
-- [x] Create `frontend/app/components/leases/LeaseForm.tsx`
-- [x] Create `frontend/app/components/leases/LeaseTable.tsx`
-- [x] Create `frontend/app/components/leases/LeaseAgreementTemplate.tsx`
-
-## Frontend Pages
-- [x] Create `frontend/app/leases/page.tsx`
-- [x] Create `frontend/app/leases/new/page.tsx`
-- [x] Create `frontend/app/leases/[id]/page.tsx`
-- [x] Create `frontend/app/leases/[id]/print/page.tsx`
-- [x] Create `frontend/app/leases/layout.tsx`
-
-## Navigation
-- [x] Update `frontend/app/components/layout/Sidebar.tsx`
-
-## Followup
-- [x] Run `npx prisma db push` (succeeded — DB is in sync)
-- [ ] Stop backend server, run `npx prisma generate`, then restart backend
-- [ ] Test full flow
-
+## Information Gathered
+- Lease model connects User (tenant), Property, rentAmount, billingCycle, lateFeePercent, graceDays
+- Payment/RentSchedule use Tenant.id (not User.id) for tenantId
+- Lease.tenantId -> User.id, Payment.tenantId -> Tenant.id
+- generateMonthlySchedules currently ignores Lease, uses Property.price
+- applyLateFees uses hardcoded 5% and 7 days
+- payments/initiate uses MOCK_TENANTS with hardcoded data

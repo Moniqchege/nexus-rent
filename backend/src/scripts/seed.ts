@@ -16,7 +16,6 @@ async function main() {
         password_hash: hashedPassword,
         phone: "+254700000000",
         plan: "FREE",
-        role: "Admin", 
         firstLogin: false, 
       },
     });
