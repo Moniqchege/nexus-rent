@@ -189,7 +189,7 @@ export async function applyLateFees() {
     const lease = await db.lease.findFirst({
       where: {
         propertyId: sched.propertyId,
-        tenantId: sched.tenant.userId ?? undefined,
+        tenantId: sched.tenantId,
         status: 'active',
       },
     });
@@ -215,44 +215,44 @@ export async function applyLateFees() {
 export async function generateMonthlySchedules() {
   const now = new Date();
 
-  // Find all active leases
   const activeLeases = await db.lease.findMany({
     where: {
-      status: 'active',
+      status: "active",
       endDate: { gte: now },
     },
   });
 
   for (const lease of activeLeases) {
-    // Find the Tenant record linked to this lease's user
-    const tenant = await db.tenant.findFirst({
-      where: {
-        userId: lease.tenantId,
-        propertyId: lease.propertyId,
+    // tenant = USER now
+    const tenant = await db.user.findUnique({
+      where: { id: lease.tenantId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
       },
     });
 
     if (!tenant) {
-      console.warn(`No Tenant record found for lease ${lease.id} (tenantId=${lease.tenantId}, propertyId=${lease.propertyId})`);
+      console.warn(`No user found for lease ${lease.id} (tenantId=${lease.tenantId})`);
       continue;
     }
 
-    // Determine next due date based on billingCycle
     let dueDate: Date;
-    if (lease.billingCycle === 'weekly') {
+
+    if (lease.billingCycle === "weekly") {
       dueDate = new Date(now);
       dueDate.setDate(dueDate.getDate() + 7);
     } else {
-      // monthly (default)
       dueDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
     }
 
-    const period = dueDate.toISOString().slice(0, 7); // YYYY-MM
+    const period = dueDate.toISOString().slice(0, 7);
 
-    // Check if schedule already exists for this period
     const existing = await db.rentSchedule.findFirst({
       where: {
-        tenantId: tenant.id,
+        tenantId: tenant.id, // same meaning, now userId
         propertyId: lease.propertyId,
         period,
       },
@@ -265,11 +265,51 @@ export async function generateMonthlySchedules() {
           tenantId: tenant.id,
           dueDate,
           amount: lease.rentAmount,
-          status: 'scheduled',
+          status: "scheduled",
           period,
         },
       });
     }
+  }
+}
+
+// In paymentService.ts
+export async function generateScheduleForLease(leaseId: number) {
+  const lease = await db.lease.findUnique({ where: { id: leaseId } });
+  if (!lease || lease.status !== 'active') return;
+
+  const now = new Date();
+
+  let dueDate: Date;
+  if (lease.billingCycle === 'weekly') {
+    dueDate = new Date(now);
+    dueDate.setDate(dueDate.getDate() + 7);
+  } else {
+    // First period: use the lease startDate's month
+    dueDate = new Date(lease.startDate);
+  }
+
+  const period = dueDate.toISOString().slice(0, 7);
+
+  const existing = await db.rentSchedule.findFirst({
+    where: {
+      tenantId: lease.tenantId,
+      propertyId: lease.propertyId,
+      period,
+    },
+  });
+
+  if (!existing) {
+    await db.rentSchedule.create({
+      data: {
+        propertyId: lease.propertyId,
+        tenantId: lease.tenantId,
+        dueDate,
+        amount: lease.rentAmount,
+        status: 'scheduled',
+        period,
+      },
+    });
   }
 }
 
@@ -462,38 +502,50 @@ export async function sendReceipt(paymentId: number) {
 
 export async function sendDueReminders() {
   const threeDaysFromNow = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+
   const schedules = await db.rentSchedule.findMany({
     where: {
-      status: 'scheduled',
+      status: "scheduled",
       dueDate: {
         lt: threeDaysFromNow,
         gt: new Date(),
       },
     },
-    include: { tenant: { select: { email: true, name: true, userId: true } } },
   });
 
   for (const sched of schedules) {
-    if (sched.tenant.email) {
-      transporter.sendMail({
-        from: `"Nexus Rent" <${process.env.SMTP_USER}>`,
-        to: sched.tenant.email,
-        subject: 'Rent Payment Reminder',
-        html: `
-          <h2>Rent Due Soon</h2>
-          <p>Dear ${sched.tenant.name},</p>
-          <p>Your rent of KES ${sched.amount.toLocaleString()} is due on ${sched.dueDate.toLocaleDateString()}.</p>
-          <p>Please make payment to avoid late fees (5% after 7 days).</p>
-          <p>Pay via M-Pesa, Card or Bank Transfer.</p>
-        `,
-      }).catch(console.error);
-    }
-    // Notification
+    // ✅ fetch user (tenant) per schedule
+    const user = await db.user.findUnique({
+      where: { id: sched.tenantId },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+      },
+    });
+
+    if (!user?.email) continue;
+
+    // ✅ send email
+    await transporter.sendMail({
+      from: `"Nexus Rent" <${process.env.SMTP_USER}>`,
+      to: user.email,
+      subject: "Rent Payment Reminder",
+      html: `
+        <h2>Rent Due Soon</h2>
+        <p>Dear ${user.name},</p>
+        <p>Your rent of KES ${sched.amount.toLocaleString()} is due on ${sched.dueDate.toLocaleDateString()}.</p>
+        <p>Please make payment to avoid late fees (5% after 7 days).</p>
+        <p>Pay via M-Pesa, Card or Bank Transfer.</p>
+      `,
+    }).catch(console.error);
+
+    // ✅ notification
     await db.notification.create({
       data: {
-        title: 'Rent Reminder',
+        title: "Rent Reminder",
         message: `KES ${sched.amount} due ${sched.dueDate.toLocaleDateString()}`,
-        recipientIds: [sched.tenant.userId?.toString() || ''],
+        recipientIds: [user.id.toString()],
       },
     });
   }

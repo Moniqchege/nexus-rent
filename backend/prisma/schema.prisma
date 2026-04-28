@@ -24,18 +24,19 @@ model User {
   updatedAt     DateTime @updatedAt
 
   userProperties      UserProperty[]
-  leases        Lease[]
-  rentSchedules RentSchedule[] @relation("UserRentSchedules")
-  payments      Payment[]      @relation("UserPayments")
+  leases              Lease[]
+  rentSchedules       RentSchedule[]       @relation("UserRentSchedules")
+  payments            Payment[]            @relation("UserPayments")
   sessions            Session[]
   properties          Property[]           @relation("LandlordProperties")
-  Tenant              Tenant?
   Notification        Notification[]
   passwordResetTokens PasswordResetToken[]
   otpCodes            OtpCode[]
   surveys             Survey[]
   surveyResponses     SurveyResponse[]
   auditTrails         AuditTrail[]
+  reviews             Review[]
+  paymentReferences   PaymentReference[]
 }
 
 model Session {
@@ -61,7 +62,7 @@ model PasswordResetToken {
 model OtpCode {
   id         Int      @id @default(autoincrement())
   userId     Int?
-  identifier String 
+  identifier String
   codeHash   String
   expiresAt  DateTime
   used       Boolean  @default(false)
@@ -75,56 +76,42 @@ model OtpCode {
 }
 
 model Property {
-  id            Int            @id @default(autoincrement())
-  landlordId    Int?
-  landlord      User?          @relation("LandlordProperties", fields: [landlordId], references: [id])
-  title         String
-  location      String
-  price         Float
-  beds          Int
-  baths         Int
-  sqft          Int
-  status        String         @default("active")
-  amenities     Json?
-  rating        Float?
-  score         Float?
-  users         UserProperty[]
-  Tenant        Tenant[]
-  Review        Review[]
-  image         String?
-  floor         String?
-  payments      Payment[]
-  rentSchedules RentSchedule[]
-  expenses      Expense[]
-  leases        Lease[]
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-}
-
-model Tenant {
-  id            Int            @id @default(autoincrement())
-  name          String
-  email         String         @unique
-  phone         String?
-  userId        Int?           @unique
-  propertyId    Int
-  moveInDate    DateTime
-  creditBalance Float    @default(0)
-  createdAt     DateTime       @default(now())
-  property      Property       @relation(fields: [propertyId], references: [id])
-  user          User?          @relation(fields: [userId], references: [id])
-  reviews       Review[]
+  id                Int                @id @default(autoincrement())
+  landlordId        Int?
+  landlord          User?              @relation("LandlordProperties", fields: [landlordId], references: [id])
+  title             String
+  location          String
+  price             Float
+  beds              Int
+  baths             Int
+  sqft              Int
+  status            String             @default("active")
+  amenities         Json?
+  rating            Float?
+  score             Float?
+  users             UserProperty[]
+  Review            Review[]
+  image             String?
+  floor             String?
+  payments          Payment[]
+  rentSchedules     RentSchedule[]
+  expenses          Expense[]
+  leases            Lease[]
+  paymentReferences PaymentReference[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
 }
 
 model Review {
-  id         Int       @id @default(autoincrement())
+  id         Int      @id @default(autoincrement())
   rating     Int
   comment    String?
   propertyId Int
-  tenantId   Int
-  createdAt  DateTime  @default(now())
-  property   Property? @relation(fields: [propertyId], references: [id])
-  tenant     Tenant    @relation(fields: [tenantId], references: [id])
+  userId     Int // renamed
+  createdAt  DateTime @default(now())
+
+  property Property? @relation(fields: [propertyId], references: [id])
+  user     User      @relation(fields: [userId], references: [id])
 }
 
 model Notification {
@@ -184,9 +171,9 @@ model Amenity {
 model Survey {
   id           Int      @id @default(autoincrement())
   title        String
-  questions    Json 
+  questions    Json
   landlordId   Int?
-  recipientIds Json 
+  recipientIds Json
   sentAt       DateTime @default(now())
   landlord     User?    @relation(fields: [landlordId], references: [id])
 
@@ -197,7 +184,7 @@ model SurveyResponse {
   id          Int      @id @default(autoincrement())
   surveyId    Int
   userId      Int
-  answers     Json 
+  answers     Json
   submittedAt DateTime @default(now())
 
   survey Survey @relation(fields: [surveyId], references: [id], onDelete: Cascade)
@@ -210,7 +197,7 @@ model ServiceCategory {
   id          Int      @id @default(autoincrement())
   name        String
   slug        String   @unique
-  icon        String 
+  icon        String
   description String?
   createdAt   DateTime @default(now())
 
@@ -241,11 +228,11 @@ model ServiceProvider {
 model AuditTrail {
   id        Int      @id @default(autoincrement())
   userId    Int
-  action    String 
-  status    String 
+  action    String
+  status    String
   title     String
   subtitle  String?
-  metadata  Json? 
+  metadata  Json?
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -256,7 +243,7 @@ model AuditTrail {
 
 model Payment {
   id          Int       @id @default(autoincrement())
-  tenantId    Int                              
+  tenantId    Int
   propertyId  Int
   amount      Float
   allocated   Float     @default(0)
@@ -269,10 +256,10 @@ model Payment {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  tenant      User      @relation("UserPayments", fields: [tenantId], references: [id])  
-  property    Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  rentSchedules       RentSchedule[]
-  allocations PaymentAllocation[]
+  tenant        User                @relation("UserPayments", fields: [tenantId], references: [id])
+  property      Property            @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  rentSchedules RentSchedule[]
+  allocations   PaymentAllocation[]
 
   @@index([tenantId])
   @@index([status])
@@ -282,7 +269,7 @@ model Payment {
 model RentSchedule {
   id              Int      @id @default(autoincrement())
   propertyId      Int
-  tenantId        Int                        
+  tenantId        Int
   dueDate         DateTime
   amount          Float
   lateFeeAmount   Float?   @default(0)
@@ -293,9 +280,9 @@ model RentSchedule {
   createdAt       DateTime @default(now())
 
   allocations PaymentAllocation[]
-  property    Property  @relation(fields: [propertyId], references: [id])
-  tenant      User      @relation("UserRentSchedules", fields: [tenantId], references: [id]) 
-  payment     Payment?  @relation(fields: [paymentId], references: [id])
+  property    Property            @relation(fields: [propertyId], references: [id])
+  tenant      User                @relation("UserRentSchedules", fields: [tenantId], references: [id])
+  payment     Payment?            @relation(fields: [paymentId], references: [id])
 
   @@index([propertyId])
   @@index([tenantId])
@@ -307,7 +294,7 @@ model Expense {
   id          Int      @id @default(autoincrement())
   propertyId  Int
   amount      Float
-  category    String 
+  category    String
   date        DateTime @default(now())
   description String?
   createdAt   DateTime @default(now())
@@ -333,17 +320,18 @@ model PaymentAllocation {
 }
 
 model Lease {
-  id                Int      @id @default(autoincrement())
-  propertyId        Int
-  tenantId          Int
-  property        Property @relation(fields: [propertyId], references: [id])
-  tenant          User     @relation(fields: [tenantId], references: [id])
+  id         Int      @id @default(autoincrement())
+  propertyId Int
+  tenantId   Int
+  property   Property @relation(fields: [propertyId], references: [id])
+  tenant     User     @relation(fields: [tenantId], references: [id])
 
   startDate         DateTime
   endDate           DateTime
   rentAmount        Float
-  billingCycle      String   @default("monthly") 
-  status            String   @default("active")  
+  billingCycle      String   @default("monthly")
+  status            String   @default("active")
+  creditBalance     Float    @default(0)
   lateFeePercent    Float    @default(0)
   graceDays         Int      @default(0)
   signedDocumentUrl String?
@@ -356,8 +344,11 @@ model Lease {
 }
 
 model PaymentReference {
-  id         Int @id @default(autoincrement())
+  id         Int    @id @default(autoincrement())
   reference  String @unique
-  tenantId   Int
+  userId     Int
   propertyId Int
+
+  user     User     @relation(fields: [userId], references: [id])
+  property Property @relation(fields: [propertyId], references: [id])
 }

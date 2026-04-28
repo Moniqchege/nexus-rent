@@ -10,33 +10,35 @@ router.use(requireAuth);
 // GET /api/notifications/reviews - Get all reviews for landlord's properties
 router.get("/reviews", async (req, res) => {
   const authReq = req as AuthRequest;
+
   try {
     const reviews = await db.review.findMany({
       where: {
         property: {
-          landlordId: authReq.userId!
-        }
+          landlordId: authReq.userId!,
+        },
       },
       include: {
-        tenant: {
+        user: {
           select: {
             id: true,
             name: true,
-            email: true
-          }
+            email: true,
+          },
         },
         property: {
           select: {
             id: true,
             title: true,
-            location: true
-          }
-        }
+            location: true,
+          },
+        },
       },
       orderBy: {
-        createdAt: "desc"
-      }
+        createdAt: "desc",
+      },
     });
+
     res.json(reviews);
   } catch (error) {
     console.error("Reviews error:", error);
@@ -47,26 +49,43 @@ router.get("/reviews", async (req, res) => {
 // GET /api/notifications/tenants - Get all tenants of landlord's properties
 router.get("/tenants", async (req, res) => {
   const authReq = req as AuthRequest;
+
   try {
-    const tenants = await db.tenant.findMany({
+    const tenants = await db.user.findMany({
       where: {
-        property: {
-          landlordId: authReq.userId!
-        }
+        userProperties: {
+          some: {
+            role: {
+              name: "Tenant",
+            },
+            property: {
+              landlordId: authReq.userId!,
+            },
+          },
+        },
       },
-      include: {
-        property: {
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        userProperties: {
           select: {
-            id: true,
-            title: true,
-            location: true
-          }
-        }
+            property: {
+              select: {
+                id: true,
+                title: true,
+                location: true,
+              },
+            },
+          },
+        },
       },
       orderBy: {
-        name: "asc"
-      }
+        name: "asc",
+      },
     });
+
     res.json(tenants);
   } catch (error) {
     console.error("Tenants error:", error);
@@ -77,54 +96,43 @@ router.get("/tenants", async (req, res) => {
 // GET /api/notifications/users - Get users for notifications (filter by propertyId, floor)
 router.get("/users", async (req, res) => {
   const authReq = req as AuthRequest;
+
   try {
     const { propertyId, floor } = req.query;
     const propertyIdNum = propertyId ? Number(propertyId) : undefined;
 
-    const whereClause: any = {
-      id: { not: authReq.userId! }
-    };
-    if (propertyIdNum) {
-      whereClause.userProperties = {
-        some: {
-          propertyId: propertyIdNum
-        },
-      };
-    }
-
-    if (floor) {
-      whereClause.userProperties = {
-        some: {
-          property: {
-            floor
-          }
-        }
-      };
-    }
-
     const users = await db.user.findMany({
-      where: whereClause,
+      where: {
+        id: { not: authReq.userId! },
+        ...(propertyIdNum && {
+          userProperties: {
+            some: {
+              propertyId: propertyIdNum,
+            },
+          },
+        }),
+      },
       select: {
         id: true,
         name: true,
         email: true,
-        role: true,
         userProperties: {
           select: {
             property: {
               select: {
                 id: true,
                 title: true,
-                floor: true
-              }
-            }
-          }
-        }
+                floor: true,
+              },
+            },
+          },
+        },
       },
       orderBy: {
-        name: "asc"
-      }
+        name: "asc",
+      },
     });
+
     res.json(users);
   } catch (error) {
     console.error("Users error:", error);

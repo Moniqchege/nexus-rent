@@ -4,6 +4,7 @@ import { requireAuth } from "../middleware/auth.js";
 import { AuthRequest } from "../middleware/auth-types.js";
 import { upload } from "../middleware/upload.js";
 import path from "path";
+import { generateScheduleForLease } from "../services/paymentService.js";
 
 const router = Router();
 
@@ -42,25 +43,16 @@ router.get("/", requireAuth, async (req: Request, res: Response) => {
             },
             orderBy: { createdAt: "desc" },
         });
-
         // Map each lease to include the corresponding Tenant record
         // (needed because Payment/RentSchedule APIs use Tenant.id, not User.id)
         const leasesWithTenantRecord = await Promise.all(
             leases.map(async (lease) => {
-                const tenantRecord = await db.tenant.findFirst({
-                    where: {
-                        userId: lease.tenantId,
-                        propertyId: lease.propertyId,
-                    },
-                    select: {
-                        id: true,
-                        name: true,
-                        email: true,
-                        phone: true,
-                        creditBalance: true,
-                        moveInDate: true,
-                    },
-                });
+                const tenantRecord = {
+                    id: lease.tenant.id,
+                    name: lease.tenant.name,
+                    email: lease.tenant.email,
+                    phone: lease.tenant.phone,
+                };
                 return { ...lease, tenantRecord };
             })
         );
@@ -147,6 +139,7 @@ router.post("/", requireAuth, async (req: Request, res: Response) => {
                 tenant: { select: { id: true, name: true, email: true, phone: true } },
             },
         });
+        await generateScheduleForLease(lease.id);
 
         res.status(201).json({ lease });
     } catch (error: any) {
@@ -178,22 +171,19 @@ router.get("/:id", requireAuth, async (req: Request, res: Response) => {
         }
 
         // Include tenant record for payment API compatibility
-        const tenantRecord = await db.tenant.findFirst({
-            where: {
-                userId: lease.tenantId,
-                propertyId: lease.propertyId,
-            },
-            select: {
-                id: true,
-                name: true,
-                email: true,
-                phone: true,
-                creditBalance: true,
-                moveInDate: true,
+        const tenantRecord = {
+            id: lease.tenant.id,
+            name: lease.tenant.name,
+            email: lease.tenant.email,
+            phone: lease.tenant.phone,
+        };
+
+        return res.json({
+            lease: {
+                ...lease,
+                tenantRecord,
             },
         });
-
-        res.json({ lease: { ...lease, tenantRecord } });
     } catch (error) {
         console.error("Fetch lease error:", error);
         res.status(500).json({ error: "Failed to fetch lease" });
