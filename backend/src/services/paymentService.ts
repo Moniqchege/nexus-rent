@@ -390,8 +390,6 @@ export async function allocatePayment(paymentId: number) {
   return db.$transaction(async (tx) => {
     const payment = await tx.payment.findUnique({ where: { id: paymentId } });
     if (!payment || payment.status !== 'paid') return;
-
-    // ✅ Idempotency guard
     if (payment.allocated >= payment.amount) return;
 
     let remaining = payment.amount - payment.allocated;
@@ -402,7 +400,7 @@ export async function allocatePayment(paymentId: number) {
         propertyId: payment.propertyId,
         status: { in: ['scheduled', 'overdue', 'partial'] },
       },
-      orderBy: { dueDate: 'asc' }, // ✅ FIXED FIFO
+      orderBy: { dueDate: 'asc' }, 
     });
 
     for (const sched of schedules) {
@@ -443,10 +441,8 @@ export async function allocatePayment(paymentId: number) {
         allocated: payment.amount - remaining,
       },
     });
-
-    // Optional: store overpayment as credit
     if (remaining > 0) {
-      await tx.tenant.update({
+      await tx.user.update({
         where: { id: payment.tenantId },
         data: { creditBalance: { increment: remaining } },
       });
@@ -514,7 +510,6 @@ export async function sendDueReminders() {
   });
 
   for (const sched of schedules) {
-    // ✅ fetch user (tenant) per schedule
     const user = await db.user.findUnique({
       where: { id: sched.tenantId },
       select: {
@@ -525,8 +520,6 @@ export async function sendDueReminders() {
     });
 
     if (!user?.email) continue;
-
-    // ✅ send email
     await transporter.sendMail({
       from: `"Nexus Rent" <${process.env.SMTP_USER}>`,
       to: user.email,
@@ -539,8 +532,6 @@ export async function sendDueReminders() {
         <p>Pay via M-Pesa, Card or Bank Transfer.</p>
       `,
     }).catch(console.error);
-
-    // ✅ notification
     await db.notification.create({
       data: {
         title: "Rent Reminder",
@@ -588,6 +579,6 @@ export async function initiateAirtelSTK(params: InitiateMpesaSTK): Promise<Payme
 // Cron helper
 export async function startCronJobs() {
   const cron = await import('node-cron');
-  cron.schedule('0 9 * * *', applyLateFees); // Daily late fees
-  cron.schedule('0 0 1 * *', generateMonthlySchedules); // Monthly schedules
+  cron.schedule('0 9 * * *', applyLateFees);
+  cron.schedule('0 0 1 * *', generateMonthlySchedules);
 }

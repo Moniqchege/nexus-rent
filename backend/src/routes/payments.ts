@@ -341,7 +341,7 @@ router.post('/mpesa/confirmation', async (req, res) => {
 
   const payment = await db.payment.create({
     data: {
-      tenantId: mapping.tenantId,
+      tenantId: mapping.userId,
       propertyId: mapping.propertyId,
       amount: body.TransAmount,
       method: 'mpesa',

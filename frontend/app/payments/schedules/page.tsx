@@ -9,8 +9,6 @@ import type { SchedStatus } from "../_lib/types";
 import { CustomDropdown } from "@/app/components/ui/CustomDropdown";
 
 const PAGE_SIZE = 20;
-
-// ── Per-row action state ───────────────────────────────────────────────────────
 type RowAction = "idle" | "loading" | "done" | "error";
 
 function useRowAction() {
@@ -19,7 +17,6 @@ function useRowAction() {
   return { state, set };
 }
 
-// ── Skeleton ──────────────────────────────────────────────────────────────────
 function SkeletonRow() {
   return (
     <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
@@ -33,13 +30,10 @@ function SkeletonRow() {
 }
 
 export default function SchedulesPage() {
-  // ── Data state ──────────────────────────────────────────────────────────────
   const [schedules, setSchedules]   = useState<RentSchedule[]>([]);
   const [loading, setLoading]       = useState(true);
   const [error, setError]           = useState<string | null>(null);
   const [payments, setPayments] = useState<Payment[]>([]);
-
-  // ── Filter / sort / page state ──────────────────────────────────────────────
   const [search, setSearch]                 = useState("");
   const [statusFilter, setStatusFilter]     = useState<SchedStatus | "all">("all");
   const [sortBy, setSortBy]                 = useState<"tenantName" | "amount" | "daysOverdue" | "propertyTitle">("amount");
@@ -49,12 +43,9 @@ export default function SchedulesPage() {
   const [bulkAction, setBulkAction]         = useState("");
   const [bulkDone, setBulkDone]             = useState(false);
   const [propertyFilter, setPropertyFilter] = useState("all");
-
-  // ── Per-row action state ────────────────────────────────────────────────────
   const receipt = useRowAction();
   const verify  = useRowAction();
 
-  // ── Fetch ───────────────────────────────────────────────────────────────────
   const fetchSchedules = useCallback(async (status?: string) => {
     setLoading(true);
     setError(null);
@@ -70,7 +61,6 @@ export default function SchedulesPage() {
 
   useEffect(() => { fetchSchedules(); }, [fetchSchedules]);
 
-  // ── Row actions ─────────────────────────────────────────────────────────────
   const handleReceipt = async (id: number) => {
     receipt.set(id, "loading");
     try {
@@ -88,7 +78,6 @@ export default function SchedulesPage() {
     try {
       await verifyPayment(id);
       verify.set(id, "done");
-      // Refresh the row in local state so status updates instantly
       setSchedules((prev) =>
   prev.map((s) =>
     s.id === id
@@ -106,7 +95,6 @@ export default function SchedulesPage() {
     }
   };
 
-  // ── Derived data ─────────────────────────────────────────────────────────────
  const properties = useMemo(() => {
   const seen = new Set<string>();
   const list: { id: number; title: string; location: string }[] = [];
@@ -287,7 +275,6 @@ const filteredProperties = properties.filter((p) => {
   return matchesSearch && matchesProperty;
 });
 
-  // ── Error state ──────────────────────────────────────────────────────────────
   if (error) {
     return (
       <GlassPanel style={{ padding: 32, textAlign: "center" }}>
@@ -299,7 +286,6 @@ const filteredProperties = properties.filter((p) => {
     );
   }
 
-  // ── Render ───────────────────────────────────────────────────────────────────
   return (
     <>
       <style>{`@keyframes shimmer { to { background-position: -200% 0; } }`}</style>
@@ -335,7 +321,7 @@ const filteredProperties = properties.filter((p) => {
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
             <input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               placeholder="🔍  Search tenant, unit or phone…"
-              style={{ flex: 1, minWidth: 200, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10, padding: "8px 12px", color: "#fff", fontSize: 13, outline: "none" }} />
+              style={{ flex: 1, minWidth: 200, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10, padding: "12px 16px", color: "#fff", fontSize: 13, outline: "none" }} />
 
            <CustomDropdown
   options={propertyOptions}
@@ -360,7 +346,7 @@ const filteredProperties = properties.filter((p) => {
                   <NeonButton variant="primary" onClick={handleBulk} disabled={!bulkAction}>Apply →</NeonButton>
                 </>
               )}
-              <NeonButton variant="ghost" style={{ minWidth: 165, color: 'var(--neon-blue)', border: "0.2px solid var(--neon-blue)" }}>Generate May ↗</NeonButton>
+              <NeonButton variant="ghost" style={{ minWidth: 165, padding: "12px 16px", color: 'var(--neon-blue)', border: "0.2px solid var(--neon-blue)" }}>Generate May ↗</NeonButton>
             </div>
           </div>
           {bulkDone && (
@@ -388,7 +374,7 @@ const filteredProperties = properties.filter((p) => {
                   </th>
                   {[
                     { label: "Tenant",          col: "tenantName"    as const },
-                    { label: "Property / Unit", col: "propertyTitle" as const },
+                    { label: "Apartment", col: "propertyTitle" as const },
                     { label: "Amount",          col: "amount"        as const },
                     { label: "Late Fee",        col: null },
                     { label: "Days Overdue",    col: "daysOverdue"   as const },
@@ -436,11 +422,9 @@ const filteredProperties = properties.filter((p) => {
                         </td>
                         <td style={{ padding: "11px 14px", whiteSpace: "nowrap" }}>
                           <div style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>{tenantName(s)}</div>
-                          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>{s.tenant?.phone ?? "—"}</div>
                         </td>
                         <td style={{ padding: "11px 14px" }}>
                           <div style={{ fontSize: 12, color: "rgba(255,255,255,0.7)" }}>{propTitle(s)}</div>
-                          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>{s.unit ?? "—"}</div>
                         </td>
                         <td style={{ padding: "11px 14px", fontSize: 13, fontWeight: 700, color: "#fff", whiteSpace: "nowrap" }}>
                           {fmt(s.amount)}
