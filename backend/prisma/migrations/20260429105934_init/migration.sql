@@ -86,29 +86,12 @@ CREATE TABLE `Property` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `Tenant` (
-    `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `name` VARCHAR(191) NOT NULL,
-    `email` VARCHAR(191) NOT NULL,
-    `phone` VARCHAR(191) NULL,
-    `userId` INTEGER NULL,
-    `propertyId` INTEGER NOT NULL,
-    `moveInDate` DATETIME(3) NOT NULL,
-    `creditBalance` DOUBLE NOT NULL DEFAULT 0,
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-
-    UNIQUE INDEX `Tenant_email_key`(`email`),
-    UNIQUE INDEX `Tenant_userId_key`(`userId`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
 CREATE TABLE `Review` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `rating` INTEGER NOT NULL,
     `comment` VARCHAR(191) NULL,
     `propertyId` INTEGER NOT NULL,
-    `tenantId` INTEGER NOT NULL,
+    `userId` INTEGER NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
     PRIMARY KEY (`id`)
@@ -329,12 +312,12 @@ CREATE TABLE `PaymentAllocation` (
 CREATE TABLE `Lease` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `propertyId` INTEGER NOT NULL,
-    `tenantId` INTEGER NOT NULL,
     `startDate` DATETIME(3) NOT NULL,
     `endDate` DATETIME(3) NOT NULL,
     `rentAmount` DOUBLE NOT NULL,
     `billingCycle` VARCHAR(191) NOT NULL DEFAULT 'monthly',
     `status` VARCHAR(191) NOT NULL DEFAULT 'active',
+    `creditBalance` DOUBLE NOT NULL DEFAULT 0,
     `lateFeePercent` DOUBLE NOT NULL DEFAULT 0,
     `graceDays` INTEGER NOT NULL DEFAULT 0,
     `signedDocumentUrl` VARCHAR(191) NULL,
@@ -342,8 +325,19 @@ CREATE TABLE `Lease` (
     `updatedAt` DATETIME(3) NOT NULL,
 
     INDEX `Lease_propertyId_idx`(`propertyId`),
-    INDEX `Lease_tenantId_idx`(`tenantId`),
     INDEX `Lease_status_idx`(`status`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `LeaseTenant` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `leaseId` INTEGER NOT NULL,
+    `tenantId` INTEGER NOT NULL,
+
+    INDEX `LeaseTenant_leaseId_idx`(`leaseId`),
+    INDEX `LeaseTenant_tenantId_idx`(`tenantId`),
+    UNIQUE INDEX `LeaseTenant_leaseId_tenantId_key`(`leaseId`, `tenantId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -351,7 +345,7 @@ CREATE TABLE `Lease` (
 CREATE TABLE `PaymentReference` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `reference` VARCHAR(191) NOT NULL,
-    `tenantId` INTEGER NOT NULL,
+    `userId` INTEGER NOT NULL,
     `propertyId` INTEGER NOT NULL,
 
     UNIQUE INDEX `PaymentReference_reference_key`(`reference`),
@@ -371,16 +365,10 @@ ALTER TABLE `OtpCode` ADD CONSTRAINT `OtpCode_userId_fkey` FOREIGN KEY (`userId`
 ALTER TABLE `Property` ADD CONSTRAINT `Property_landlordId_fkey` FOREIGN KEY (`landlordId`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Tenant` ADD CONSTRAINT `Tenant_propertyId_fkey` FOREIGN KEY (`propertyId`) REFERENCES `Property`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Tenant` ADD CONSTRAINT `Tenant_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE `Review` ADD CONSTRAINT `Review_propertyId_fkey` FOREIGN KEY (`propertyId`) REFERENCES `Property`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Review` ADD CONSTRAINT `Review_tenantId_fkey` FOREIGN KEY (`tenantId`) REFERENCES `Tenant`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `Review` ADD CONSTRAINT `Review_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Notification` ADD CONSTRAINT `Notification_landlordId_fkey` FOREIGN KEY (`landlordId`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
@@ -437,4 +425,13 @@ ALTER TABLE `PaymentAllocation` ADD CONSTRAINT `PaymentAllocation_scheduleId_fke
 ALTER TABLE `Lease` ADD CONSTRAINT `Lease_propertyId_fkey` FOREIGN KEY (`propertyId`) REFERENCES `Property`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Lease` ADD CONSTRAINT `Lease_tenantId_fkey` FOREIGN KEY (`tenantId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `LeaseTenant` ADD CONSTRAINT `LeaseTenant_leaseId_fkey` FOREIGN KEY (`leaseId`) REFERENCES `Lease`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `LeaseTenant` ADD CONSTRAINT `LeaseTenant_tenantId_fkey` FOREIGN KEY (`tenantId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `PaymentReference` ADD CONSTRAINT `PaymentReference_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `PaymentReference` ADD CONSTRAINT `PaymentReference_propertyId_fkey` FOREIGN KEY (`propertyId`) REFERENCES `Property`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;

@@ -30,7 +30,6 @@ export default function LeaseTable({ leases, onDeleteClick }: LeaseTableProps) {
         <thead>
           <tr style={{ borderBottom: "1px solid var(--border-glow)" }}>
             <th style={{ textAlign: "left", padding: "12px", fontSize: "12px", color: "var(--neon-blue)" }}>Property</th>
-            <th style={{ textAlign: "left", padding: "12px", fontSize: "12px", color: "var(--neon-blue)" }}>Tenant</th>
             <th style={{ textAlign: "left", padding: "12px", fontSize: "12px", color: "var(--neon-blue)" }}>Start Date</th>
             <th style={{ textAlign: "left", padding: "12px", fontSize: "12px", color: "var(--neon-blue)" }}>End Date</th>
             <th style={{ textAlign: "left", padding: "12px", fontSize: "12px", color: "var(--neon-blue)" }}>Rent (KES)</th>
@@ -53,7 +52,6 @@ export default function LeaseTable({ leases, onDeleteClick }: LeaseTableProps) {
                 {lease.property?.title || "—"}
                 <div style={{ fontSize: "11px", color: "var(--text-secondary)" }}>{lease.property?.location}</div>
               </td>
-              <td style={{ padding: "12px", fontSize: "14px" }}>{lease.tenant?.name || "—"}</td>
               <td style={{ padding: "12px", fontSize: "14px" }}>{lease.startDate ? new Date(lease.startDate).toLocaleDateString() : "—"}</td>
               <td style={{ padding: "12px", fontSize: "14px" }}>{lease.endDate ? new Date(lease.endDate).toLocaleDateString() : "—"}</td>
               <td style={{ padding: "12px", fontSize: "14px" }}>{lease.rentAmount?.toLocaleString()}</td>

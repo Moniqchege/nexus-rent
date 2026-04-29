@@ -24,7 +24,7 @@ model User {
   updatedAt     DateTime @updatedAt
 
   userProperties      UserProperty[]
-  leases              Lease[]
+  leaseTenants        LeaseTenant[]
   rentSchedules       RentSchedule[]       @relation("UserRentSchedules")
   payments            Payment[]            @relation("UserPayments")
   sessions            Session[]
@@ -322,9 +322,8 @@ model PaymentAllocation {
 model Lease {
   id         Int      @id @default(autoincrement())
   propertyId Int
-  tenantId   Int
   property   Property @relation(fields: [propertyId], references: [id])
-  tenant     User     @relation(fields: [tenantId], references: [id])
+  tenants  LeaseTenant[]
 
   startDate         DateTime
   endDate           DateTime
@@ -339,8 +338,20 @@ model Lease {
   updatedAt         DateTime @updatedAt
 
   @@index([propertyId])
-  @@index([tenantId])
   @@index([status])
+}
+
+model LeaseTenant {
+  id       Int @id @default(autoincrement())
+  leaseId  Int
+  tenantId Int
+
+  lease  Lease @relation(fields: [leaseId], references: [id], onDelete: Cascade)
+  tenant User  @relation(fields: [tenantId], references: [id])
+
+  @@unique([leaseId, tenantId])
+  @@index([leaseId])
+  @@index([tenantId])
 }
 
 model PaymentReference {

@@ -6,7 +6,6 @@ import api from "@/app/lib/api";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface Lease {
   id: number;
@@ -291,9 +290,9 @@ function generateStatementPDF(
 
 async function fetchTenantFinancials(lease: Lease): Promise<TenantFinancials> {
   const [schedulesRes, paymentsRes, ledgerRes] = await Promise.all([
-    api.get(`/api/payments/schedules?leaseId=${lease.id}`),
-    api.get(`/api/payments?tenantId=${lease.tenantId}`),
-    api.get(`/api/payments/tenants/${lease.tenantId}/statement`),
+    api.get(`/api/payments/schedules?leaseId=${lease.id}&tenantId=${lease.tenant.id}`), // ← add tenantId
+    api.get(`/api/payments?tenantId=${lease.tenant.id}`),
+    api.get(`/api/payments/tenants/${lease.tenant.id}/statement`),
   ]);
 
   const [schedulesData, paymentsData, ledgerData] = [
@@ -428,15 +427,20 @@ export default function TenantPage() {
   const [loadingFinancials, setLoadingFinancials] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Load leases list on mount
   useEffect(() => {
     setLoadingLeases(true);
     api.get("/api/leases")
-      .then((res) => {
-        const list: Lease[] = Array.isArray(res.data?.leases) ? res.data.leases : [];
-        setLeases(list);
-        if (list.length > 0) setSelectedLease(list[0]);
-      })
+  .then((res) => {
+    const raw = Array.isArray(res.data?.leases) ? res.data.leases : [];
+
+    const list: Lease[] = raw.map((l: any) => ({
+      ...l,
+      tenant: l.tenants?.[0]?.tenant ?? null, 
+    }));
+
+    setLeases(list);
+    if (list.length > 0) setSelectedLease(list[0]);
+  })
       .catch(() => setError("Failed to load leases"))
       .finally(() => setLoadingLeases(false));
   }, []);

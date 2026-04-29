@@ -6,6 +6,7 @@ import api from "@/app/lib/api";
 import { Lease, BillingCycle, LeaseStatus } from "@/types/lease";
 import DatePickerPopup from "../ui/Datepickerpopup";
 import { CustomDropdown } from "../ui/CustomDropdown";
+import { MultiSelectDropdown } from "../ui/MultiSelectDropdown";
 
 interface LeaseFormProps {
   initialData?: Partial<Lease>;
@@ -37,7 +38,7 @@ export default function LeaseForm({
   const [allTenants, setAllTenants] = useState<any[]>([]);
   const [data, setData] = useState({
     propertyId: initialData.propertyId || 0,
-    tenantId: initialData.tenantId || 0,
+    tenantIds: (initialData as any).tenantIds || [],
     startDate: initialData.startDate ? initialData.startDate.slice(0, 10) : "",
     endDate: initialData.endDate ? initialData.endDate.slice(0, 10) : "",
     rentAmount: initialData.rentAmount || 0,
@@ -82,7 +83,7 @@ const fetchUsers = async () => {
     e.preventDefault();
     if (!onSuccess) return;
 
-    if (!data.propertyId || !data.tenantId || !data.startDate || !data.endDate || !data.rentAmount) {
+    if (!data.propertyId || !data.tenantIds.length || !data.startDate || !data.endDate || !data.rentAmount) {
       setError("Property, tenant, start date, end date, and rent amount are required");
       return;
     }
@@ -94,7 +95,7 @@ const fetchUsers = async () => {
       await onSuccess({
         ...data,
         propertyId: Number(data.propertyId),
-        tenantId: Number(data.tenantId),
+        tenantIds: data.tenantIds.map(Number),
         rentAmount: Number(data.rentAmount),
         lateFeePercent: Number(data.lateFeePercent),
         graceDays: Number(data.graceDays),
@@ -164,31 +165,27 @@ const fetchUsers = async () => {
   }))}
   value={data.propertyId}
   onChange={(val) =>
-    setData({ ...data, propertyId: Number(val), tenantId: 0 })
+    setData({ ...data, propertyId: Number(val), tenantIds: [] })
   }
   labelKey="label"
   valueKey="value"
   placeholder="Select Property"
 />
           </div>
-          <div>
-            <label style={labelStyle}>Tenant *</label>
-           <CustomDropdown
-  options={filteredTenants.map((tenant: any) => ({
-    label: tenant.name,
-    value: tenant.id,
-  }))}
-  value={data.tenantId}
-  onChange={(val) =>
-    setData({ ...data, tenantId: Number(val) })
-  }
-  labelKey="label"
-  valueKey="value"
-  placeholder={
-    data.propertyId ? "Select Tenant" : "Select Property First"
-  }
-/>
-          </div>
+<div>
+  <label style={labelStyle}>Tenants *</label>
+  <MultiSelectDropdown
+    options={filteredTenants.map((t: any) => ({
+      label: t.name,
+      value: t.id,
+    }))}
+    values={data.tenantIds}
+    onChange={(vals) => setData((prev) => ({ ...prev, tenantIds: vals }))}
+    labelKey="label"
+    valueKey="value"
+    placeholder={data.propertyId ? "Select tenants" : "Select a property first"}
+  />
+</div>
         </div>
 
         {/* Start Date + End Date */}

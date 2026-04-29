@@ -220,27 +220,18 @@ export async function generateMonthlySchedules() {
       status: "active",
       endDate: { gte: now },
     },
+    include: {
+      tenants: true,  
+    },
   });
 
   for (const lease of activeLeases) {
-    // tenant = USER now
-    const tenant = await db.user.findUnique({
-      where: { id: lease.tenantId },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        phone: true,
-      },
-    });
-
-    if (!tenant) {
-      console.warn(`No user found for lease ${lease.id} (tenantId=${lease.tenantId})`);
+    if (!lease.tenants.length) {
+      console.warn(`No tenants found for lease ${lease.id}`);
       continue;
     }
 
     let dueDate: Date;
-
     if (lease.billingCycle === "weekly") {
       dueDate = new Date(now);
       dueDate.setDate(dueDate.getDate() + 7);
@@ -250,9 +241,57 @@ export async function generateMonthlySchedules() {
 
     const period = dueDate.toISOString().slice(0, 7);
 
+    for (const leaseTenant of lease.tenants) {
+      const existing = await db.rentSchedule.findFirst({
+        where: {
+          tenantId: leaseTenant.tenantId,
+          propertyId: lease.propertyId,
+          period,
+        },
+      });
+
+      if (!existing) {
+        await db.rentSchedule.create({
+          data: {
+            propertyId: lease.propertyId,
+            tenantId: leaseTenant.tenantId,
+            dueDate,
+            amount: lease.rentAmount,
+            status: "scheduled",
+            period,
+          },
+        });
+      }
+    }
+  }
+}
+
+// In paymentService.ts
+export async function generateScheduleForLease(leaseId: number) {
+  const lease = await db.lease.findUnique({
+    where: { id: leaseId },
+    include: {
+      tenants: true,  
+    },
+  });
+
+  if (!lease || lease.status !== "active") return;
+
+  let dueDate: Date;
+  if (lease.billingCycle === "weekly") {
+    dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + 7);
+  } else {
+    dueDate = new Date(lease.startDate);
+  }
+
+  const period = dueDate.toISOString().slice(0, 7);
+
+  // Create a rent schedule for each tenant on the lease
+  for (const leaseTenant of lease.tenants) {
     const existing = await db.rentSchedule.findFirst({
       where: {
-        tenantId: tenant.id, // same meaning, now userId
+        tenantId: leaseTenant.tenantId,
         propertyId: lease.propertyId,
         period,
       },
@@ -262,7 +301,7 @@ export async function generateMonthlySchedules() {
       await db.rentSchedule.create({
         data: {
           propertyId: lease.propertyId,
-          tenantId: tenant.id,
+          tenantId: leaseTenant.tenantId,
           dueDate,
           amount: lease.rentAmount,
           status: "scheduled",
@@ -270,46 +309,6 @@ export async function generateMonthlySchedules() {
         },
       });
     }
-  }
-}
-
-// In paymentService.ts
-export async function generateScheduleForLease(leaseId: number) {
-  const lease = await db.lease.findUnique({ where: { id: leaseId } });
-  if (!lease || lease.status !== 'active') return;
-
-  const now = new Date();
-
-  let dueDate: Date;
-  if (lease.billingCycle === 'weekly') {
-    dueDate = new Date(now);
-    dueDate.setDate(dueDate.getDate() + 7);
-  } else {
-    // First period: use the lease startDate's month
-    dueDate = new Date(lease.startDate);
-  }
-
-  const period = dueDate.toISOString().slice(0, 7);
-
-  const existing = await db.rentSchedule.findFirst({
-    where: {
-      tenantId: lease.tenantId,
-      propertyId: lease.propertyId,
-      period,
-    },
-  });
-
-  if (!existing) {
-    await db.rentSchedule.create({
-      data: {
-        propertyId: lease.propertyId,
-        tenantId: lease.tenantId,
-        dueDate,
-        amount: lease.rentAmount,
-        status: 'scheduled',
-        period,
-      },
-    });
   }
 }
 

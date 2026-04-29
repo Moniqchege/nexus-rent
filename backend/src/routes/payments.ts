@@ -20,8 +20,8 @@ router.get('/', audit({ action: 'view_payments', title: 'Payments' }), async (re
   try {
     const { propertyId, tenantId, status } = req.query;
     const where: any = {};
-    if (propertyId) where.propertyId = Number(propertyId);
-    if (tenantId) where.tenantId = Number(tenantId);
+    if (propertyId) where.propertyId = parseInt(propertyId as string, 10);
+    if (tenantId) where.tenantId = parseInt(tenantId as string, 10);
     if (status) where.status = status;
 
     const payments = await db.payment.findMany({
@@ -35,44 +35,63 @@ router.get('/', audit({ action: 'view_payments', title: 'Payments' }), async (re
   }
 });
 
-// GET /api/payments/schedules?status=overdue&leaseId=
+// GET /api/payments/schedules
+// GET /api/payments/schedules
 router.get('/schedules', async (req: Request, res: Response) => {
   try {
     const authReq = req as AuthRequest;
-    const { status, leaseId, propertyId } = req.query;
+    const { status, leaseId, propertyId, tenantId } = req.query; 
 
     const where: any = {
       property: { landlordId: authReq.userId! }
     };
 
-    // If fetching by leaseId, resolve the Tenant record first
     if (leaseId) {
       const lease = await db.lease.findFirst({
         where: {
           id: Number(leaseId),
           property: { landlordId: authReq.userId! }
         },
-        select: { tenantId: true, propertyId: true }
+        select: { propertyId: true, tenants: { select: { tenantId: true } } }
       });
 
       if (!lease) {
         return res.status(404).json({ error: 'Lease not found' });
       }
 
-      where.tenantId = lease.tenantId;
+      // If tenantId is also provided, scope to just that tenant (must be on the lease)
+      if (tenantId) {
+        const parsed = parseInt(tenantId as string, 10);
+        const isOnLease = lease.tenants.some((t) => t.tenantId === parsed);
+        if (!isNaN(parsed) && isOnLease) {
+          where.tenantId = parsed;
+        } else {
+          return res.status(403).json({ error: 'Tenant not on this lease' });
+        }
+      } else {
+        // No tenantId — return all tenants on the lease
+        where.tenantId = { in: lease.tenants.map((t) => t.tenantId) };
+      }
+
       where.propertyId = lease.propertyId;
     }
 
-    if (propertyId) where.propertyId = Number(propertyId);
-    if (status) where.status = status;
+    // Standalone tenantId filter (no leaseId) — landlord can query a tenant directly
+    if (!leaseId && tenantId) {
+      const parsed = parseInt(tenantId as string, 10);
+      if (!isNaN(parsed)) where.tenantId = parsed;
+    }
+
+    if (propertyId) where.propertyId = parseInt(propertyId as string, 10);
+    if (status) where.status = status as string;
 
     const schedules = await db.rentSchedule.findMany({
       where,
       include: {
-        tenant: true,
+        tenant: { select: { id: true, name: true, email: true, phone: true } },
         property: { select: { id: true, title: true, location: true } },
         payment: true,
-        allocations: true,          // ← needed for partial payment calc
+        allocations: true,
       },
       orderBy: { dueDate: 'asc' },
     });
@@ -101,12 +120,12 @@ router.post(
       });
 
       if (result.success) {
-        return res.json(result); // ✅ audit triggers here
+        return res.json(result); 
       } else {
-        return res.status(400).json(result); // ✅ audit logs FAILED
+        return res.status(400).json(result); 
       }
     } catch (error: any) {
-      return res.status(500).json({ error: error.message }); // ✅ audit logs FAILED
+      return res.status(500).json({ error: error.message }); 
     }
   }
 );
@@ -356,7 +375,8 @@ router.post('/mpesa/confirmation', async (req, res) => {
 });
 
 router.get('/tenants/:id/statement', async (req, res) => {
-  const tenantId = Number(req.params.id);
+  const tenantId = parseInt(req.params.id, 10);
+  if (isNaN(tenantId)) return res.status(400).json({ error: 'Invalid tenant ID' });
 
   const schedules = await db.rentSchedule.findMany({
     where: { tenantId },
