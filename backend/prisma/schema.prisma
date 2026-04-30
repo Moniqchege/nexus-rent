@@ -363,3 +363,13 @@ model PaymentReference {
   user     User     @relation(fields: [userId], references: [id])
   property Property @relation(fields: [propertyId], references: [id])
 }
+
+model CronLog {
+  id        Int      @id @default(autoincrement())
+  type      String   
+  status    String  
+  affected  Int?
+  error     String?
+  duration  Int?
+  createdAt DateTime @default(now())
+}

@@ -36,7 +36,6 @@ router.get('/', audit({ action: 'view_payments', title: 'Payments' }), async (re
 });
 
 // GET /api/payments/schedules
-// GET /api/payments/schedules
 router.get('/schedules', async (req: Request, res: Response) => {
   try {
     const authReq = req as AuthRequest;
