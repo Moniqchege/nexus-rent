@@ -277,6 +277,7 @@ model RentSchedule {
   status          String
   period          String
   paymentId       Int?     @unique
+  reminderSentAt DateTime?
   createdAt       DateTime @default(now())
 
   allocations PaymentAllocation[]

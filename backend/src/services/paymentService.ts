@@ -3,13 +3,19 @@ import axios from 'axios';
 import { db } from '../db/prisma.js';
 import crypto from 'crypto';
 import { transporter } from './mailer';
+import twilio from "twilio"; 
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2026-03-25.dahlia',
 });
 
+const twilioClient = new twilio.Twilio(
+  process.env.TWILIO_ACCOUNT_SID!,
+  process.env.TWILIO_AUTH_TOKEN!
+);
+
 export interface InitiateMpesaSTK {
-  phone: string; // 2547xxxxxxxx
+  phone: string; 
   amount: number;
   accountRef: string;
   propertyId: number;
@@ -172,27 +178,51 @@ export async function confirmStripePayment(piId: string, tenantId: number, prope
 }
 
 // Late Fee Automation — uses Lease.graceDays and Lease.lateFeePercent
-export async function applyLateFees() {
+export async function applyLateFees(): Promise<number> {
   const now = new Date();
 
-  // Find all scheduled schedules that are past their due date
   const candidates = await db.rentSchedule.findMany({
     where: {
-      status: 'scheduled',
+      status: "scheduled",
       dueDate: { lt: now },
     },
-    include: { tenant: true },
+    select: {
+      id: true,
+      dueDate: true,
+      amount: true,
+      propertyId: true,
+      tenantId: true,
+    },
   });
 
-  for (const sched of candidates) {
-    // Find the active lease for this property + tenant (via Tenant.userId)
-    const lease = await db.lease.findFirst({
-      where: {
-        propertyId: sched.propertyId,
-        tenantId: sched.tenantId,
-        status: 'active',
+  if (!candidates.length) return 0;
+
+  // Fetch all relevant leases in ONE query
+  const leases = await db.lease.findMany({
+    where: {
+      status: "active",
+      tenants: {
+        some: {
+          tenantId: { in: candidates.map((c) => c.tenantId) },
+        },
       },
-    });
+      propertyId: {
+        in: candidates.map((c) => c.propertyId),
+      },
+    },
+    include: {
+      tenants: true,
+    },
+  });
+
+  let affected = 0;
+
+  for (const sched of candidates) {
+    const lease = leases.find(
+      (l) =>
+        l.propertyId === sched.propertyId &&
+        l.tenants.some((t) => t.tenantId === sched.tenantId)
+    );
 
     const graceDays = lease?.graceDays ?? 7;
     const lateFeePercent = lease?.lateFeePercent ?? 5;
@@ -202,13 +232,20 @@ export async function applyLateFees() {
 
     if (now > graceDeadline) {
       const fee = sched.amount * (lateFeePercent / 100);
+
       await db.rentSchedule.update({
         where: { id: sched.id },
-        data: { status: 'overdue', lateFeeAmount: fee },
+        data: {
+          status: "overdue",
+          lateFeeAmount: fee,
+        },
       });
-      // TODO: Notify tenant/landlord
+
+      affected++;
     }
   }
+
+  return affected;
 }
 
 // Generate Schedules (cron) — uses Lease.rentAmount and Lease.billingCycle
@@ -495,50 +532,152 @@ export async function sendReceipt(paymentId: number) {
   }
 }
 
-export async function sendDueReminders() {
-  const threeDaysFromNow = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+async function dispatchReminder(
+  sched: {
+    id: number;
+    amount: number;
+    lateFeeAmount: number | null;
+    dueDate: Date;
+    status: string;
+    tenant: { id: number; name: string; email: string; phone: string | null };
+    property: { title: string };
+  }
+): Promise<{ email: boolean; whatsapp: boolean }> {
+  const result = { email: false, whatsapp: false };
+
+  const dueDateStr = new Date(sched.dueDate).toLocaleDateString("en-KE", {
+    day: "numeric", month: "long", year: "numeric",
+  });
+
+  const lateFeeNote = sched.lateFeeAmount
+    ? ` + KES ${sched.lateFeeAmount.toLocaleString()} late fee`
+    : "";
+
+  const overdueNote = sched.status === "overdue" ? "⚠️ This payment is OVERDUE.\n" : "";
+
+  const message = `${overdueNote}Hi ${sched.tenant.name}, this is a reminder that your rent of KES ${sched.amount.toLocaleString()}${lateFeeNote} for ${sched.property.title} is due on ${dueDateStr}. Please pay at your earliest convenience.`;
+
+  // ── Email ──
+  if (sched.tenant.email) {
+    try {
+      await transporter.sendMail({
+        from: `"Nexus Rent" <${process.env.SMTP_USER}>`,
+        to: sched.tenant.email,
+        subject: `Rent Reminder — ${sched.property.title}`,
+        html: `
+          <h2>Rent Payment Reminder</h2>
+          <p>Dear ${sched.tenant.name},</p>
+          <p>Your rent of <strong>KES ${sched.amount.toLocaleString()}</strong>${lateFeeNote}
+             for <strong>${sched.property.title}</strong> is due on
+             <strong>${dueDateStr}</strong>.</p>
+          ${sched.status === "overdue"
+            ? `<p style="color:red;"><strong>⚠️ This payment is overdue.</strong></p>`
+            : ""}
+          <p>Please make your payment at your earliest convenience.</p>
+        `,
+      });
+      result.email = true;
+    } catch (e) {
+      console.error(`Email failed for tenant ${sched.tenant.id}:`, e);
+    }
+  }
+
+  // ── WhatsApp ──
+  if (sched.tenant.phone) {
+    try {
+      // Normalize phone: 07xxxxxxxx → +2547xxxxxxxx
+      const raw = sched.tenant.phone.replace(/\s+/g, "");
+      const e164 = raw.startsWith("+")
+        ? raw
+        : raw.startsWith("0")
+        ? `+254${raw.slice(1)}`
+        : `+${raw}`;
+
+      await twilioClient.messages.create({
+        from: `whatsapp:${process.env.TWILIO_WHATSAPP_FROM}`, // e.g. whatsapp:+14155238886
+        to: `whatsapp:${e164}`,
+        body: message,
+      });
+      result.whatsapp = true;
+    } catch (e) {
+      console.error(`WhatsApp failed for tenant ${sched.tenant.id}:`, e);
+    }
+  }
+
+  // ── Mark as reminded so it won't be re-queued ──
+  await db.rentSchedule.update({
+    where: { id: sched.id },
+    data: { reminderSentAt: new Date() },
+  });
+
+  // ── In-app notification ──
+  await db.notification.create({
+    data: {
+      title: "Rent Reminder",
+      message: `KES ${sched.amount.toLocaleString()} due ${dueDateStr}`,
+      recipientIds: [sched.tenant.id.toString()],
+    },
+  }).catch(console.error);
+
+  return result;
+}
+
+export async function sendDueReminders(): Promise<number> {
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const threeDaysFromNow = new Date(todayStart.getTime() + 3 * 24 * 60 * 60 * 1000);
 
   const schedules = await db.rentSchedule.findMany({
     where: {
       status: "scheduled",
+      reminderSentAt: null,          
       dueDate: {
+        gte: todayStart,
         lt: threeDaysFromNow,
-        gt: new Date(),
       },
+    },
+    include: {
+      tenant: { select: { id: true, email: true, name: true, phone: true } },
+      property: { select: { title: true } },
     },
   });
 
+  let sent = 0;
   for (const sched of schedules) {
-    const user = await db.user.findUnique({
-      where: { id: sched.tenantId },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-      },
-    });
-
-    if (!user?.email) continue;
-    await transporter.sendMail({
-      from: `"Nexus Rent" <${process.env.SMTP_USER}>`,
-      to: user.email,
-      subject: "Rent Payment Reminder",
-      html: `
-        <h2>Rent Due Soon</h2>
-        <p>Dear ${user.name},</p>
-        <p>Your rent of KES ${sched.amount.toLocaleString()} is due on ${sched.dueDate.toLocaleDateString()}.</p>
-        <p>Please make payment to avoid late fees (5% after 7 days).</p>
-        <p>Pay via M-Pesa, Card or Bank Transfer.</p>
-      `,
-    }).catch(console.error);
-    await db.notification.create({
-      data: {
-        title: "Rent Reminder",
-        message: `KES ${sched.amount} due ${sched.dueDate.toLocaleDateString()}`,
-        recipientIds: [user.id.toString()],
-      },
-    });
+    const { email, whatsapp } = await dispatchReminder(sched);
+    if (email || whatsapp) sent++;
   }
+  return sent;
+}
+
+export async function sendManualReminders(scheduleIds?: number[]): Promise<number> {
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  const where: any = {
+    status: { in: ["scheduled", "overdue", "partial"] },
+    OR: [
+      { reminderSentAt: null },
+      { reminderSentAt: { lt: todayStart } },
+    ],
+  };
+
+  if (scheduleIds?.length) where.id = { in: scheduleIds };
+
+  const schedules = await db.rentSchedule.findMany({
+    where,
+    include: {
+      tenant: { select: { id: true, email: true, name: true, phone: true } },
+      property: { select: { title: true } },
+    },
+  });
+
+  let sent = 0;
+  for (const sched of schedules) {
+    const { email, whatsapp } = await dispatchReminder(sched);
+    if (email || whatsapp) sent++;
+  }
+  return sent;
 }
 
 // Bank Transfers

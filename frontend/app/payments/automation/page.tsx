@@ -176,14 +176,24 @@ export default function AutomationPage() {
     fetchData();
   }, [fetchData]);
 
-  const handleSendReminders = async () => {
-    try {
-      await api.post("/api/cron/reminders");
-      setRunLog((l) => ({ ...l, reminders: `Sent at ${new Date().toLocaleTimeString()}` }));
-    } catch {
-      // surface error if needed
-    }
-  };
+const handleSendReminders = async () => {
+  try {
+    const res = await api.post("/api/cron/reminders/manual");
+    const { affected } = res.data;
+    setRunLog((l) => ({
+      ...l,
+      reminders: affected > 0
+        ? `${affected} reminder${affected !== 1 ? "s" : ""} sent (email + WhatsApp) at ${new Date().toLocaleTimeString()}`
+        : `No new reminders to send`,
+    }));
+  } catch (e: any) {
+    setRunLog((l) => ({
+      ...l,
+      reminders: `Failed: ${e?.message ?? "error"}`,
+    }));
+  }
+};
+
   const triggerRun = async (key: string, endpoint: string) => {
     setRunLoading((l) => ({ ...l, [key]: true }));
     try {
