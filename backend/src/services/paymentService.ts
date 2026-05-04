@@ -584,25 +584,35 @@ async function dispatchReminder(
 
   // ── WhatsApp ──
   if (sched.tenant.phone) {
-    try {
-      // Normalize phone: 07xxxxxxxx → +2547xxxxxxxx
-      const raw = sched.tenant.phone.replace(/\s+/g, "");
-      const e164 = raw.startsWith("+")
-        ? raw
-        : raw.startsWith("0")
-        ? `+254${raw.slice(1)}`
-        : `+${raw}`;
+  try {
+    const raw = sched.tenant.phone.replace(/\s+/g, "");
+    const e164 = raw.startsWith("+")
+      ? raw
+      : raw.startsWith("0")
+      ? `+254${raw.slice(1)}`
+      : `+${raw}`;
 
-      await twilioClient.messages.create({
-        from: `whatsapp:${process.env.TWILIO_WHATSAPP_FROM}`, // e.g. whatsapp:+14155238886
-        to: `whatsapp:${e164}`,
-        body: message,
-      });
-      result.whatsapp = true;
-    } catch (e) {
-      console.error(`WhatsApp failed for tenant ${sched.tenant.id}:`, e);
-    }
+    console.log("📱 Attempting WhatsApp to:", e164);
+
+    const response = await twilioClient.messages.create({
+      from: process.env.TWILIO_WHATSAPP_FROM!,
+      to: `whatsapp:${e164}`,
+      contentSid: process.env.TWILIO_WHATSAPP_CONTENT_SID!,
+      contentVariables: JSON.stringify({
+        "1": new Date(sched.dueDate).toLocaleDateString("en-KE", { day: "numeric", month: "short" }),
+        "2": `KES ${sched.amount.toLocaleString()}`,
+      }),
+    });
+
+    console.log("✅ WhatsApp sent! SID:", response.sid, "Status:", response.status);
+    result.whatsapp = true;
+  } catch (e: any) {
+    console.error("❌ WhatsApp failed for tenant", sched.tenant.id);
+    console.error("   Code:", e.code);
+    console.error("   Message:", e.message);
+    console.error("   More info:", e.moreInfo);
   }
+}
 
   // ── Mark as reminded so it won't be re-queued ──
   await db.rentSchedule.update({
