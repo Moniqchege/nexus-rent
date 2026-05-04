@@ -9,6 +9,7 @@ const TABS = [
   { key: "schedules",  label: "Schedules",  icon: "🛰️", href: "/payments/schedules" },
   { key: "tenant",     label: "Tenant",     icon: "👤", href: "/payments/tenant" },
   { key: "automation", label: "Automation", icon: "⚡", href: "/payments/automation" },
+  { key: "expenses",    label: "Expenses",    icon: "📡", href: "/payments/expenses" },
   { key: "reports",    label: "Reports",    icon: "📡", href: "/payments/reports" },
 ];
 
