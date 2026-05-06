@@ -36,12 +36,17 @@ export interface RentSchedule {
 export interface Expense {
   id: number;
   category: string;
-  description: string;
+  description: string | null;
   amount: number;
   date: string;
   propertyId: number;
   property?: { title: string };
+  mpesaPaidTo?: string | null;
+  paymentStatus?: string;
+  paidAt?: string | null;
+  vendorAccount?: { id: number; name: string; identifier: string };
 }
+
 
 export interface Tenant {
   id: number;

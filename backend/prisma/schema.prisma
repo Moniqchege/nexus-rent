@@ -300,10 +300,48 @@ model Expense {
   description String?
   createdAt   DateTime @default(now())
 
+  vendorAccountId  Int?
+  vendorAccount    VendorAccount? @relation(fields: [vendorAccountId], references: [id])
+
+  paymentStatus String @default("pending")
+  mpesaPaidTo   String?
   property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
   @@index([propertyId])
   @@index([date])
+}
+
+model VendorAccount {
+  id         Int      @id @default(autoincrement())
+  name       String
+  identifier String   @unique 
+  createdAt  DateTime @default(now())
+
+  expenses   Expense[]
+}
+
+model Account {
+  id           Int      @id @default(autoincrement())
+  ownerUserId  Int
+  type         String  
+  name         String
+  balanceKES   Float    @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model LedgerEntry {
+  id               Int      @id @default(autoincrement())
+  idempotencyKey   String   @unique
+  landlordId       Int
+  type             String
+  description      String?
+  amount           Float
+
+  mainAccountId    Int
+  vendorAccountId  Int?
+
+  createdAt        DateTime @default(now())
 }
 
 model PaymentAllocation {
