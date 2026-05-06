@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { GlassPanel, SectionTag, NeonButton, MetricCard } from "../_lib/components";
 import { MOCK_EXPENSES, fmt } from "../_lib/data";
 import type { Expense } from "../_lib/types";
@@ -13,6 +13,11 @@ interface ExpenseSummary {
   utilities: number;
   insurance: number;
   count: number;
+}
+
+interface Property {
+  id: number;
+  title: string;
 }
 
 function categoryColor(category: string) {
@@ -28,20 +33,18 @@ function categoryColor(category: string) {
 
 export default function ExpensesPage() {
   const [expenses, setExpenses] = useState<Expense[]>(MOCK_EXPENSES);
-  const [properties, setProperties] = useState<{label: string, value: string}[]>([
-    {label: "All Properties", value: "all"},
-    {label: "Maple Court", value: "1"},
-    {label: "Sunset Villas", value: "2"},
-    {label: "Central Heights", value: "3"},
-    {label: "Green Park", value: "4"},
-  ]);
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [loadingProperties, setLoadingProperties] = useState(true);
   const [selectedProperty, setSelectedProperty] = useState("all");
   const [filterCategory, setFilterCategory] = useState("all");
   const [showAddModal, setShowAddModal] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const [formProperty, setFormProperty] = useState("all");
+  const [formCategory, setFormCategory] = useState("Maintenance");
+
   const summary = expenses.reduce((acc: ExpenseSummary, exp) => {
-    if (selectedProperty !== "all" && exp.property !== properties.find(p => p.value === selectedProperty)?.label) return acc;
+    if (selectedProperty !== "all" && exp.propertyId !== Number(selectedProperty)) return acc;
     if (filterCategory !== "all" && exp.category !== filterCategory) return acc;
     
     acc.total += exp.amount;
@@ -52,31 +55,34 @@ export default function ExpensesPage() {
     return acc;
   }, { total: 0, maintenance: 0, utilities: 0, insurance: 0, count: 0 });
 
-  const filteredExpenses = expenses.filter(exp => 
-    (selectedProperty === "all" || exp.property === properties.find(p => p.value === selectedProperty)?.label) &&
-    (filterCategory === "all" || exp.category === filterCategory)
-  );
+  const filteredExpenses = expenses.filter(exp =>
+  (selectedProperty === "all" || exp.propertyId === Number(selectedProperty)) &&
+  (filterCategory === "all" || exp.category === filterCategory)
+);
 
   const categories = ["all", ...Array.from(new Set(expenses.map(e => e.category))).sort()];
 
-  const handleAddExpense = async (formData: Partial<Expense>) => {
-    setLoading(true);
-    // Mock API call - replace with real /api/expenses
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const newExpense: Expense = {
-      id: expenses.length + 1,
-      property: formData.property || "Maple Court",
-      amount: formData.amount || 0,
-      category: formData.category || "Maintenance",
-      description: formData.description || "",
-      date: new Date().toISOString().slice(0, 10),
-    };
-    
-    setExpenses([newExpense, ...expenses]);
-    setShowAddModal(false);
-    setLoading(false);
+const handleAddExpense = async (formData: Partial<Expense>) => {
+  setLoading(true);
+
+  await new Promise(resolve => setTimeout(resolve, 1000));
+
+  const selected = properties.find(p => p.id === Number(formProperty));
+
+  const newExpense: Expense = {
+    id: expenses.length + 1,
+    propertyId: selected?.id || 0,
+    property: selected ? { title: selected.title } : undefined,
+    amount: formData.amount || 0,
+    category: formData.category || "Maintenance",
+    description: formData.description || "",
+    date: new Date().toISOString().slice(0, 10),
   };
+
+  setExpenses([newExpense, ...expenses]);
+  setShowAddModal(false);
+  setLoading(false);
+};
 
   const CATEGORIES: {label: string, value: string, color: string}[] = [
     {label: "All Categories", value: "all", color: "#6366f1"},
@@ -86,21 +92,38 @@ export default function ExpensesPage() {
     {label: "Admin", value: "Admin", color: "#fbbf24"},
   ];
 
+  useEffect(() => {
+  setLoadingProperties(true);
+  api
+    .get("/api/properties")
+    .then((res) => setProperties(res.data ?? []))
+    .catch((err) => console.error("Failed to load properties", err))
+    .finally(() => setLoadingProperties(false));
+}, []);
+
+const propertyOptions = useMemo(() => [
+  { label: "All Properties", value: "all" },
+  ...properties.map((p) => ({
+    label: p.title,
+    value: String(p.id),
+  })),
+], [properties]);
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       {/* Filters */}
-      <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-end" }}>
-        <div>
-          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", marginBottom: 5, textTransform: "uppercase" }}>Property</div>
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end" }}>
+        <div style={{ width: 300 }}>
+          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", marginBottom: 5, textTransform: "uppercase", letterSpacing: ".06em" }}>Property</div>
           <CustomDropdown
-            options={properties}
+            options={propertyOptions}
             value={selectedProperty}
             onChange={setSelectedProperty}
             labelKey="label"
             valueKey="value"
           />
         </div>
-        <div>
+        <div style={{ width: 300 }}>
           <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", marginBottom: 5, textTransform: "uppercase" }}>Category</div>
           <CustomDropdown
             options={CATEGORIES}
@@ -110,10 +133,30 @@ export default function ExpensesPage() {
             valueKey="value"
           />
         </div>
-        <NeonButton variant="primary" onClick={() => setShowAddModal(true)}>
+        <NeonButton 
+          variant="primary" 
+          onClick={() => setShowAddModal(true)}
+          style={{
+            background: "linear-gradient(to right,var(--neon-blue),var(--neon-purple))",
+            color: "white",
+            border: "none",
+            borderRadius: 12,
+            padding: "12px 16px",
+            fontWeight: 600,
+            cursor: "pointer",
+            width: "140px",
+            fontSize: 13,
+            textDecoration: "none",
+            display: "inline-block",
+          }}
+        >
           ➕ Add Expense
         </NeonButton>
-        <NeonButton variant="ghost" onClick={() => window.location.reload()}>
+        <NeonButton 
+          variant="ghost" 
+          onClick={() => window.location.reload()}
+          style={{padding: "13px 16px", width: "140px"}}
+        >
           ↻ Refresh
         </NeonButton>
       </div>
@@ -185,7 +228,7 @@ export default function ExpensesPage() {
                   }}>
                     {exp.category}
                   </div>
-                  <div style={{ fontSize: 13, fontWeight: 500, color: "#fff" }}>{exp.property}</div>
+                  <div style={{ fontSize: 13, fontWeight: 500, color: "#fff" }}>{exp.property?.title ?? "—"}</div>
                 </div>
                 <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", marginTop: 2 }}>
                   {exp.description} • {new Date(exp.date).toLocaleDateString("en-KE")}
@@ -211,37 +254,53 @@ export default function ExpensesPage() {
           </div>
         )}
       </GlassPanel>
-
-      {/* Add Expense Modal */}
       {showAddModal && (
         <div style={{
-          position: "fixed", inset: 0, 
+          position: "fixed", 
+          inset: 0, 
           background: "rgba(0,0,0,0.7)",
-          display: "flex", alignItems: "center", justifyContent: "center",
+          display: "flex", 
+          alignItems: "center", 
+          justifyContent: "center",
           zIndex: 1000,
           backdropFilter: "blur(8px)"
-        }} onClick={() => setShowAddModal(false)}>
-          <GlassPanel style={{ 
-            width: "min(500px, 90vw)", 
-            maxHeight: "90vh", 
-            padding: 0,
+        }} 
+        onClick={() => setShowAddModal(false)}>
+          <GlassPanel 
+          style={{ 
+            width: "90%", 
+            maxWidth: "700px",
+            padding: "10px",
             position: "relative"
-          }} onClick={e => e.stopPropagation()}>
+          }} 
+          onClick={e => e.stopPropagation()}>
             <div style={{ padding: "24px 28px 16px", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
-              <SectionTag style={{ margin: 0 }}>➕ New Expense</SectionTag>
+              <SectionTag>➕ New Expense</SectionTag>
             </div>
             <div style={{ padding: 24 }}>
               {/* Form fields */}
-              <div style={{ display: "grid", gap: 16 }}>
-                <div>
-                  <label style={{ display: "block", fontSize: 12, color: "rgba(255,255,255,0.7)", marginBottom: 6 }}>Property</label>
-                  <CustomDropdown options={properties} labelKey="label" valueKey="value" />
+              <div style={{  display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end"  }}>
+                <div style={{ width: 300 }}>
+                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", marginBottom: 5, textTransform: "uppercase", letterSpacing: ".06em" }}>Property</div>
+                  <CustomDropdown
+                    options={propertyOptions}
+                    value={formProperty}
+                    onChange={setFormProperty}
+                    labelKey="label"
+                    valueKey="value"
+                  />
                 </div>
-                <div>
+                <div style={{ width: 300 }}>
                   <label style={{ display: "block", fontSize: 12, color: "rgba(255,255,255,0.7)", marginBottom: 6 }}>Category</label>
-                  <CustomDropdown options={CATEGORIES} labelKey="label" valueKey="value" />
+                  <CustomDropdown
+                    options={CATEGORIES}
+                    value={formCategory}
+                    onChange={setFormCategory}
+                    labelKey="label"
+                    valueKey="value"
+                  />
                 </div>
-                <div>
+                <div style={{ width: 300 }}>
                   <label style={{ display: "block", fontSize: 12, color: "rgba(255,255,255,0.7)", marginBottom: 6 }}>Amount</label>
                   <input type="number" placeholder="KES 0" style={{
                     width: "100%", padding: "12px 16px", background: "rgba(255,255,255,0.05)",
@@ -249,7 +308,7 @@ export default function ExpensesPage() {
                     fontSize: 14
                   }} />
                 </div>
-                <div>
+                <div style={{ width: 300 }}>
                   <label style={{ display: "block", fontSize: 12, color: "rgba(255,255,255,0.7)", marginBottom: 6 }}>Description</label>
                   <input type="text" placeholder="Plumbing repair, roof leak, etc." style={{
                     width: "100%", padding: "12px 16px", background: "rgba(255,255,255,0.05)",

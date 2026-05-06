@@ -1,10 +1,13 @@
 "use client";
 
-import React from "react";
+import React, { HTMLAttributes } from "react";
 import { STATUS_STYLE } from "./data";
 import type { PayMethod } from "./types";
 
-// ─── Atoms ──────────────────────────────────────────────────────────────────────
+type GlassPanelProps = {
+  children: React.ReactNode;
+  style?: React.CSSProperties;
+} & HTMLAttributes<HTMLDivElement>;
 
 export function LiveDot() {
   return (
@@ -36,12 +39,11 @@ export function StatusBadge({ status }: { status: string }) {
 export function GlassPanel({
   children,
   style,
-}: {
-  children: React.ReactNode;
-  style?: React.CSSProperties;
-}) {
+  ...rest
+}: GlassPanelProps) {
   return (
     <div
+      {...rest}
       style={{
         background: "rgba(255,255,255,0.03)",
         border: "1px solid rgba(255,255,255,0.08)",

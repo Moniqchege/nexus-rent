@@ -39,7 +39,8 @@ export interface Expense {
   description: string;
   amount: number;
   date: string;
-  property: string;
+  propertyId: number;
+  property?: { title: string };
 }
 
 export interface Tenant {
