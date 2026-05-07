@@ -53,24 +53,24 @@ export async function createExpensePay(params: {
             vendorAccountId = vendorAccount.id;
         }
 
+        // Expenses must debit the single SYSTEM MAIN account (owned by seeded admin)
         const mainAccount = await tx.account.findFirst({
             where: {
-                ownerUserId: landlordId,
                 type: "MAIN",
             },
         });
 
-        if (!mainAccount) throw new Error("Main account not found for this landlord");
+        if (!mainAccount) throw new Error("System MAIN account not found");
 
-        const vendorAccount = await tx.account.findUnique({
-            where: {
-                id: vendorAccountId ?? undefined,
-            },
+        // Vendor source of truth for expenses is the Prisma VendorAccount model
+        const vendorAccount = await tx.vendorAccount.findUnique({
+            where: { id: vendorAccountId ?? undefined },
         });
 
-        if (!vendorAccount || vendorAccount.type !== "VENDOR") {
+        if (!vendorAccount) {
             throw new Error("Vendor account not found");
         }
+
 
         // Idempotency key: use reference if provided, otherwise use expenseId
         const idempotencyKey = reference ? `EXP_PAY:${reference}` : `EXP_PAY:${expense.id}`;
@@ -98,6 +98,7 @@ export async function createExpensePay(params: {
             },
         });
 
+
         await tx.account.update({
             where: { id: mainAccount.id },
             data: {
@@ -106,21 +107,18 @@ export async function createExpensePay(params: {
             },
         });
 
-        await tx.account.update({
-            where: { id: vendorAccount.id },
-            data: {
-                balanceKES: { increment: amount },
-                updatedAt: new Date(),
-            },
-        });
+        // Vendor balance is not tracked via Account.type for expenses.
+        // (LedgerEntry references the VendorAccount record for auditing.)
 
         const updated = await tx.expense.update({
+
             where: { id: expense.id },
             data: {
                 paymentStatus: "paid",
-                paidAt: new Date(),
                 mpesaPaidTo: (mpesaPaidTo ? String(mpesaPaidTo) : expense.mpesaPaidTo) ?? null,
                 vendorAccountId,
+
+
             },
             include: {
                 property: { select: { id: true, title: true } },

@@ -3,7 +3,7 @@ import { STANDARD_PERMISSIONS, STANDARD_AMENITIES } from "../services/seedData.j
 import bcrypt from "bcrypt";
 
 async function main() {
-   const adminEmail = "monicah.tech@gmail.com";
+  const adminEmail = "monicah.tech@gmail.com";
   const existingAdmin = await db.user.findFirst({ where: { email: adminEmail } });
 
   if (!existingAdmin) {
@@ -16,13 +16,37 @@ async function main() {
         password_hash: hashedPassword,
         phone: "+254700000000",
         plan: "FREE",
-        firstLogin: false, 
+        firstLogin: false,
       },
     });
     console.log(`✅ Default admin created — email: ${adminEmail} | password: Admin@1234`);
   } else {
     console.log(`ℹ️  Admin user already exists: ${adminEmail}`);
   }
+
+  // Ensure exactly one SYSTEM MAIN account exists (owned by the seeded admin)
+  const mainAccountCount = await db.account.count({ where: { type: "MAIN" } });
+  if (mainAccountCount === 0) {
+    const adminUser = await db.user.findUnique({ where: { email: adminEmail } });
+    if (!adminUser) throw new Error("Seed admin user not found");
+
+    await db.account.create({
+      data: {
+        ownerUserId: adminUser.id,
+        type: "MAIN",
+        name: "SYSTEM MAIN",
+        balanceKES: 0,
+      },
+    });
+
+    console.log("✅ System MAIN account created");
+  } else if (mainAccountCount > 1) {
+    // Fail fast; we must never auto-delete bookkeeping accounts.
+    throw new Error(`Expected exactly one MAIN account, found ${mainAccountCount}`);
+  } else {
+    console.log("ℹ️ System MAIN account already exists");
+  }
+
   // Seed permissions
   const permissionCount = await db.permission.count();
   if (permissionCount === 0) {
@@ -47,7 +71,7 @@ async function main() {
   if (amenityCount === 0) {
     const amenityData = STANDARD_AMENITIES.map(a => ({
       key: a,
-      label: a.replace(/_/g, " "), 
+      label: a.replace(/_/g, " "),
       category: "AMENITY"
     }));
 

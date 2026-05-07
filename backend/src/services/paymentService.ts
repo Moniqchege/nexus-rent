@@ -3,7 +3,7 @@ import axios from 'axios';
 import { db } from '../db/prisma.js';
 import crypto from 'crypto';
 import { transporter } from './mailer';
-import twilio from "twilio"; 
+import twilio from "twilio";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2026-03-25.dahlia',
@@ -15,7 +15,7 @@ const twilioClient = new twilio.Twilio(
 );
 
 export interface InitiateMpesaSTK {
-  phone: string; 
+  phone: string;
   amount: number;
   accountRef: string;
   propertyId: number;
@@ -163,19 +163,55 @@ export async function createStripeSession(propertyId: number, tenantId: number, 
 
 export async function confirmStripePayment(piId: string, tenantId: number, propertyId: number) {
   const paymentIntent = await stripe.paymentIntents.retrieve(piId);
-  if (paymentIntent.status === 'succeeded') {
-    await db.payment.update({
+  if (paymentIntent.status !== 'succeeded') return false;
+
+  return db.$transaction(async (tx) => {
+    const existing = await tx.payment.findUnique({ where: { referenceId: piId } });
+    if (!existing) return false;
+    if (existing.status === 'paid') return true;
+
+    const systemMain = await tx.account.findFirst({ where: { type: 'MAIN' } });
+    if (!systemMain) throw new Error('System MAIN account not found');
+
+    await tx.payment.update({
       where: { referenceId: piId },
       data: { status: 'paid', paidAt: new Date() },
     });
-    const payment = await db.payment.findUnique({ where: { referenceId: piId } });
-    if (payment) {
-      await allocatePayment(payment.id);
-    }
+
+    const idempotencyKey = `PAY:${piId}`;
+
+
+    // ledger: record payment into MAIN
+    // Use idempotencyKey to avoid double-credit on retries/webhooks.
+    // Ledger write is idempotent.
+    await tx.ledgerEntry.create({
+      data: {
+        idempotencyKey,
+        landlordId: 0,
+        type: 'PAYMENT_RECEIVED',
+        description: `Payment ${piId} confirmed (stripe)`,
+        amount: Number(existing.amount),
+        mainAccountId: systemMain.id,
+        vendorAccountId: null,
+      },
+    }).catch((e: unknown) => {
+      // If duplicate idempotency key, ignore and continue.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const msg = (e as any)?.message || '';
+      if (!msg.toLowerCase().includes('idempotencykey')) throw e;
+    });
+
+
+    await tx.account.update({
+      where: { id: systemMain.id },
+      data: { balanceKES: { increment: Number(existing.amount) } },
+    });
+
+    await allocatePayment(existing.id);
     return true;
-  }
-  return false;
+  });
 }
+
 
 // Late Fee Automation — uses Lease.graceDays and Lease.lateFeePercent
 export async function applyLateFees(): Promise<number> {
@@ -258,7 +294,7 @@ export async function generateMonthlySchedules() {
       endDate: { gte: now },
     },
     include: {
-      tenants: true,  
+      tenants: true,
     },
   });
 
@@ -308,7 +344,7 @@ export async function generateScheduleForLease(leaseId: number) {
   const lease = await db.lease.findUnique({
     where: { id: leaseId },
     include: {
-      tenants: true,  
+      tenants: true,
     },
   });
 
@@ -436,7 +472,7 @@ export async function allocatePayment(paymentId: number) {
         propertyId: payment.propertyId,
         status: { in: ['scheduled', 'overdue', 'partial'] },
       },
-      orderBy: { dueDate: 'asc' }, 
+      orderBy: { dueDate: 'asc' },
     });
 
     for (const sched of schedules) {
@@ -584,35 +620,35 @@ async function dispatchReminder(
 
   // ── WhatsApp ──
   if (sched.tenant.phone) {
-  try {
-    const raw = sched.tenant.phone.replace(/\s+/g, "");
-    const e164 = raw.startsWith("+")
-      ? raw
-      : raw.startsWith("0")
-      ? `+254${raw.slice(1)}`
-      : `+${raw}`;
+    try {
+      const raw = sched.tenant.phone.replace(/\s+/g, "");
+      const e164 = raw.startsWith("+")
+        ? raw
+        : raw.startsWith("0")
+          ? `+254${raw.slice(1)}`
+          : `+${raw}`;
 
-    console.log("📱 Attempting WhatsApp to:", e164);
+      console.log("📱 Attempting WhatsApp to:", e164);
 
-    const response = await twilioClient.messages.create({
-      from: process.env.TWILIO_WHATSAPP_FROM!,
-      to: `whatsapp:${e164}`,
-      contentSid: process.env.TWILIO_WHATSAPP_CONTENT_SID!,
-      contentVariables: JSON.stringify({
-        "1": new Date(sched.dueDate).toLocaleDateString("en-KE", { day: "numeric", month: "short" }),
-        "2": `KES ${sched.amount.toLocaleString()}`,
-      }),
-    });
+      const response = await twilioClient.messages.create({
+        from: process.env.TWILIO_WHATSAPP_FROM!,
+        to: `whatsapp:${e164}`,
+        contentSid: process.env.TWILIO_WHATSAPP_CONTENT_SID!,
+        contentVariables: JSON.stringify({
+          "1": new Date(sched.dueDate).toLocaleDateString("en-KE", { day: "numeric", month: "short" }),
+          "2": `KES ${sched.amount.toLocaleString()}`,
+        }),
+      });
 
-    console.log("✅ WhatsApp sent! SID:", response.sid, "Status:", response.status);
-    result.whatsapp = true;
-  } catch (e: any) {
-    console.error("❌ WhatsApp failed for tenant", sched.tenant.id);
-    console.error("   Code:", e.code);
-    console.error("   Message:", e.message);
-    console.error("   More info:", e.moreInfo);
+      console.log("✅ WhatsApp sent! SID:", response.sid, "Status:", response.status);
+      result.whatsapp = true;
+    } catch (e: any) {
+      console.error("❌ WhatsApp failed for tenant", sched.tenant.id);
+      console.error("   Code:", e.code);
+      console.error("   Message:", e.message);
+      console.error("   More info:", e.moreInfo);
+    }
   }
-}
 
   // ── Mark as reminded so it won't be re-queued ──
   await db.rentSchedule.update({
@@ -640,7 +676,7 @@ export async function sendDueReminders(): Promise<number> {
   const schedules = await db.rentSchedule.findMany({
     where: {
       status: "scheduled",
-      reminderSentAt: null,          
+      reminderSentAt: null,
       dueDate: {
         gte: todayStart,
         lt: threeDaysFromNow,
