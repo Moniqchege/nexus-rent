@@ -321,27 +321,38 @@ const handlePayExpense = async (exp: Expense) => {
   ) : (
     <>
       {/* TABLE HEADER */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1.5fr 1fr 1.2fr 1fr 1fr 1fr auto",
-          padding: "12px 20px",
-          fontSize: 11,
-          fontWeight: 600,
-          color: "rgba(255,255,255,0.4)",
-          borderBottom: "1px solid rgba(255,255,255,0.08)",
-          textTransform: "uppercase",
-          letterSpacing: 0.5,
-        }}
-      >
-        <div>Property</div>
-        <div>Category</div>
-        <div>Vendor</div>
-        <div>Date</div>
-        <div>Amount</div>
-        <div>Status</div>
-        <div style={{ textAlign: "right" }}>Action</div>
-      </div>
+   {/* TABLE HEADER */}
+<div
+  style={{
+    display: "grid",
+    gridTemplateColumns: "2fr 1.1fr 1.3fr 1fr 1fr 0.9fr 140px",
+    alignItems: "center",
+    padding: "14px 20px",
+    fontSize: 11,
+    fontWeight: 600,
+    color: "rgba(255,255,255,0.4)",
+    borderBottom: "1px solid rgba(255,255,255,0.08)",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    gap: 16,
+  }}
+>
+  <div>Property</div>
+
+  <div>Category</div>
+
+  <div>Vendor</div>
+
+  <div>Date</div>
+
+  <div>Amount</div>
+
+  <div>Status</div>
+
+  <div style={{ textAlign: "right" }}>
+    Action
+  </div>
+</div>
 
       {/* ROWS */}
       {filteredExpenses.map((exp) => (
@@ -349,13 +360,14 @@ const handlePayExpense = async (exp: Expense) => {
           key={exp.id}
           style={{
             display: "grid",
-            gridTemplateColumns: "1.5fr 1fr 1.2fr 1fr 1fr 1fr auto",
+            gridTemplateColumns: "2fr 1.1fr 1.3fr 1fr 1fr 0.9fr 140px",
             alignItems: "center",
             padding: "14px 20px",
             borderBottom: "1px solid rgba(255,255,255,0.05)",
             background: "rgba(255,255,255,0.02)",
             transition: "all 0.2s",
-            gap: 12,
+            gap: 16,
+            minHeight: 72,
           }}
           onMouseEnter={(e) =>
             (e.currentTarget.style.background = "rgba(255,255,255,0.05)")
@@ -398,12 +410,17 @@ const handlePayExpense = async (exp: Expense) => {
           </div>
 
           {/* AMOUNT */}
-          <div style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: "#fff",  whiteSpace: "nowrap", }}>
             {fmt(exp.amount)}
           </div>
 
           {/* STATUS */}
-<div>
+<div
+style={{
+    display: "flex",
+    justifyContent: "flex-start",
+  }}
+>
   <div
     style={{
       fontSize: 11,
@@ -428,23 +445,45 @@ const handlePayExpense = async (exp: Expense) => {
   </div>
 </div>
 
-          {/* ACTION / STATUS */}
-          <div style={{ textAlign: "right" }}>
-           {exp.paymentStatus === "paid" ? null : (
+          {/* ACTION  */}
+          <div
+  style={{
+    display: "flex",
+    justifyContent: "flex-end",
+    gap: 8,
+  }}
+>
   <NeonButton
-    variant="primary"
-    disabled={payingId === exp.id}
-    onClick={() => handlePayExpense(exp)}
+    variant="ghost"
     style={{
       padding: "6px 10px",
       borderRadius: 8,
       fontSize: 12,
+      minWidth: 64,
+    }}
+    onClick={() => {
+      console.log("View expense", exp.id);
     }}
   >
-    {payingId === exp.id ? "Paying…" : "Pay"}
+    View
   </NeonButton>
-)}
-          </div>
+
+  {exp.paymentStatus !== "paid" && (
+    <NeonButton
+      variant="primary"
+      disabled={payingId === exp.id}
+      onClick={() => handlePayExpense(exp)}
+      style={{
+        padding: "6px 10px",
+        borderRadius: 8,
+        fontSize: 12,
+        minWidth: 64,
+      }}
+    >
+      {payingId === exp.id ? "Paying…" : "Pay"}
+    </NeonButton>
+  )}
+</div>
         </div>
       ))}
 
