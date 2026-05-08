@@ -38,9 +38,18 @@ function parseReportCSV(csv: string): ReportSummary | null {
   try {
     const lines = csv.trim().split("\n");
     if (lines.length < 2) return null;
-    const [, , revenue, arrears, expenses, pl] = lines[1].split(",");
-    const parse = (v: string) => parseFloat(v.replace(/[^0-9.]/g, "")) || 0;
-    return { revenue: parse(revenue), arrears: parse(arrears), expenses: parse(expenses), pl: parse(pl) };
+    // Extract KES amounts directly (handles commas from toLocaleString like 1,234,567)
+    const row = lines[1];
+    const matches = row.match(/KES\s*([0-9]{1,3}(?:,[0-9]{3})*|[0-9]+(?:\.[0-9]+)?)/g);
+    if (!matches || matches.length < 4) return null;
+
+    const parseKES = (s: string) => {
+      const numeric = s.replace(/[^0-9.,]/g, "");
+      const normalized = numeric.replace(/,/g, "");
+      return parseFloat(normalized) || 0;
+    };
+
+    return { revenue: parseKES(matches[0]), arrears: parseKES(matches[1]), expenses: parseKES(matches[2]), pl: parseKES(matches[3]) };
   } catch {
     return null;
   }
@@ -209,7 +218,10 @@ export default function ReportsPage() {
     return acc;
   }, {} as Record<string, { total: number; items: Payment[] }>);
 
-  const maxVal = Math.max(...momData.map((m) => m.revenue), 1);
+  const maxVal = Math.max(
+    1,
+    ...momData.map((m) => Math.max(m.revenue, m.expenses, Math.abs(m.pl)))
+  );
 
   const propertyOptions = useMemo(() => [
     { label: "All Properties", value: "all" },
@@ -293,29 +305,86 @@ export default function ReportsPage() {
 
       {/* MoM bar chart */}
       <GlassPanel>
-        <SectionTag>📈 Month-over-Month (KES thousands)</SectionTag>
+        <SectionTag>📈 Month-over-Month</SectionTag>
+        <div style={{ marginTop: 6, fontSize: 12, color: "rgba(255,255,255,0.35)" }}>
+          Revenue vs Expenses (scaled to max month)
+        </div>
+
         {loadingMom ? (
-          <div style={{ height: 100, display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.3)", fontSize: 12, marginTop: 16 }}>
+          <div style={{ height: 120, display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.3)", fontSize: 12, marginTop: 16 }}>
             Loading chart…
           </div>
         ) : (
-          <div style={{ display: "flex", gap: 6, alignItems: "flex-end", height: 100, marginTop: 16, padding: "0 8px" }}>
-            {momData.map((m) => (
-              <div key={m.month} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
-                <div style={{ display: "flex", gap: 3, alignItems: "flex-end", width: "100%" }}>
-                  {[{ val: m.revenue, color: "#00ff87" }, { val: m.expenses, color: "#f97316" }].map((bar, i) => (
-                    <div key={i} title={`KES ${bar.val.toLocaleString()}`} style={{ flex: 1, height: `${Math.max(2, (bar.val / maxVal) * 80)}px`, background: bar.color, borderRadius: "3px 3px 0 0", opacity: 0.8, boxShadow: `0 0 6px ${bar.color}40`, transition: "height .4s" }} />
-                  ))}
-                </div>
-                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", textAlign: "center" }}>{shortMonth(m.month)}</div>
+          <div style={{ marginTop: 16 }}>
+            {/* grid */}
+            <div style={{ position: "relative", padding: "0 8px" }}>
+              <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
+                {[0.25, 0.5, 0.75, 1].map((t, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      position: "absolute",
+                      left: 0,
+                      right: 0,
+                      bottom: `${t * 100}%`,
+                      borderTop: "1px solid rgba(255,255,255,0.06)",
+                    }}
+                  />
+                ))}
               </div>
-            ))}
-            <div style={{ display: "flex", gap: 10, alignSelf: "flex-start", marginTop: -4, marginLeft: 12 }}>
-              {[["Revenue","#00ff87"],["Expenses","#f97316"]].map(([l, c]) => (
-                <div key={l} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10, color: "rgba(255,255,255,0.5)" }}>
-                  <div style={{ width: 8, height: 8, borderRadius: 2, background: c as string }} />{l}
-                </div>
-              ))}
+
+              <div style={{ display: "flex", gap: 10, alignItems: "flex-end", height: 110 }}>
+                {momData.map((m) => {
+                  const revenueH = Math.max(2, (m.revenue / maxVal) * 96);
+                  const expensesH = Math.max(2, (m.expenses / maxVal) * 96);
+                  return (
+                    <div
+                      key={m.month}
+                      style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}
+                    >
+                      <div style={{ display: "flex", gap: 6, alignItems: "flex-end", width: "100%" }}>
+                        <div
+                          title={`Revenue: ${fmt(m.revenue)}`}
+                          style={{
+                            flex: 1,
+                            height: revenueH,
+                            background: "#00ff87",
+                            borderRadius: "6px 6px 0 0",
+                            opacity: 0.9,
+                            boxShadow: "0 0 10px rgba(0,255,135,0.18)",
+                            transition: "height .4s",
+                          }}
+                        />
+                        <div
+                          title={`Expenses: ${fmt(m.expenses)}`}
+                          style={{
+                            flex: 1,
+                            height: expensesH,
+                            background: "#f97316",
+                            borderRadius: "6px 6px 0 0",
+                            opacity: 0.9,
+                            boxShadow: "0 0 10px rgba(249,115,22,0.18)",
+                            transition: "height .4s",
+                          }}
+                        />
+                      </div>
+                      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", textAlign: "center" }}>
+                        {shortMonth(m.month)}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* legend */}
+            <div style={{ display: "flex", gap: 14, marginTop: 10, padding: "0 8px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "rgba(255,255,255,0.55)" }}>
+                <span style={{ width: 10, height: 10, borderRadius: 3, background: "#00ff87", display: "inline-block" }} /> Revenue
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "rgba(255,255,255,0.55)" }}>
+                <span style={{ width: 10, height: 10, borderRadius: 3, background: "#f97316", display: "inline-block" }} /> Expenses
+              </div>
             </div>
           </div>
         )}
