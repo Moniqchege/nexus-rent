@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Pressable } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { CreditCard, Smartphone, Building2, ArrowLeft } from "lucide-react-native";
@@ -21,32 +21,39 @@ export default function PaymentMethodPage() {
   const propertyTitle = params.propertyTitle as string || "Property";
   const dueDate = params.dueDate as string || "";
 
-  const paymentMethods = [
-    {
-      id: "mpesa",
-      title: "M-Pesa",
-      subtitle: "Pay via M-Pesa STK Push",
-      icon: Smartphone,
-      gradient: ["#00FFA3", "#00FFFF"],
-      route: "/pay/mpesa",
-    },
-    {
-      id: "card",
-      title: "Card Payment",
-      subtitle: "Credit or Debit Card via Stripe",
-      icon: CreditCard,
-      gradient: ["#7C3AED", "#00FFFF"],
-      route: "/pay/card",
-    },
-    {
-      id: "bank",
-      title: "Bank Transfer",
-      subtitle: "Direct bank transfer",
-      icon: Building2,
-      gradient: ["#FFB84D", "#FF6B6B"],
-      route: "/pay/bank",
-    },
-  ];
+  const paymentMethods: {
+  id: string;
+  title: string;
+  subtitle: string;
+  icon: any;
+  gradient: [string, string];
+  route: string;
+}[] = [
+  {
+    id: "mpesa",
+    title: "M-Pesa",
+    subtitle: "Pay via M-Pesa STK Push",
+    icon: Smartphone,
+    gradient: ["#00FFA3", "#00FFFF"],
+    route: "/pay/mpesa",
+  },
+  {
+    id: "card",
+    title: "Card Payment",
+    subtitle: "Credit or Debit Card via Stripe",
+    icon: CreditCard,
+    gradient: ["#7C3AED", "#00FFFF"],
+    route: "/pay/card",
+  },
+  {
+    id: "bank",
+    title: "Bank Transfer",
+    subtitle: "Direct bank transfer",
+    icon: Building2,
+    gradient: ["#FFB84D", "#FF6B6B"],
+    route: "/pay/bank",
+  },
+];
 
   const handleMethodSelect = (method: typeof paymentMethods[0]) => {
     router.push({
@@ -65,12 +72,15 @@ export default function PaymentMethodPage() {
       {/* Ambient Glow */}
       <View style={styles.ambientGlow} />
 
-      <ScrollView contentContainerStyle={{ paddingTop: 60, paddingBottom: 40 }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <ArrowLeft size={20} color={colorMap.neon} />
-          </TouchableOpacity>
+          <Pressable onPress={() => router.back()} style={styles.side}>
+                      <Image
+                        source={require('../../assets/back_icon.png')}
+                        style={styles.backIcon}
+                      />
+                    </Pressable>
           <View style={{ flex: 1, alignItems: "center" }}>
             <Text style={styles.headerLabel}>SELECT PAYMENT METHOD</Text>
             <Text style={styles.headerTitle}>Choose How to Pay</Text>
@@ -274,4 +284,14 @@ const styles = StyleSheet.create({
     color: "#888",
     lineHeight: 18,
   },
+    side: {
+  width: 40, 
+  alignItems: 'center',
+  justifyContent: 'center',
+},
+backIcon: {
+  width: 22,
+  height: 22,
+  tintColor: '#00FFFF', 
+},
 });

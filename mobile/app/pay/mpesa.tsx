@@ -104,7 +104,7 @@ export default function PaymentMpesaPage() {
     <View style={styles.container}>
       <View style={styles.ambientGlow} />
 
-      <ScrollView contentContainerStyle={{ paddingTop: 60, paddingBottom: 40 }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         {/* Header */}
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} style={styles.side}>
