@@ -5,6 +5,7 @@ import { fmt } from "../_lib/data";
 import { GlassPanel, SectionTag, NeonButton, MetricCard } from "../_lib/components";
 import api from "@/app/lib/api";
 import { CustomDropdown } from "@/app/components/ui/CustomDropdown";
+import MonthPickerPopup from "@/app/components/ui/Monthpickerpopup";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -30,6 +31,19 @@ interface Payment {
 interface Property {
   id: number;
   title: string;
+}
+
+interface Expense {
+  id: number;
+  propertyId: number;
+  amount: number;
+  category: string;
+  date: string;
+  description: string;
+  paymentStatus: string;
+  mpesaPaidTo?: string;
+  property: { id: number; title: string };
+  vendorAccount?: { id: number; name: string; identifier: string };
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -90,6 +104,17 @@ function methodColor(method: string) {
   }
 }
 
+function categoryColor(cat: string) {
+  switch (cat.toLowerCase()) {
+    case "maintenance":  return "#f97316";
+    case "utilities":    return "#60a5fa";
+    case "salaries":     return "#a78bfa";
+    case "insurance":    return "#fbbf24";
+    case "repairs":      return "#ef4444";
+    default:             return "#94a3b8";
+  }
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function ReportsPage() {
@@ -110,8 +135,11 @@ export default function ReportsPage() {
 
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [loadingExpenses, setLoadingExpenses] = useState(false);
+  const [expandedExpenses, setExpandedExpenses] = useState<Record<string, boolean>>({});
+
   // ── GET /api/properties ───────────────────────────────────────────────────
-  // Must resolve first — fetchSummary and fetchMom depend on the numeric IDs
   useEffect(() => {
     setLoadingProperties(true);
     api
@@ -122,7 +150,6 @@ export default function ReportsPage() {
   }, []);
 
   // ── Single property+month report fetch ───────────────────────────────────
-  // Always uses p.id (number) so the endpoint gets e.g. propertyId=2, not "Green Park"
   const fetchReportForProperty = useCallback(async (pid: number, m: string): Promise<ReportSummary> => {
     const res = await api.get("/api/payments/reports", {
       params: { propertyId: pid, month: m },
@@ -132,7 +159,6 @@ export default function ReportsPage() {
   }, []);
 
   // ── GET /api/payments/reports — summary metrics ───────────────────────────
-  // Skips until properties are loaded so the fan-out has real IDs to work with
   const fetchSummary = useCallback(async () => {
     if (loadingProperties || properties.length === 0) return;
     setLoadingSummary(true);
@@ -152,48 +178,81 @@ export default function ReportsPage() {
   }, [propertyId, month, properties, loadingProperties, fetchReportForProperty]);
 
   // ── GET /api/payments?status=paid ────────────────────────────────────────
-  const fetchPayments = useCallback(async () => {
-    setLoadingPayments(true);
-    try {
-      const params: Record<string, string> = { status: "paid" };
-      if (propertyId !== "all") params.propertyId = propertyId;
-      const res = await api.get("/api/payments", { params });
-      setPayments(res.data.payments ?? []);
-    } catch (e: any) {
-      setError(e?.response?.data?.error ?? e?.message ?? "Failed to load payments");
-    } finally {
-      setLoadingPayments(false);
-    }
-  }, [propertyId]);
+const fetchPayments = useCallback(async () => {
+  setLoadingPayments(true);
+  try {
+    const params: Record<string, string> = { status: "paid", month }; // ← add month
+    if (propertyId !== "all") params.propertyId = propertyId;
+    const res = await api.get("/api/payments", { params });
+    setPayments(res.data.payments ?? []);
+  } catch (e: any) {
+    setError(e?.response?.data?.error ?? e?.message ?? "Failed to load payments");
+  } finally {
+    setLoadingPayments(false);
+  }
+}, [propertyId, month]); 
+
+const fetchExpensesForMonth = useCallback(async (m: string, pid: string): Promise<number> => {
+  const params: Record<string, string> = { month: m };
+  if (pid !== "all") params.propertyId = pid;
+  const res = await api.get("/api/expenses", { params });
+  const items: Expense[] = res.data?.expenses ?? [];
+  return items
+    .filter((e) => e.date.slice(0, 7) === m)
+    .reduce((sum, e) => sum + e.amount, 0);
+}, []);
 
   // ── GET /api/payments/reports × 4 months — MoM chart ────────────────────
-  // Same guard: skips until properties are loaded
   const fetchMom = useCallback(async () => {
-    if (loadingProperties || properties.length === 0) return;
-    setLoadingMom(true);
-    try {
-      const months = Array.from({ length: MONTHS_BACK }, (_, i) => monthLabel(MONTHS_BACK - 1 - i));
-      const results = await Promise.all(
-        months.map(async (m) => {
-          try {
-            let r: ReportSummary;
-            if (propertyId !== "all") {
-              r = await fetchReportForProperty(Number(propertyId), m);
-            } else {
-              const all = await Promise.all(properties.map((p) => fetchReportForProperty(p.id, m)));
-              r = sumSummaries(all);
-            }
-            return { month: m, revenue: r.revenue, expenses: r.expenses, pl: r.pl };
-          } catch {
-            return { month: m, revenue: 0, expenses: 0, pl: 0 };
+  if (loadingProperties || properties.length === 0) return;
+  setLoadingMom(true);
+  try {
+    const months = Array.from({ length: MONTHS_BACK }, (_, i) => monthLabel(MONTHS_BACK - 1 - i));
+    const results = await Promise.all(
+      months.map(async (m) => {
+        try {
+          let revenue = 0;
+          let pl = 0;
+
+          if (propertyId !== "all") {
+            const r = await fetchReportForProperty(Number(propertyId), m);
+            revenue = r.revenue;
+            pl = r.pl;
+          } else {
+            const all = await Promise.all(properties.map((p) => fetchReportForProperty(p.id, m)));
+            const summed = sumSummaries(all);
+            revenue = summed.revenue;
+            pl = summed.pl;
           }
-        })
-      );
-      setMomData(results);
-    } finally {
-      setLoadingMom(false);
-    }
-  }, [propertyId, properties, loadingProperties, fetchReportForProperty]);
+
+          const expenses = await fetchExpensesForMonth(m, propertyId); // ← real expenses
+
+          return { month: m, revenue, expenses, pl };
+        } catch {
+          return { month: m, revenue: 0, expenses: 0, pl: 0 };
+        }
+      })
+    );
+    setMomData(results);
+  } finally {
+    setLoadingMom(false);
+  }
+}, [propertyId, properties, loadingProperties, fetchReportForProperty, fetchExpensesForMonth]);
+
+  const fetchExpenses = useCallback(async () => {
+  setLoadingExpenses(true);
+  try {
+    const params: Record<string, string> = {};
+    if (propertyId !== "all") params.propertyId = propertyId;
+    params.month = month; 
+    const res = await api.get("/api/expenses", { params });
+    setExpenses(res.data?.expenses ?? []);
+  } catch (e: any) {
+    setError(e?.response?.data?.error ?? e?.message ?? "Failed to load expenses");
+  } finally {
+    setLoadingExpenses(false);
+  }
+}, [propertyId, month]);
 
   // ── Trigger data fetches once properties are ready, and on filter changes ─
   useEffect(() => {
@@ -201,7 +260,8 @@ export default function ReportsPage() {
     fetchSummary();
     fetchPayments();
     fetchMom();
-  }, [loadingProperties, fetchSummary, fetchPayments, fetchMom]);
+    fetchExpenses(); 
+  }, [loadingProperties, fetchSummary, fetchPayments, fetchMom, fetchExpenses]);
 
   // ── Derived ───────────────────────────────────────────────────────────────
 
@@ -210,6 +270,9 @@ export default function ReportsPage() {
   const totalExp = summary?.expenses ?? 0;
   const pl       = summary?.pl       ?? 0;
 
+  const realExpensesTotal = expenses.reduce((sum, e) => sum + e.amount, 0);
+  const filteredExpenses = expenses.filter((e) => e.date.slice(0, 7) === month);
+
   const grouped = payments.reduce((acc, p) => {
     const key = p.method.charAt(0).toUpperCase() + p.method.slice(1);
     if (!acc[key]) acc[key] = { total: 0, items: [] as Payment[] };
@@ -217,6 +280,14 @@ export default function ReportsPage() {
     acc[key].items.push(p);
     return acc;
   }, {} as Record<string, { total: number; items: Payment[] }>);
+
+  const groupedExpenses = expenses.reduce((acc, e) => {
+  const key = e.category;
+  if (!acc[key]) acc[key] = { total: 0, items: [] as Expense[] };
+  acc[key].total += e.amount;
+  acc[key].items.push(e);
+  return acc;
+}, {} as Record<string, { total: number; items: Expense[] }>);
 
   const maxVal = Math.max(
     1,
@@ -253,17 +324,16 @@ export default function ReportsPage() {
           />
         </div>
         <div style={{ width: 300 }}>
-          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", marginBottom: 5, textTransform: "uppercase", letterSpacing: ".06em" }}>Month</div>
-          <input
-            type="month"
-            value={month}
-            onChange={(e) => setMonth(e.target.value)}
-            style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10, padding: "12px 16px", color: "#fff", fontSize: 13 }}
-          />
+          <MonthPickerPopup
+          label="Month"
+          value={month}
+          onChange={setMonth}
+          placeholder="Select month"
+        />
         </div>
         <NeonButton 
         variant="ghost" 
-        onClick={() => { fetchSummary(); fetchPayments(); fetchMom(); }}
+        onClick={() => { fetchSummary(); fetchPayments(); fetchMom(); fetchExpenses(); }}
         style={{padding: "13px 16px", width: "140px"}}
         >
           {loadingSummary ? "⟳ Loading…" : "↺ Refresh"}
@@ -297,155 +367,722 @@ export default function ReportsPage() {
 
       {/* Summary metrics */}
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-        <MetricCard label="Revenue"  value={loadingSummary ? "…" : `KES ${(revenue / 1000).toFixed(0)}K`}  accent="linear-gradient(90deg,#00ff87,#0ea5e9)" sparkData={momData.map((m) => m.revenue / 1000)} sparkColor="#00ff87" />
-        <MetricCard label="Arrears"  value={loadingSummary ? "…" : `KES ${(arrears / 1000).toFixed(0)}K`}  accent="linear-gradient(90deg,#ef4444,#f97316)" />
-        <MetricCard label="Expenses" value={loadingSummary ? "…" : `KES ${(totalExp / 1000).toFixed(0)}K`} accent="linear-gradient(90deg,#fbbf24,#f97316)" sparkData={momData.map((m) => m.expenses / 1000)} sparkColor="#f97316" />
-        <MetricCard label="Net P&L"  value={loadingSummary ? "…" : `KES ${(pl / 1000).toFixed(0)}K`}       accent="linear-gradient(90deg,#6366f1,#00ff87)" sparkData={momData.map((m) => m.pl / 1000)} sparkColor="#00ff87" />
+        <MetricCard 
+        label="Revenue"  
+        value={loadingSummary ? "…" : `KES ${(revenue / 1000).toFixed(0)}K`}  
+        accent="linear-gradient(90deg,#00ff87,#0ea5e9)" 
+        sparkData={momData.map((m) => m.revenue / 1000)} 
+        sparkColor="#00ff87" 
+        />
+
+        <MetricCard 
+        label="Arrears"  
+        value={loadingSummary ? "…" : `KES ${(arrears / 1000).toFixed(0)}K`}  
+        accent="linear-gradient(90deg,#ef4444,#f97316)" 
+        />
+
+        <MetricCard
+          label="Expenses"
+          value={loadingExpenses ? "…" : `KES ${(realExpensesTotal / 1000).toFixed(0)}K`}
+          accent="linear-gradient(90deg,#fbbf24,#f97316)"
+          sparkData={momData.map((m) => m.expenses / 1000)}
+          sparkColor="#f97316"
+        />
+
+        <MetricCard 
+        label="Net P&L"  
+        value={loadingSummary ? "…" : `KES ${(pl / 1000).toFixed(0)}K`}       
+        accent="linear-gradient(90deg,#6366f1,#00ff87)" 
+        sparkData={momData.map((m) => m.pl / 1000)} sparkColor="#00ff87" 
+        />
       </div>
 
       {/* MoM bar chart */}
-      <GlassPanel>
-        <SectionTag>📈 Month-over-Month</SectionTag>
-        <div style={{ marginTop: 6, fontSize: 12, color: "rgba(255,255,255,0.35)" }}>
-          Revenue vs Expenses (scaled to max month)
-        </div>
+  <GlassPanel>
+  {/* Header */}
+  <div
+    style={{
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+      marginBottom: 18,
+    }}
+  >
+    <div>
+      <SectionTag>📈 Month-over-Month</SectionTag>
 
-        {loadingMom ? (
-          <div style={{ height: 120, display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.3)", fontSize: 12, marginTop: 16 }}>
-            Loading chart…
-          </div>
-        ) : (
-          <div style={{ marginTop: 16 }}>
-            {/* grid */}
-            <div style={{ position: "relative", padding: "0 8px" }}>
-              <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
-                {[0.25, 0.5, 0.75, 1].map((t, idx) => (
-                  <div
-                    key={idx}
-                    style={{
-                      position: "absolute",
-                      left: 0,
-                      right: 0,
-                      bottom: `${t * 100}%`,
-                      borderTop: "1px solid rgba(255,255,255,0.06)",
-                    }}
-                  />
-                ))}
-              </div>
+      <div
+        style={{
+          marginTop: 8,
+          fontSize: 12,
+          color: "rgba(255,255,255,0.38)",
+          lineHeight: 1.5,
+        }}
+      >
+        Monthly revenue and operational expenses comparison.
+      </div>
+    </div>
+  </div>
 
-              <div style={{ display: "flex", gap: 10, alignItems: "flex-end", height: 110 }}>
-                {momData.map((m) => {
-                  const revenueH = Math.max(2, (m.revenue / maxVal) * 96);
-                  const expensesH = Math.max(2, (m.expenses / maxVal) * 96);
-                  return (
-                    <div
-                      key={m.month}
-                      style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}
-                    >
-                      <div style={{ display: "flex", gap: 6, alignItems: "flex-end", width: "100%" }}>
-                        <div
-                          title={`Revenue: ${fmt(m.revenue)}`}
-                          style={{
-                            flex: 1,
-                            height: revenueH,
-                            background: "#00ff87",
-                            borderRadius: "6px 6px 0 0",
-                            opacity: 0.9,
-                            boxShadow: "0 0 10px rgba(0,255,135,0.18)",
-                            transition: "height .4s",
-                          }}
-                        />
-                        <div
-                          title={`Expenses: ${fmt(m.expenses)}`}
-                          style={{
-                            flex: 1,
-                            height: expensesH,
-                            background: "#f97316",
-                            borderRadius: "6px 6px 0 0",
-                            opacity: 0.9,
-                            boxShadow: "0 0 10px rgba(249,115,22,0.18)",
-                            transition: "height .4s",
-                          }}
-                        />
-                      </div>
-                      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", textAlign: "center" }}>
-                        {shortMonth(m.month)}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+  {loadingMom ? (
+    <div
+      style={{
+        height: 220,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        color: "rgba(255,255,255,0.3)",
+        fontSize: 12,
+      }}
+    >
+      Loading chart…
+    </div>
+  ) : (
+    <div
+      style={{
+        marginTop: 8,
+        position: "relative",
+      }}
+    >
+      {/* Chart Area */}
+      <div
+        style={{
+          display: "flex",
+          gap: 10,
+        }}
+      >
+        {/* Y AXIS */}
+        <div
+          style={{
+            width: 52,
+            height: 240,
+            position: "relative",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+            paddingBottom: 28,
+          }}
+        >
+          {[1, 0.75, 0.5, 0.25, 0].map((v, idx) => {
+            const amount = maxVal * v;
 
-            {/* legend */}
-            <div style={{ display: "flex", gap: 14, marginTop: 10, padding: "0 8px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "rgba(255,255,255,0.55)" }}>
-                <span style={{ width: 10, height: 10, borderRadius: 3, background: "#00ff87", display: "inline-block" }} /> Revenue
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "rgba(255,255,255,0.55)" }}>
-                <span style={{ width: 10, height: 10, borderRadius: 3, background: "#f97316", display: "inline-block" }} /> Expenses
-              </div>
-            </div>
-          </div>
-        )}
-      </GlassPanel>
-
-      {/* Grouped payments table */}
-      <GlassPanel style={{ padding: 0, overflow: "hidden" }}>
-        <div style={{ padding: "16px 20px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <SectionTag>🧾 Payments — {shortMonth(month)} {month.slice(0, 4)} (by Method)</SectionTag>
-          {loadingPayments && <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>Loading…</span>}
-        </div>
-
-        {!loadingPayments && payments.length === 0 ? (
-          <div style={{ padding: "24px 20px", color: "rgba(255,255,255,0.3)", fontSize: 13, textAlign: "center" }}>
-            No payments found for this period.
-          </div>
-        ) : (
-          Object.entries(grouped).map(([method, group]) => {
-            const color = methodColor(method);
-            const isOpen = expanded[method];
             return (
-              <div key={method}>
-                <div
-                  onClick={() => setExpanded((e) => ({ ...e, [method]: !e[method] }))}
-                  style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "13px 20px", background: "rgba(255,255,255,0.02)", borderBottom: "1px solid rgba(255,255,255,0.06)", cursor: "pointer", transition: "background .1s" }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.04)")}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.02)")}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 700, background: `${color}18`, color, border: `1px solid ${color}40` }}>{method}</span>
-                    <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>{group.items.length} payment{group.items.length !== 1 ? "s" : ""}</span>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <span style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{fmt(group.total)}</span>
-                    <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 12 }}>{isOpen ? "▲" : "▼"}</span>
-                  </div>
-                </div>
-                {isOpen && group.items.map((p) => (
-                  <div key={p.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 20px 10px 36px", borderBottom: "1px solid rgba(255,255,255,0.03)", background: "rgba(0,0,0,0.1)" }}>
-                    <div>
-                      <div style={{ fontSize: 13, color: "rgba(255,255,255,0.7)" }}>{p.tenant?.name ?? "Unknown Tenant"}</div>
-                      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 2 }}>
-                        {p.property?.title ?? "—"} · {p.paidAt ? new Date(p.paidAt).toLocaleDateString("en-KE") : p.createdAt?.slice(0, 10)}
-                        {p.referenceId && <> · <span style={{ fontFamily: "monospace" }}>{p.referenceId.slice(0, 20)}</span></>}
-                      </div>
-                    </div>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>{fmt(p.amount)}</span>
-                  </div>
-                ))}
+              <div
+                key={idx}
+                style={{
+                  fontSize: 10,
+                  color: "rgba(255,255,255,0.38)",
+                  textAlign: "right",
+                  paddingRight: 8,
+                  transform: "translateY(6px)",
+                }}
+              >
+                {amount >= 1000
+                  ? `K${Math.round(amount / 1000)}k`
+                  : `K${Math.round(amount)}`}
               </div>
             );
-          })
-        )}
+          })}
+        </div>
 
-        <div style={{ display: "flex", justifyContent: "flex-end", padding: "14px 20px", borderTop: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.02)" }}>
-          <div style={{ textAlign: "right" }}>
-            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: ".06em" }}>Total Revenue</div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: "#fff", marginTop: 2 }}>{fmt(revenue)}</div>
+        {/* GRAPH */}
+        <div
+          style={{
+            flex: 1,
+            position: "relative",
+            height: 240,
+            borderLeft: "1px solid rgba(255,255,255,0.08)",
+            borderBottom: "1px solid rgba(255,255,255,0.08)",
+            padding: "0 10px 28px 14px",
+          }}
+        >
+          {/* Horizontal Grid */}
+          {[0, 0.25, 0.5, 0.75, 1].map((t, idx) => (
+            <div
+              key={idx}
+              style={{
+                position: "absolute",
+                left: 0,
+                right: 0,
+                bottom: `${t * 100}%`,
+                borderTop:
+                  idx === 4
+                    ? "1px solid rgba(255,255,255,0.12)"
+                    : "1px dashed rgba(255,255,255,0.06)",
+              }}
+            />
+          ))}
+
+          {/* Bars */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "flex-end",
+              justifyContent: "space-between",
+              gap: 8,
+              height: "100%",
+              position: "relative",
+              zIndex: 2,
+            }}
+          >
+            {momData.map((m) => {
+              const revenueH = Math.max(
+                6,
+                (m.revenue / maxVal) * 180
+              );
+
+              const expensesH = Math.max(
+                6,
+                (m.expenses / maxVal) * 180
+              );
+
+              return (
+                <div
+                  key={m.month}
+                  style={{
+                    flex: 1,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "flex-end",
+                    height: "100%",
+                  }}
+                >
+                  {/* VALUES */}
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 8,
+                      alignItems: "flex-end",
+                      width: "100%",
+                      height: 180,
+                    }}
+                  >
+                    {/* Revenue */}
+                    <div
+                      style={{
+                        flex: 1,
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: 9,
+                          color: "#00ff87",
+                          marginBottom: 6,
+                          fontWeight: 700,
+                        }}
+                      >
+                        {fmt(m.revenue)}
+                      </div>
+
+                      <div
+                        title={`Revenue: ${fmt(m.revenue)}`}
+                        style={{
+                          width: "100%",
+                          height: revenueH,
+                          borderRadius: "10px 10px 4px 4px",
+                          background:
+                            "linear-gradient(to top, rgba(0,255,135,0.75), rgba(0,255,135,1))",
+                          boxShadow:
+                            "0 0 16px rgba(0,255,135,0.25)",
+                          position: "relative",
+                          overflow: "hidden",
+                          transition: "height .4s ease",
+                        }}
+                      >
+                        <div
+                          style={{
+                            position: "absolute",
+                            inset: 0,
+                            background:
+                              "linear-gradient(to bottom, rgba(255,255,255,0.22), transparent)",
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Expenses */}
+                    <div
+                      style={{
+                        flex: 1,
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: 9,
+                          color: "#f97316",
+                          marginBottom: 6,
+                          fontWeight: 700,
+                        }}
+                      >
+                        {fmt(m.expenses)}
+                      </div>
+
+                      <div
+                        title={`Expenses: ${fmt(m.expenses)}`}
+                        style={{
+                          width: "100%",
+                          height: expensesH,
+                          borderRadius: "10px 10px 4px 4px",
+                          background:
+                            "linear-gradient(to top, rgba(249,115,22,0.75), rgba(249,115,22,1))",
+                          boxShadow:
+                            "0 0 16px rgba(249,115,22,0.22)",
+                          position: "relative",
+                          overflow: "hidden",
+                          transition: "height .4s ease",
+                        }}
+                      >
+                        <div
+                          style={{
+                            position: "absolute",
+                            inset: 0,
+                            background:
+                              "linear-gradient(to bottom, rgba(255,255,255,0.2), transparent)",
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Month */}
+                  <div
+                    style={{
+                      marginTop: 12,
+                      fontSize: 11,
+                      fontWeight: 600,
+                      color: "rgba(255,255,255,0.5)",
+                      letterSpacing: ".03em",
+                    }}
+                  >
+                    {shortMonth(m.month)}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
-      </GlassPanel>
+      </div>
+
+      {/* Legend */}
+      <div
+        style={{
+          display: "flex",
+          gap: 18,
+          marginTop: 18,
+          paddingLeft: 58,
+          flexWrap: "wrap",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            fontSize: 12,
+            color: "rgba(255,255,255,0.6)",
+          }}
+        >
+          <span
+            style={{
+              width: 12,
+              height: 12,
+              borderRadius: 4,
+              background: "#00ff87",
+              boxShadow: "0 0 10px rgba(0,255,135,0.4)",
+            }}
+          />
+          Revenue
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            fontSize: 12,
+            color: "rgba(255,255,255,0.6)",
+          }}
+        >
+          <span
+            style={{
+              width: 12,
+              height: 12,
+              borderRadius: 4,
+              background: "#f97316",
+              boxShadow: "0 0 10px rgba(249,115,22,0.4)",
+            }}
+          />
+          Expenses
+        </div>
+      </div>
+    </div>
+  )}
+</GlassPanel>
+
+      {/* Grouped expenses table */}
+<GlassPanel
+  style={{
+    padding: 0,
+    overflow: "hidden",
+    border: "1px solid rgba(255,255,255,0.06)",
+    backdropFilter: "blur(14px)",
+  }}
+>
+  {/* Header */}
+  <div
+    style={{
+      padding: "18px 22px",
+      borderBottom: "1px solid rgba(255,255,255,0.07)",
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      background: "linear-gradient(to right, rgba(255,255,255,0.03), rgba(255,255,255,0.015))",
+    }}
+  >
+    <div>
+      <div
+        style={{
+          fontSize: 11,
+          textTransform: "uppercase",
+          letterSpacing: ".12em",
+          color: "rgba(255,255,255,0.35)",
+          marginBottom: 5,
+        }}
+      >
+        Expense Analytics
+      </div>
+
+      <SectionTag>
+        💸 Expenses — {shortMonth(month)} {month.slice(0, 4)}
+      </SectionTag>
+    </div>
+
+    {loadingExpenses && (
+      <span
+        style={{
+          fontSize: 11,
+          color: "rgba(255,255,255,0.35)",
+        }}
+      >
+        Loading…
+      </span>
+    )}
+  </div>
+
+  {/* Table Header */}
+  {!loadingExpenses && expenses.length > 0 && (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "1.7fr 0.8fr 0.8fr 0.8fr auto",
+        gap: 12,
+        padding: "8px 10px",
+        fontSize: 11,
+        fontWeight: 700,
+        letterSpacing: ".08em",
+        textTransform: "uppercase",
+        color: "rgba(255,255,255,0.38)",
+        background: "rgba(255,255,255,0.02)",
+        borderBottom: "1px solid rgba(255,255,255,0.05)",
+      }}
+    >
+      <div>Category</div>
+      <div>Items</div>
+      <div>Total</div>
+      <div>Expand</div>
+    </div>
+  )}
+
+  {/* Empty State */}
+  {!loadingExpenses && expenses.length === 0 ? (
+    <div
+      style={{
+        padding: "32px 20px",
+        color: "rgba(255,255,255,0.3)",
+        fontSize: 13,
+        textAlign: "center",
+      }}
+    >
+      No expenses found for this period.
+    </div>
+  ) : (
+    Object.entries(groupedExpenses).map(([category, group]) => {
+      const color = categoryColor(category);
+      const isOpen = expandedExpenses[category];
+
+      return (
+        <div
+          key={category}
+          style={{
+            borderBottom: "1px solid rgba(255,255,255,0.04)",
+          }}
+        >
+          {/* Category Row */}
+          <div
+            onClick={() =>
+              setExpandedExpenses((e) => ({
+                ...e,
+                [category]: !e[category],
+              }))
+            }
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1.7fr 0.8fr 0.8fr 0.8fr auto",
+              gap: 12,
+              alignItems: "center",
+              padding: "8px 10px",
+              fontSize: "10",
+              cursor: "pointer",
+              transition: "all .18s ease",
+              background: isOpen
+                ? "rgba(255,255,255,0.04)"
+                : "rgba(255,255,255,0.015)",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "rgba(255,255,255,0.05)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = isOpen
+                ? "rgba(255,255,255,0.04)"
+                : "rgba(255,255,255,0.015)";
+            }}
+          >
+            {/* Category */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+              }}
+            >
+              <div
+                style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: "50%",
+                  background: color,
+                  boxShadow: `0 0 12px ${color}`,
+                }}
+              />
+
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  padding: "6px 12px",
+                  borderRadius: 999,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  background: `${color}15`,
+                  color,
+                  border: `1px solid ${color}40`,
+                }}
+              >
+                {category}
+              </span>
+            </div>
+
+            {/* Items */}
+            <div
+              style={{
+                fontSize: 12,
+                color: "rgba(255,255,255,0.7)",
+                fontWeight: 600,
+              }}
+            >
+              {group.items.length}
+            </div>
+
+            {/* Total */}
+            <div
+              style={{
+                fontSize: 13,
+                fontWeight: 700,
+                color: "#fff",
+              }}
+            >
+              {fmt(group.total)}
+            </div>
+
+            {/* Expand Button */}
+            <button
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 10,
+                border: isOpen
+                  ? "1px solid rgba(0,255,135,0.35)"
+                  : "1px solid rgba(255,255,255,0.08)",
+                background: isOpen
+                  ? "rgba(0,255,135,0.12)"
+                  : "rgba(255,255,255,0.03)",
+                color: isOpen ? "#00ff87" : "rgba(255,255,255,0.7)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                transition: "all .2s ease",
+                fontSize: 14,
+                fontWeight: 700,
+              }}
+            >
+              {isOpen ? "−" : "+"}
+            </button>
+          </div>
+
+          {/* Expanded Rows */}
+          {isOpen &&
+            group.items.map((e, idx) => (
+              <div
+                key={e.id}
+                style={{
+                  padding: "14px 24px 14px 52px",
+                  background:
+                    idx % 2 === 0
+                      ? "rgba(0,0,0,0.14)"
+                      : "rgba(255,255,255,0.015)",
+                  borderTop: "1px solid rgba(255,255,255,0.03)",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <div>
+                  <div
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: "rgba(255,255,255,0.88)",
+                    }}
+                  >
+                    {e.description}
+                  </div>
+
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 10,
+                      flexWrap: "wrap",
+                      marginTop: 5,
+                      fontSize: 10,
+                      color: "rgba(255,255,255,0.38)",
+                    }}
+                  >
+                    <span>{e.property?.title ?? "—"}</span>
+
+                    <span>
+                      {new Date(e.date).toLocaleDateString("en-KE")}
+                    </span>
+
+                    {e.vendorAccount && (
+                      <span
+                        style={{
+                          fontFamily: "monospace",
+                          color: "rgba(255,255,255,0.55)",
+                        }}
+                      >
+                        {e.vendorAccount.identifier}
+                      </span>
+                    )}
+
+                    {e.paymentStatus && (
+                      <span
+                        style={{
+                          padding: "2px 7px",
+                          borderRadius: 999,
+                          fontWeight: 700,
+                          background:
+                            e.paymentStatus === "paid"
+                              ? "rgba(0,255,135,0.12)"
+                              : "rgba(239,68,68,0.12)",
+                          color:
+                            e.paymentStatus === "paid"
+                              ? "#00ff87"
+                              : "#ef4444",
+                          border: `1px solid ${
+                            e.paymentStatus === "paid"
+                              ? "rgba(0,255,135,0.25)"
+                              : "rgba(239,68,68,0.25)"
+                          }`,
+                        }}
+                      >
+                        {e.paymentStatus.toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    fontSize: 14,
+                    fontWeight: 700,
+                    color: "#fff",
+                  }}
+                >
+                  {fmt(e.amount)}
+                </div>
+              </div>
+            ))}
+        </div>
+      );
+    })
+  )}
+
+  {/* Footer */}
+  <div
+    style={{
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: "18px 22px",
+      borderTop: "1px solid rgba(255,255,255,0.07)",
+      background:
+        "linear-gradient(to right, rgba(255,255,255,0.03), rgba(255,255,255,0.015))",
+    }}
+  >
+    <div
+      style={{
+        fontSize: 11,
+        color: "rgba(255,255,255,0.35)",
+        textTransform: "uppercase",
+        letterSpacing: ".08em",
+      }}
+    >
+      
+    </div>
+
+    <div style={{ textAlign: "right" }}>
+      <div
+        style={{
+          fontSize: 10,
+          color: "rgba(255,255,255,0.35)",
+          textTransform: "uppercase",
+          letterSpacing: ".08em",
+        }}
+      >
+        Total Expenses
+      </div>
+
+      <div
+        style={{
+          fontSize: 14,
+          fontWeight: 800,
+          color: "#fff",
+          marginTop: 3,
+        }}
+      >
+        {fmt(realExpensesTotal)}
+      </div>
+    </div>
+  </div>
+</GlassPanel>
     </div>
   );
 }

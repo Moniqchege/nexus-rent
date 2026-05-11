@@ -218,22 +218,39 @@ export default function DatePickerPopup({
           }
           setOpen(o => !o);
         }}
-        style={{
-          ...styles.trigger,
-          borderColor: open
-            ? "rgba(59,130,246,0.7)"
-            : displayValue
-            ? "rgba(139,92,246,0.5)"
-            : "var(--border-glow, rgba(59,130,246,0.3))",
-          boxShadow: open ? "0 0 0 3px rgba(59,130,246,0.08)" : "none",
-        }}
+         style={{
+    ...styles.trigger,
+    borderColor: open
+      ? "rgba(70, 71, 72, 0.7)"
+      : displayValue
+      ? "rgba(82, 81, 84, 0.5)"
+      : "var(--border-glow, rgba(59,130,246,0.3))",
+
+    boxShadow: open
+      ? "0 0 0 3px rgba(59,130,246,0.08)"
+      : "none",
+  }}
       >
-        <CalendarIcon />
-        {displayValue ? (
-          <span style={styles.valueText}>{displayValue}</span>
-        ) : (
-          <span style={styles.placeholder}>{placeholder}</span>
-        )}
+
+        <div
+         style={{
+      display: "flex",
+      alignItems: "center",
+      gap: "10px",
+      minWidth: 0,
+    }}
+        >
+           {displayValue ? (
+      <span style={styles.valueText}>
+        {displayValue}
+      </span>
+    ) : (
+      <span style={styles.placeholder}>
+        {placeholder}
+      </span>
+    )}
+        </div>
+        <AgendaIcon open={open} />
       </div>
 
       {/* Popup rendered in a portal to escape parent stacking contexts */}
@@ -242,20 +259,29 @@ export default function DatePickerPopup({
   );
 }
 
-function CalendarIcon() {
+function AgendaIcon({ open }: { open: boolean }) {
   return (
     <svg
-      width="16" height="16"
-      viewBox="0 0 16 16"
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
       fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      style={{ flexShrink: 0, opacity: 0.6 }}
+      stroke="#94a3b8"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      style={{
+        flexShrink: 0,
+        transition: "all 0.2s ease",
+        opacity: open ? 0.7 : 1,
+      }}
     >
-      <rect x="1" y="3" width="14" height="12" rx="2.5" />
-      <line x1="1" y1="7" x2="15" y2="7" />
-      <line x1="5" y1="1" x2="5" y2="5" />
-      <line x1="11" y1="1" x2="11" y2="5" />
+      <rect x="3" y="4" width="18" height="18" rx="2" />
+      <path d="M3 10h18" />
+      <path d="M8 14h8" />
+      <path d="M8 18h5" />
+      <path d="M10 2v4" />
+      <path d="M14 2v4" />
     </svg>
   );
 }
@@ -269,20 +295,20 @@ const styles: Record<string, React.CSSProperties> = {
     color: "var(--neon-blue)",
   },
   trigger: {
-    display: "flex",
-    alignItems: "center",
-    gap: "10px",
-    width: "100%",
-    backgroundColor: "rgba(17,24,39,0.5)",
-    border: "1px solid",
-    borderRadius: "12px",
-    padding: "13px 18px",
-    cursor: "pointer",
-    transition: "border-color 0.2s, box-shadow 0.2s",
-    color: "var(--text-primary, #f1f5f9)",
-    fontSize: "14px",
-    userSelect: "none",
-  },
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  width: "100%",
+  backgroundColor: "rgba(17,24,39,0.5)",
+  border: "1px solid",
+  borderRadius: "12px",
+  padding: "13px 18px",
+  cursor: "pointer",
+  transition: "border-color 0.2s, box-shadow 0.2s",
+  color: "var(--text-primary, #f1f5f9)",
+  fontSize: "14px",
+  userSelect: "none",
+},
   placeholder: {
     color: "var(--text-secondary, #94a3b8)",
     fontSize: "14px",

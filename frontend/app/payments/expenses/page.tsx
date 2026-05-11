@@ -320,7 +320,6 @@ const handlePayExpense = async (exp: Expense) => {
     </div>
   ) : (
     <>
-      {/* TABLE HEADER */}
    {/* TABLE HEADER */}
 <div
   style={{
@@ -349,7 +348,7 @@ const handlePayExpense = async (exp: Expense) => {
 
   <div>Status</div>
 
-  <div style={{ textAlign: "right" }}>
+  <div>
     Action
   </div>
 </div>
@@ -449,7 +448,7 @@ style={{
           <div
   style={{
     display: "flex",
-    justifyContent: "flex-end",
+    // justifyContent: "flex-end",
     gap: 8,
   }}
 >
