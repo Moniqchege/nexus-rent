@@ -54,6 +54,8 @@ export default function RootLayout() {
   useEffect(() => {
   if (!fontsLoaded) return;
 
+  console.log('🧭 segments:', JSON.stringify(segments));
+
   const inTabsGroup = segments[0] === '(tabs)';
   const isAuthFlow = segments[0] === 'reset-password' 
     || segments[0] === 'otp' 
@@ -63,13 +65,14 @@ export default function RootLayout() {
   const isContactsRoute = segments[0] === 'contacts';
   const isChatbotRoute = segments[0] === 'chatbot';
   const isAuditRoute = segments[0] === 'audit-trails';
+  const isPayRoute = segments[0] === 'pay';
 
   if (!auth.token && !auth.tempToken && inTabsGroup && !isAuthFlow) {
     router.replace('/login');
     return;
   }
 
-  if ((auth.token || (auth.tempToken && !auth.isFirstLogin)) && !inTabsGroup && !isAuthFlow && !isServicesRoute && !isContactsRoute && !isChatbotRoute && !isAuditRoute) {
+  if ((auth.token || (auth.tempToken && !auth.isFirstLogin)) && !inTabsGroup && !isAuthFlow && !isServicesRoute && !isContactsRoute && !isChatbotRoute && !isAuditRoute && !isPayRoute) {
     router.replace('/(tabs)/home');
   }
 }, [auth.token, auth.tempToken, segments, router, fontsLoaded]);

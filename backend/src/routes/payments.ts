@@ -18,10 +18,29 @@ router.use(requireAuth);
 // GET /api/payments?propertyId=&status=
 router.get('/', audit({ action: 'view_payments', title: 'Payments' }), async (req: Request, res: Response) => {
   try {
+    const authReq = req as AuthRequest;
     const { propertyId, tenantId, status } = req.query;
+
+    // Check if user is a tenant
+    const userProperties = await db.userProperty.findMany({
+      where: { userId: authReq.userId! },
+      include: { role: true },
+    });
+
+    const isTenant = userProperties.some(up => up.role.name.toLowerCase() === 'tenant');
+    const isLandlord = userProperties.some(up => up.role.name.toLowerCase() === 'landlord');
+
     const where: any = {};
-    if (propertyId) where.propertyId = parseInt(propertyId as string, 10);
-    if (tenantId) where.tenantId = parseInt(tenantId as string, 10);
+
+    if (isTenant && !isLandlord) {
+      // Tenant can only see their own payments
+      where.tenantId = authReq.userId!;
+    } else {
+      // Landlord can filter by property/tenant
+      if (propertyId) where.propertyId = parseInt(propertyId as string, 10);
+      if (tenantId) where.tenantId = parseInt(tenantId as string, 10);
+    }
+
     if (status) where.status = status;
 
     const payments = await db.payment.findMany({
@@ -39,49 +58,65 @@ router.get('/', audit({ action: 'view_payments', title: 'Payments' }), async (re
 router.get('/schedules', async (req: Request, res: Response) => {
   try {
     const authReq = req as AuthRequest;
-    const { status, leaseId, propertyId, tenantId } = req.query; 
+    const { status, leaseId, propertyId, tenantId } = req.query;
 
-    const where: any = {
-      property: { landlordId: authReq.userId! }
-    };
+    // Check if user is a tenant by looking at their properties
+    const userProperties = await db.userProperty.findMany({
+      where: { userId: authReq.userId! },
+      include: { role: true },
+    });
 
-    if (leaseId) {
-      const lease = await db.lease.findFirst({
-        where: {
-          id: Number(leaseId),
-          property: { landlordId: authReq.userId! }
-        },
-        select: { propertyId: true, tenants: { select: { tenantId: true } } }
-      });
+    const isTenant = userProperties.some(up => up.role.name.toLowerCase() === 'tenant');
+    const isLandlord = userProperties.some(up => up.role.name.toLowerCase() === 'landlord');
 
-      if (!lease) {
-        return res.status(404).json({ error: 'Lease not found' });
-      }
+    let where: any = {};
 
-      // If tenantId is also provided, scope to just that tenant (must be on the lease)
-      if (tenantId) {
-        const parsed = parseInt(tenantId as string, 10);
-        const isOnLease = lease.tenants.some((t) => t.tenantId === parsed);
-        if (!isNaN(parsed) && isOnLease) {
-          where.tenantId = parsed;
-        } else {
-          return res.status(403).json({ error: 'Tenant not on this lease' });
+    if (isTenant && !isLandlord) {
+      // Tenant can only see their own schedules
+      where.tenantId = authReq.userId!;
+    } else {
+      // Landlord view - filter by properties they own
+      where.property = { landlordId: authReq.userId! };
+
+      if (leaseId) {
+        const lease = await db.lease.findFirst({
+          where: {
+            id: Number(leaseId),
+            property: { landlordId: authReq.userId! }
+          },
+          select: { propertyId: true, tenants: { select: { tenantId: true } } }
+        });
+
+        if (!lease) {
+          return res.status(404).json({ error: 'Lease not found' });
         }
-      } else {
-        // No tenantId — return all tenants on the lease
-        where.tenantId = { in: lease.tenants.map((t) => t.tenantId) };
+
+        // If tenantId is also provided, scope to just that tenant (must be on the lease)
+        if (tenantId) {
+          const parsed = parseInt(tenantId as string, 10);
+          const isOnLease = lease.tenants.some((t) => t.tenantId === parsed);
+          if (!isNaN(parsed) && isOnLease) {
+            where.tenantId = parsed;
+          } else {
+            return res.status(403).json({ error: 'Tenant not on this lease' });
+          }
+        } else {
+          // No tenantId — return all tenants on the lease
+          where.tenantId = { in: lease.tenants.map((t) => t.tenantId) };
+        }
+
+        where.propertyId = lease.propertyId;
       }
 
-      where.propertyId = lease.propertyId;
+      // Standalone tenantId filter (no leaseId) — landlord can query a tenant directly
+      if (!leaseId && tenantId) {
+        const parsed = parseInt(tenantId as string, 10);
+        if (!isNaN(parsed)) where.tenantId = parsed;
+      }
+
+      if (propertyId) where.propertyId = parseInt(propertyId as string, 10);
     }
 
-    // Standalone tenantId filter (no leaseId) — landlord can query a tenant directly
-    if (!leaseId && tenantId) {
-      const parsed = parseInt(tenantId as string, 10);
-      if (!isNaN(parsed)) where.tenantId = parsed;
-    }
-
-    if (propertyId) where.propertyId = parseInt(propertyId as string, 10);
     if (status) where.status = status as string;
 
     const schedules = await db.rentSchedule.findMany({
@@ -119,12 +154,12 @@ router.post(
       });
 
       if (result.success) {
-        return res.json(result); 
+        return res.json(result);
       } else {
-        return res.status(400).json(result); 
+        return res.status(400).json(result);
       }
     } catch (error: any) {
-      return res.status(500).json({ error: error.message }); 
+      return res.status(500).json({ error: error.message });
     }
   }
 );
