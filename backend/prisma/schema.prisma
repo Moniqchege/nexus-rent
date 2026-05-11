@@ -274,6 +274,7 @@ model RentSchedule {
   amount          Float
   lateFeeAmount   Float?   @default(0)
   allocatedAmount Float    @default(0)
+  lateFeeLastAppliedAt DateTime? 
   status          String
   period          String
   paymentId       Int?     @unique

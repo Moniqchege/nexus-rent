@@ -219,7 +219,7 @@ export async function applyLateFees(): Promise<number> {
 
   const candidates = await db.rentSchedule.findMany({
     where: {
-      status: "scheduled",
+      status: { in: ["scheduled", "overdue", "partial"] },
       dueDate: { lt: now },
     },
     select: {
@@ -228,27 +228,20 @@ export async function applyLateFees(): Promise<number> {
       amount: true,
       propertyId: true,
       tenantId: true,
+      lateFeeAmount: true,       
+      lateFeeLastAppliedAt: true, 
     },
   });
 
   if (!candidates.length) return 0;
 
-  // Fetch all relevant leases in ONE query
   const leases = await db.lease.findMany({
     where: {
       status: "active",
-      tenants: {
-        some: {
-          tenantId: { in: candidates.map((c) => c.tenantId) },
-        },
-      },
-      propertyId: {
-        in: candidates.map((c) => c.propertyId),
-      },
+      tenants: { some: { tenantId: { in: candidates.map((c) => c.tenantId) } } },
+      propertyId: { in: candidates.map((c) => c.propertyId) },
     },
-    include: {
-      tenants: true,
-    },
+    include: { tenants: true },
   });
 
   let affected = 0;
@@ -260,25 +253,38 @@ export async function applyLateFees(): Promise<number> {
         l.tenants.some((t) => t.tenantId === sched.tenantId)
     );
 
-    const graceDays = lease?.graceDays ?? 7;
-    const lateFeePercent = lease?.lateFeePercent ?? 5;
+    const graceDays      = lease?.graceDays      ?? 7;
+    const lateFeePercent = lease?.lateFeePercent  ?? 5;
 
     const graceDeadline = new Date(sched.dueDate);
     graceDeadline.setDate(graceDeadline.getDate() + graceDays);
 
-    if (now > graceDeadline) {
-      const fee = sched.amount * (lateFeePercent / 100);
+    if (now <= graceDeadline) continue; 
 
-      await db.rentSchedule.update({
-        where: { id: sched.id },
-        data: {
-          status: "overdue",
-          lateFeeAmount: fee,
-        },
-      });
+    // How many days have elapsed since grace expired (or since last application)
+    const chargeFrom = sched.lateFeeLastAppliedAt
+      ? new Date(sched.lateFeeLastAppliedAt)
+      : graceDeadline;
 
-      affected++;
-    }
+    const msPerDay   = 86_400_000;
+    const daysToCharge = Math.floor((now.getTime() - chargeFrom.getTime()) / msPerDay);
+
+    if (daysToCharge < 1) continue; 
+
+    // Daily fee = % of original rent amount (simple, non-compounding)
+    const dailyFee      = sched.amount * (lateFeePercent / 100);
+    const newFeeAmount  = (sched.lateFeeAmount ?? 0) + dailyFee * daysToCharge;
+
+    await db.rentSchedule.update({
+      where: { id: sched.id },
+      data: {
+        status:              "overdue",
+        lateFeeAmount:       newFeeAmount,
+        lateFeeLastAppliedAt: now,       
+      },
+    });
+
+    affected++;
   }
 
   return affected;

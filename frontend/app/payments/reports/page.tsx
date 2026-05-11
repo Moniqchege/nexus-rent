@@ -139,6 +139,9 @@ export default function ReportsPage() {
   const [loadingExpenses, setLoadingExpenses] = useState(false);
   const [expandedExpenses, setExpandedExpenses] = useState<Record<string, boolean>>({});
 
+  const [schedules, setSchedules] = useState<any[]>([]);
+  const [loadingSchedules, setLoadingSchedules] = useState(false);
+
   // ── GET /api/properties ───────────────────────────────────────────────────
   useEffect(() => {
     setLoadingProperties(true);
@@ -254,6 +257,20 @@ const fetchExpensesForMonth = useCallback(async (m: string, pid: string): Promis
   }
 }, [propertyId, month]);
 
+const fetchArrears = useCallback(async () => {
+  setLoadingSchedules(true);
+  try {
+    const params: Record<string, string> = {};
+    if (propertyId !== "all") params.propertyId = propertyId;
+    const res = await api.get("/api/payments/schedules", { params });
+    setSchedules(res.data?.schedules ?? []);
+  } catch (e: any) {
+    setError(e?.response?.data?.error ?? e?.message ?? "Failed to load arrears");
+  } finally {
+    setLoadingSchedules(false);
+  }
+}, [propertyId]);
+
   // ── Trigger data fetches once properties are ready, and on filter changes ─
   useEffect(() => {
     if (loadingProperties) return;
@@ -261,7 +278,8 @@ const fetchExpensesForMonth = useCallback(async (m: string, pid: string): Promis
     fetchPayments();
     fetchMom();
     fetchExpenses(); 
-  }, [loadingProperties, fetchSummary, fetchPayments, fetchMom, fetchExpenses]);
+    fetchArrears();
+  }, [loadingProperties, fetchSummary, fetchPayments, fetchMom, fetchExpenses, fetchArrears]);
 
   // ── Derived ───────────────────────────────────────────────────────────────
 
@@ -289,6 +307,16 @@ const fetchExpensesForMonth = useCallback(async (m: string, pid: string): Promis
   return acc;
 }, {} as Record<string, { total: number; items: Expense[] }>);
 
+const arrearsBySchedule = useMemo(() => {
+  return schedules
+    .filter((s) => s.status === "overdue" || s.status === "partial")
+    .reduce((sum, s) => {
+      const totalDue = s.amount + (s.lateFeeAmount ?? 0);
+      const paid     = s.allocatedAmount ?? 0;
+      return sum + Math.max(0, totalDue - paid);
+    }, 0);
+}, [schedules]);
+
   const maxVal = Math.max(
     1,
     ...momData.map((m) => Math.max(m.revenue, m.expenses, Math.abs(m.pl)))
@@ -304,8 +332,6 @@ const fetchExpensesForMonth = useCallback(async (m: string, pid: string): Promis
     if (propertyId !== "all") params.set("propertyId", propertyId);
     window.open(`/api/payments/reports?${params}`, "_blank");
   };
-
-  // ─────────────────────────────────────────────────────────────────────────
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -377,7 +403,7 @@ const fetchExpensesForMonth = useCallback(async (m: string, pid: string): Promis
 
         <MetricCard 
         label="Arrears"  
-        value={loadingSummary ? "…" : `KES ${(arrears / 1000).toFixed(0)}K`}  
+        value={loadingSchedules ? "…" : `KES ${(arrearsBySchedule / 1000).toFixed(0)}K`} 
         accent="linear-gradient(90deg,#ef4444,#f97316)" 
         />
 
