@@ -76,11 +76,11 @@ export default function PaymentMethodPage() {
         {/* Header */}
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} style={styles.side}>
-                      <Image
-                        source={require('../../assets/back_icon.png')}
-                        style={styles.backIcon}
-                      />
-                    </Pressable>
+            <Image
+             source={require('../../assets/back_icon.png')}
+             style={styles.backIcon}
+            />
+          </Pressable>
           <View style={{ flex: 1, alignItems: "center" }}>
             <Text style={styles.headerLabel}>SELECT PAYMENT METHOD</Text>
             <Text style={styles.headerTitle}>Choose How to Pay</Text>
@@ -169,17 +169,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   headerLabel: {
-    fontSize: 10,
+    fontSize: 13,
     fontFamily: "Orbitron",
     letterSpacing: 2,
-    color: "#888",
+    color: "#FFF",
     marginBottom: 4,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 14,
     fontFamily: "Orbitron",
     fontWeight: "700",
-    color: "#fff",
+    color: "#888",
   },
   summaryCard: {
     marginHorizontal: 20,

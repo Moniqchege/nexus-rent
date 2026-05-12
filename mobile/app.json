@@ -1,0 +1,11 @@
+{
+  "plugins": [
+    [
+      "@stripe/stripe-react-native",
+      {
+        "merchantIdentifier": "merchant.com.nexusrent",
+        "enableGooglePay": true
+      }
+    ]
+  ]
+}

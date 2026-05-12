@@ -58,47 +58,66 @@ const getMpesaAccessToken = async (): Promise<string> => {
 };
 
 // M-Pesa Daraja API - Lipa na M-Pesa STK Push
-export async function initiateMpesaSTK(params: InitiateMpesaSTK): Promise<PaymentResult> {
+export async function initiateMpesaSTK(
+  params: InitiateMpesaSTK
+): Promise<PaymentResult> {
   try {
-    const { phone, amount, accountRef, propertyId, tenantId, description } = params;
+    const { phone, amount, accountRef, propertyId, tenantId, description } =
+      params;
 
     console.log("📦 STK REQUEST INPUT:", params);
 
     const accessToken = await getMpesaAccessToken();
-
     console.log("🔑 ACCESS TOKEN:", accessToken);
 
-    const timestamp = new Date()
-      .toISOString()
-      .replace(/[^0-9]/g, '')
-      .slice(0, 14);
+    // ✅ SAFE timestamp (Daraja strict format)
+    const date = new Date();
+    const timestamp =
+      date.getFullYear().toString() +
+      String(date.getMonth() + 1).padStart(2, "0") +
+      String(date.getDate()).padStart(2, "0") +
+      String(date.getHours()).padStart(2, "0") +
+      String(date.getMinutes()).padStart(2, "0") +
+      String(date.getSeconds()).padStart(2, "0");
 
     console.log("⏱ TIMESTAMP:", timestamp);
 
-    const password = Buffer.from(
-      `${process.env.MPESA_SHORTCODE}${process.env.MPESA_PASSKEY}${timestamp}`
-    ).toString('base64');
+    // ✅ CLEAN ENV VALUES (VERY IMPORTANT)
+    const shortCode = (process.env.MPESA_SHORTCODE || "").trim();
+    const passKey = (process.env.MPESA_PASSKEY || "").trim();
+
+    console.log("SHORTCODE:", shortCode);
+    console.log("PASSKEY LENGTH:", passKey.length);
+    console.log("PASSKEY START:", passKey.slice(0, 10));
+    console.log("PASSKEY END:", passKey.slice(-10));
+
+    // 🔥 STRICT DARARAJA PASSWORD FORMAT
+    const passwordString = `${shortCode}${passKey}${timestamp}`;
+
+    console.log("PASSWORD INPUT STRING:", passwordString);
+
+    const password = Buffer.from(passwordString).toString("base64");
 
     console.log("🔒 PASSWORD GENERATED:", password);
 
     const payload = {
-      BusinessShortCode: process.env.MPESA_SHORTCODE!,
+      BusinessShortCode: shortCode,
       Password: password,
       Timestamp: timestamp,
-      TransactionType: 'CustomerPayBillOnline',
+      TransactionType: "CustomerPayBillOnline",
       Amount: amount,
       PartyA: phone,
-      PartyB: process.env.MPESA_SHORTCODE!,
+      PartyB: shortCode,
       PhoneNumber: phone,
       CallBackURL: `${process.env.MPESA_CALLBACK_URL}/api/payments/mpesa/callback`,
       AccountReference: accountRef,
       TransactionDesc: description,
     };
 
-    console.log("🚀 STK PAYLOAD:", payload);
+    console.log("🚀 STK PAYLOAD:", JSON.stringify(payload, null, 2));
 
     const stkRes = await axios.post(
-      'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest',
+      "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest",
       payload,
       {
         headers: {
@@ -109,14 +128,14 @@ export async function initiateMpesaSTK(params: InitiateMpesaSTK): Promise<Paymen
 
     console.log("📩 STK RESPONSE:", stkRes.data);
 
-    if (stkRes.data.ResponseCode === '0') {
+    if (stkRes.data.ResponseCode === "0") {
       await db.payment.create({
         data: {
           tenantId,
           propertyId,
           amount,
-          method: 'mpesa',
-          status: 'pending',
+          method: "mpesa",
+          status: "pending",
           referenceId: stkRes.data.CheckoutRequestID,
           metadata: { phone, description },
         },
@@ -127,10 +146,22 @@ export async function initiateMpesaSTK(params: InitiateMpesaSTK): Promise<Paymen
 
     console.log("❌ STK FAILED:", stkRes.data);
 
-    return { success: false, error: stkRes.data.errorMessage };
+    return {
+      success: false,
+      error: stkRes.data.errorMessage || "STK request failed",
+    };
   } catch (error: any) {
     console.log("🔥 STK EXCEPTION:");
-    console.log(error.response?.data || error.message);
+
+    if (error.response) {
+      console.log("STATUS:", error.response.status);
+      console.log(
+        "DATA:",
+        JSON.stringify(error.response.data, null, 2)
+      );
+    } else {
+      console.log(error.message);
+    }
 
     return {
       success: false,

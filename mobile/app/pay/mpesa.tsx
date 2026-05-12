@@ -34,59 +34,108 @@ export default function PaymentMpesaPage() {
   const accountNumber = `RENT-${scheduleId}`;
 
   const formatPhoneNumber = (text: string) => {
-    // Remove all non-numeric characters
-    const cleaned = text.replace(/\D/g, "");
-    
-    // Format as Kenyan number (254XXXXXXXXX)
-    if (cleaned.startsWith("0")) {
-      return "254" + cleaned.slice(1);
-    } else if (cleaned.startsWith("254")) {
-      return cleaned;
-    } else if (cleaned.startsWith("+254")) {
-      return cleaned.slice(1);
-    }
+  const cleaned = text.replace(/\D/g, "");
+
+  if (cleaned.startsWith("0")) {
+    return "254" + cleaned.slice(1);
+  }
+
+  if (
+    cleaned.length === 9 &&
+    (cleaned.startsWith("7") || cleaned.startsWith("1"))
+  ) {
+    return "254" + cleaned;
+  }
+
+  if (cleaned.startsWith("254")) {
     return cleaned;
-  };
+  }
 
-  const handlePayment = async () => {
-    if (!phone || phone.length < 10) {
-      Alert.alert("Invalid Phone", "Please enter a valid phone number");
-      return;
+  return cleaned;
+};
+
+ const handlePayment = async () => {
+  const formattedPhone = formatPhoneNumber(phone);
+
+  console.log("========== PHONE DEBUG ==========");
+  console.log("Raw phone:", phone);
+  console.log("Formatted phone:", formattedPhone);
+  console.log("Raw length:", phone.length);
+  console.log("Formatted length:", formattedPhone.length);
+  console.log("================================");
+
+  if (!formattedPhone || formattedPhone.length !== 12) {
+    Alert.alert(
+      "Invalid Phone",
+      "Please enter a valid Safaricom number"
+    );
+    return;
+  }
+
+  if (!token || !user) {
+    Alert.alert("Authentication Error", "Please login again");
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    const payload = {
+      phone: formattedPhone,
+      amount,
+      propertyId: user.userProperties[0]?.propertyId || 0,
+      tenantId: user.id,
+      accountRef: accountNumber,
+      description: `Rent payment for ${propertyTitle}`,
+    };
+
+    console.log("========== STK PUSH REQUEST ==========");
+    console.log("Payload:", JSON.stringify(payload, null, 2));
+    console.log("======================================");
+
+    const result = await api.initiateMpesaSTK(token, payload);
+
+    console.log("========== STK PUSH RESPONSE ==========");
+    console.log("Response:", JSON.stringify(result, null, 2));
+    console.log("======================================");
+
+    if (result.success) {
+      setSuccess(true);
+
+      setTimeout(() => {
+        router.replace("/(tabs)/payments");
+      }, 3000);
+    } else {
+      Alert.alert(
+        "Payment Failed",
+        result.error || "Unable to initiate payment"
+      );
+    }
+  } catch (error: any) {
+    console.log("========== STK PUSH ERROR ==========");
+    console.log("Full Error:", error);
+
+    if (error.response) {
+      console.log("Status:", error.response.status);
+      console.log(
+        "Response Data:",
+        JSON.stringify(error.response.data, null, 2)
+      );
     }
 
-    if (!token || !user) {
-      Alert.alert("Authentication Error", "Please login again");
-      return;
-    }
+    console.log("Message:", error.message);
+    console.log("====================================");
 
-    setLoading(true);
-
-    try {
-      const formattedPhone = formatPhoneNumber(phone);
-      
-      const result = await api.initiateMpesaSTK(token, {
-        phone: formattedPhone,
-        amount,
-        propertyId: user.userProperties[0]?.propertyId || 0,
-        tenantId: user.id,
-        accountRef: accountNumber,
-        description: `Rent payment for ${propertyTitle}`,
-      });
-
-      if (result.success) {
-        setSuccess(true);
-        setTimeout(() => {
-          router.replace("/(tabs)/payments");
-        }, 3000);
-      } else {
-        Alert.alert("Payment Failed", result.error || "Unable to initiate payment");
-      }
-    } catch (error: any) {
-      Alert.alert("Error", error.message || "Failed to process payment");
-    } finally {
-      setLoading(false);
-    }
-  };
+    Alert.alert(
+      "Error",
+      error.response?.data?.message ||
+        error.message ||
+        "Failed to process payment"
+    );
+  } finally {
+    setLoading(false);
+  }
+};
 
   if (success) {
     return (

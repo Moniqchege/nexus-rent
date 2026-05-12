@@ -24,6 +24,7 @@ import {
   JetBrainsMono_600SemiBold
 } from '@expo-google-fonts/jetbrains-mono';
 import { useAuthStore } from '../store/authStore';
+import { StripeProvider } from '@stripe/stripe-react-native';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -79,5 +80,13 @@ export default function RootLayout() {
 
   if (!fontsLoaded) return null;
 
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <StripeProvider 
+    publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? ""}
+    merchantIdentifier="merchant.com.nexusrent"
+    urlScheme="nexusrent"
+    >
+      <Stack screenOptions={{ headerShown: false }} />
+    </StripeProvider>
+  );
 }
