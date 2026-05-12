@@ -83,10 +83,12 @@ export default function Payments() {
     router.push({
       pathname: "/pay/method",
       params: {
-        amount: nextDue.amount.toString(),
+        amount: (nextDue.amount + (nextDue.lateFeeAmount ?? 0)).toString(),
         scheduleId: nextDue.id.toString(),
         propertyTitle: nextDue.property.title,
         dueDate: nextDue.dueDate,
+        propertyId:    nextDue.propertyId.toString(),
+        tenantId:      nextDue.tenantId.toString(),
       },
     });
   };

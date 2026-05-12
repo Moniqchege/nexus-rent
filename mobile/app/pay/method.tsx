@@ -20,6 +20,9 @@ export default function PaymentMethodPage() {
   const scheduleId = params.scheduleId ? parseInt(params.scheduleId as string) : 0;
   const propertyTitle = params.propertyTitle as string || "Property";
   const dueDate = params.dueDate as string || "";
+  const propertyId    = (params.propertyId    as string) || "0";
+  const tenantId      = (params.tenantId      as string) || "0";
+  const accountRef    = (params.accountRef    as string) || `SCHED-${scheduleId}`;
 
   const paymentMethods: {
   id: string;
@@ -63,6 +66,9 @@ export default function PaymentMethodPage() {
         scheduleId: scheduleId.toString(),
         propertyTitle,
         dueDate,
+        propertyId:    (params.propertyId ?? "0").toString(), 
+        tenantId:      (params.tenantId   ?? "0").toString(),
+        accountRef:    (params.accountRef ?? `SCHED-${scheduleId}`).toString(),
       },
     });
   };

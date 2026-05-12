@@ -1,8 +1,18 @@
 import Constants from 'expo-constants';
 import { Property } from '../types/property';
 import { ServiceCategory, ServiceProvider } from '../types/service';
+import { Payment, RentSchedule } from '../types/payment';
 
 export const API_BASE = Constants.expoConfig?.extra?.apiUrl ?? 'https://lavenia-pronounceable-radically.ngrok-free.dev';
+
+type PaymentResult = { success: boolean; data?: any; error?: string };
+
+export interface CardSessionResult {
+    clientSecret: string;
+    ephemeralKey: string;
+    customerId: string;
+    paymentIntentId: string;
+}
 
 const api = {
     async fetchProperties(token?: string): Promise<Property[]> {
@@ -241,24 +251,27 @@ const api = {
         return data.auditTrails || [];
     },
 
-    async getPayments(token: string, params?: { propertyId?: number; status?: string }): Promise<{ payments: Payment[] }> {
-        const headers: Record<string, string> = {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        };
+    async getPayments(
+        token: string,
+        params?: { propertyId?: number; status?: string }
+    ): Promise<{ payments: Payment[] }> {
         const query = new URLSearchParams();
-        if (params) {
-            Object.entries(params).forEach(([k,v]) => v && query.append(k, v.toString()));
-        }
-        const response = await fetch(`${API_BASE}/api/payments?${query}`, { headers });
+        if (params) Object.entries(params).forEach(([k, v]) => v && query.append(k, v.toString()));
+        const response = await fetch(`${API_BASE}/api/payments?${query}`, {
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         return response.json();
     },
 
-    async getPaymentSchedules(token: string, params?: { status?: string }): Promise<{ schedules: RentSchedule[] }> {
-        const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
+    async getPaymentSchedules(
+        token: string,
+        params?: { status?: string }
+    ): Promise<{ schedules: RentSchedule[] }> {
         const query = new URLSearchParams(params || {});
-        const response = await fetch(`${API_BASE}/api/payments/schedules?${query}`, { headers });
+        const response = await fetch(`${API_BASE}/api/payments/schedules?${query}`, {
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         return response.json();
     },
@@ -273,20 +286,41 @@ const api = {
         return response.json();
     },
 
-    async createCardSession(token: string, data: { propertyId: number; tenantId: number; amount: number; accountRef: string }): Promise<{ clientSecret: string; id: string }> {
+    async createCardSession(
+        token: string,
+        data: { propertyId: number; tenantId: number; amount: number; accountRef: string }
+    ): Promise<CardSessionResult> {
         const response = await fetch(`${API_BASE}/api/payments/card/session`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
             body: JSON.stringify(data),
         });
-        if (!response.ok) throw new Error(await response.text());
+        if (!response.ok) {
+            const text = await response.text();
+            throw new Error(`Card session failed (${response.status}): ${text}`);
+        }
+        return response.json();
+    },
+
+    async confirmCardPayment(
+        token: string,
+        data: { piId: string; tenantId: number; propertyId: number }
+    ): Promise<{ success: boolean }> {
+        const response = await fetch(`${API_BASE}/api/payments/card/confirm`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify(data),
+        });
+        if (!response.ok) {
+            console.warn('[api] confirmCardPayment non-OK:', response.status);
+            return { success: false };
+        }
         return response.json();
     },
 };
 
 export default api;
 
-import { Payment, RentSchedule } from '../types/payment';
-type PaymentResult = { success: boolean; data?: any; error?: string };
+
 
 

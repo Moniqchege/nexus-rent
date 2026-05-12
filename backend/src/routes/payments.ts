@@ -167,17 +167,44 @@ router.post(
 // POST /api/payments/card/session
 router.post('/card/session', async (req: Request, res: Response) => {
   try {
-    const session = await createStripeSession(
-      Number(req.body.propertyId),
-      Number(req.body.tenantId),
-      Number(req.body.amount),
-      req.body.accountRef,
+    const propertyId = Number(req.body.propertyId);
+    const tenantId = Number(req.body.tenantId);
+    const amount = Number(req.body.amount);
+    const accountRef = req.body.accountRef;
+
+    const session = await createStripeSession(propertyId, tenantId, amount, accountRef);
+
+    // NOTE: Stripe RN PaymentSheet requires Customer + ephemeral key in many setups.
+    // We create a Stripe Customer per tenant email (or a stable synthetic identifier).
+    // For now we use tenantId as metadata; customer name/email are best-effort.
+    const tenantUser = await db.user.findUnique({ where: { id: tenantId }, select: { email: true, name: true } });
+
+    const customer = await stripe.customers.create({
+      metadata: { tenantId: tenantId.toString(), propertyId: propertyId.toString(), accountRef },
+      email: tenantUser?.email || undefined,
+      name: tenantUser?.name || undefined,
+    });
+
+    const ephemeralKey = await stripe.ephemeralKeys.create(
+      { customer: customer.id },
+      { apiVersion: '2026-03-25.dahlia' }
     );
-    res.json({ clientSecret: session.client_secret, id: session.id });
+
+    // Ensure PaymentIntent is attached to the customer (for platform/card flows)
+    await stripe.paymentIntents.update(session.id, { customer: customer.id });
+
+    // Return payload matching mobile/app/pay/card.tsx expectations
+    res.json({
+      clientSecret: session.client_secret,
+      ephemeralKey: ephemeralKey.secret,
+      customerId: customer.id,
+      paymentIntentId: session.id,
+    });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
 });
+
 
 // POST /api/payments/card/confirm
 router.post('/card/confirm', async (req: Request, res: Response) => {
