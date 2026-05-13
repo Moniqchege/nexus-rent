@@ -18,7 +18,7 @@ export default function SearchBar({
   return (
     <div
       className={className}
-      style={{ position: "relative", width: "100%", maxWidth: "400px", marginBottom: "22px" }}
+      style={{ position: "relative", width: "100%", maxWidth: "450px", marginBottom: "22px" }}
     >
       {/* Input */}
       <input
@@ -48,7 +48,7 @@ export default function SearchBar({
   onClick={() => onChange("")}
   style={{
     position: "absolute",
-    right: "-172px",
+    right: "10px",
     top: "50%",
     transform: "translateY(-50%)",
     cursor: "pointer",
