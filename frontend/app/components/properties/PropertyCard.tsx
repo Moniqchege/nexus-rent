@@ -11,7 +11,7 @@ export interface Property {
   price: number;
   beds: number;
   baths: number;
-  sqft: number;
+  sqft?: number | null;
   distance: number;
   image?: string;
   amenities: string[];
@@ -101,9 +101,6 @@ export default function PropertyCard({ property, onSaveToggle }: PropertyCardPro
           </div>
           <div className="meta-item">
             <span className="meta-icon">◎</span> {property.baths} Baths
-          </div>
-          <div className="meta-item">
-            <span className="meta-icon">▣</span> {property.sqft.toLocaleString()} sqft
           </div>
           {property.distance && (
             <div className="meta-item">

@@ -8,21 +8,24 @@ export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
   const toggleSidebar = useUIStore((state) => state.toggleSidebar);
-
   const [mounted, setMounted] = useState(false);
 
-useEffect(() => {
-  setMounted(true);
-}, []);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-const isDashboardPage =
-  pathname?.startsWith("/dashboard") ||
-  pathname?.startsWith("/rentals") ||
-  pathname?.startsWith("/payments") ||
-  pathname?.startsWith("/ai-insights") ||
-  pathname?.startsWith("/settings");
+  const isDashboardPage =
+    pathname?.startsWith("/dashboard") ||
+    pathname?.startsWith("/my-rentals") ||
+    pathname?.startsWith("/payments") ||
+    pathname?.startsWith("/leases") ||
+    pathname?.startsWith("/properties") ||
+    pathname?.startsWith("/notifications") ||
+    pathname?.startsWith("/roles") ||
+    pathname?.startsWith("/services") ||
+    pathname?.startsWith("/users");
 
-const isHeroPage = mounted && pathname === "/";
+  const isHeroPage = mounted && pathname === "/";
 
   return (
     <nav className="top-nav">
@@ -56,7 +59,6 @@ const isHeroPage = mounted && pathname === "/";
       Sign In
     </button>
   )}
-        <button className="btn-purple" onClick={() => router.push("/properties")}>Book Appointment</button>
       </div>
     </nav>
   );

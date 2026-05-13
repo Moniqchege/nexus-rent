@@ -1,18 +1,14 @@
 "use client";
 
-import { AMENITY_OPTIONS, PROPERTY_STATUS_OPTIONS } from "@/app/lib/utils";
+import { PROPERTY_STATUS_OPTIONS } from "@/app/lib/utils";
 import { useAdminStore } from "@/app/store/adminStore";
 import React, { useEffect, useRef, useState } from "react";
+import { CustomDropdown } from "../ui/CustomDropdown";
+import { MultiSelectDropdown } from "../ui/MultiSelectDropdown";
 
 interface Option {
   label: string;
   value: string;
-}
-
-interface AmenitiesDropdownProps {
-  options: Option[];
-  value: string[];
-  onChange: (val: string[]) => void;
 }
 
 interface PropertyApi {
@@ -23,7 +19,7 @@ interface PropertyApi {
   price: number;
   beds: number;
   baths: number;
-  sqft: number;
+  sqft?: number;
   status: string;
   amenities?: string[];
   image?: string;
@@ -36,165 +32,6 @@ interface PropertyFormProps {
   submitLabel?: string;
   isEdit?: boolean;
   onCancel: () => void;
-}
-
-function AmenitiesDropdown({
-  options,
-  value = [],
-  onChange,
-}: AmenitiesDropdownProps) {
-  const [open, setOpen] = useState(false);
-  const [dropUp, setDropUp] = useState(false);
-  const [search, setSearch] = useState("");
-  const ref = useRef<HTMLDivElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // Filtered options for autocomplete
-  const filteredOptions = options.filter(opt =>
-    opt.label.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const toggleOption = (val: string) => {
-    if (value.includes(val)) {
-      onChange(value.filter((v) => v !== val));
-    } else {
-      onChange([...value, val]);
-    }
-  };
-
-  // Close dropdown if clicked outside
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  // Calculate whether dropdown should open up or down
-  useEffect(() => {
-    if (open && ref.current && dropdownRef.current) {
-      const rect = ref.current.getBoundingClientRect();
-      const dropdownHeight = dropdownRef.current.offsetHeight;
-      const spaceBelow = window.innerHeight - rect.bottom;
-      const spaceAbove = rect.top;
-
-      if (dropdownHeight > spaceBelow && spaceAbove > spaceBelow) {
-        setDropUp(true);
-      } else {
-        setDropUp(false);
-      }
-    }
-  }, [open, filteredOptions]); // recalc whenever filteredOptions changes
-
-  return (
-    <div ref={ref} style={{ position: "relative", width: "100%" }}>
-      {/* Trigger */}
-      <div
-        onClick={() => setOpen((prev) => !prev)}
-        style={{
-          width: "100%",
-          backgroundColor: "rgba(17,24,39,0.5)",
-          border: "1px solid var(--border-glow)",
-          borderRadius: "12px",
-          padding: "14px 20px",
-          cursor: "pointer",
-          color: value.length ? "var(--text-primary)" : "var(--text-secondary)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          fontSize: "14px",
-        }}
-      >
-        <span>
-          {value.length > 0
-            ? options
-                .filter((opt) => value.includes(opt.value))
-                .map((opt) => opt.label)
-                .join(", ")
-            : "Select amenities"}
-        </span>
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="16"
-          height="16"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          style={{
-            transition: "transform 0.2s ease",
-            transform: open ? "rotate(180deg)" : "rotate(0deg)",
-            color: "var(--text-primary)",
-          }}
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
-      </div>
-
-      {/* Dropdown */}
-      {open && (
-        <div
-          ref={dropdownRef}
-          style={{
-            position: "absolute",
-            left: 0,
-            width: "100%",
-            maxHeight: "200px",
-            overflowY: "auto",
-            backgroundColor: "#111827",
-            border: "1px solid var(--border-glow)",
-            borderRadius: "12px",
-            padding: "10px",
-            zIndex: 1000,
-            boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
-            top: dropUp ? "auto" : "calc(100% + 4px)",
-            bottom: dropUp ? "calc(100% + 4px)" : "auto",
-          }}
-        >
-          {/* Search Input */}
-          <input
-            type="text"
-            placeholder="Search..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={{
-              width: "100%",
-              padding: "8px 10px",
-              marginBottom: "8px",
-              borderRadius: "8px",
-              border: "1px solid var(--border-glow)",
-              backgroundColor: "#1f2937",
-              color: "white",
-            }}
-          />
-          {filteredOptions.map((option) => (
-            <label
-              key={option.value}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                padding: "6px 2px",
-                fontSize: "14px",
-                cursor: "pointer",
-                color: "white",
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={value.includes(option.value)}
-                onChange={() => toggleOption(option.value)}
-              />
-              {option.label}
-            </label>
-          ))}
-          {filteredOptions.length === 0 && <p style={{ color: "#888", padding: "6px" }}>No results</p>}
-        </div>
-      )}
-    </div>
-  );
 }
 
 export default function PropertyForm({
@@ -212,8 +49,21 @@ export default function PropertyForm({
   const [loading, setLoading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const { amenities, fetchAmenities } = useAdminStore();
+  const [isMobile, setIsMobile] = useState(false);
 
-    useEffect(() => {
+  useEffect(() => {
+  const checkScreen = () => {
+    setIsMobile(window.innerWidth <= 768);
+  };
+
+  checkScreen();
+
+  window.addEventListener("resize", checkScreen);
+
+  return () => window.removeEventListener("resize", checkScreen);
+}, []);
+
+ useEffect(() => {
   fetchAmenities();
 }, []);
 
@@ -289,7 +139,12 @@ useEffect(() => {
 
       <form onSubmit={handleSubmit} style={{ display: "grid", gap: "10px" }}>
         {/* Title + Location */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+        <div 
+        style={{ 
+          display: "grid", 
+          gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", 
+          gap: "16px" 
+          }}>
           <div>
             <label style={{ display: "block", fontWeight: 600, fontSize: "12px", marginBottom: "8px", color: "var(--neon-blue)" }}>
             Title *
@@ -335,7 +190,12 @@ useEffect(() => {
         </div>
 
         {/* Price + Beds */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+        <div 
+        style={{ 
+          display: "grid", 
+          gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", 
+          gap: "16px" 
+          }}>
           <div>
             <label style={{ display: "block", fontWeight: 600, fontSize: "14px", marginBottom: "8px", color: "var(--neon-blue)" }}>
             Price(Ksh /Month) *
@@ -361,11 +221,11 @@ useEffect(() => {
           </div>
           <div>
             <label style={{ display: "block", fontWeight: 600, fontSize: "14px", marginBottom: "8px", color: "var(--neon-blue)" }}>
-            Floor *
+            Floors *
           </label>
            <input
             type="text"
-            placeholder="e.g. 2nd, Ground, 1"
+            placeholder="e.g. 1, 5, 10"
             value={data.floor || ""}
             onChange={(e) =>
               setData({ ...data, floor: e.target.value })
@@ -385,7 +245,11 @@ useEffect(() => {
         </div>
 
         {/* Beds + Baths */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+        <div 
+        style={{ display: "grid", 
+        gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", 
+        gap: "16px" 
+        }}>
           <div>
             <label style={{ display: "block", fontWeight: 600, fontSize: "14px", marginBottom: "8px", color: "var(--neon-blue)" }}>
             Bedrooms *
@@ -435,10 +299,14 @@ useEffect(() => {
         </div>
 
         {/* Baths + Sqft */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+        <div 
+        style={{ 
+          display: "grid", 
+          gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", 
+          gap: "16px" }}>
           <div>
             <label style={{ display: "block", fontWeight: 600, fontSize: "14px", marginBottom: "8px", color: "var(--neon-blue)" }}>
-            Sqft *
+            Sqft 
           </label>
            <input
             type="number"
@@ -456,39 +324,29 @@ useEffect(() => {
               fontSize: "14px",
               color: "var(--text-primary)"
             }}
-            required
           />
           </div>
            <div>
             <label style={{ display: "block", fontWeight: 600, fontSize: "14px", marginBottom: "8px", color: "var(--neon-blue)" }}>
             Status *
           </label>
-          <select
-          value={data.status || "available"}
-          onChange={(e) => setData({ ...data, status: e.target.value })}
-          style={{
-              width: "100%",
-              backgroundColor: "rgba(17,24,39,0.5)",
-              border: "1px solid var(--border-glow)",
-              borderRadius: "12px",
-              padding: "14px 20px",
-              fontSize: "14px",
-              color: "var(--text-primary)"
-          }}
-          required
-          >
-          <option value="">Select status</option>
-          {PROPERTY_STATUS_OPTIONS.map((option) => (
-          <option key={option.value} value={option.value}>
-          {option.label}
-          </option>
-          ))}
-          </select>
+          <CustomDropdown
+  options={PROPERTY_STATUS_OPTIONS}
+  value={data.status || ""}
+  onChange={(value) => setData({ ...data, status: value })}
+  labelKey="label"
+  valueKey="value"
+  placeholder="Select status"
+/>
           </div>
         </div>
 
         {/* Status + Amenities */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+        <div 
+        style={{ 
+          display: "grid", 
+          gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", 
+          gap: "16px" }}>
 <div>
   <label
     style={{
@@ -501,17 +359,22 @@ useEffect(() => {
   >
     Amenities *
   </label>
- <AmenitiesDropdown
+<MultiSelectDropdown
   options={amenityOptions}
-  value={data.amenities || []}
-  onChange={(val) => setData({ ...data, amenities: val })}
+  values={data.amenities || []}
+  onChange={(values) =>
+    setData({ ...data, amenities: values })
+  }
+  labelKey="label"
+  valueKey="value"
+  placeholder="Select amenities"
 />
 </div>
  </div>
 
         {/* Image */}
         <label style={{ display: "block", fontWeight: 600, fontSize: "14px", marginBottom: "8px", color: "var(--neon-blue)" }}>
-            Image *
+            Image 
           </label>
         <input
           type="file"

@@ -28,13 +28,10 @@ export default function Sidebar() {
   { label: "Apartments", icon: "/apartment_icon.png", to: "/my-rentals", type: "image" },
   { label: "Payments", icon: "/payments_icon.png", to: "/payments", type: "image" },
   { label: "Leases", icon: "/apartment_icon.png", to: "/leases", type: "image" },
-  // { label: "AI Insights", icon: "🤖", to: "/ai-insights" },
   { label: "Roles", icon: "/roles_icon.png", to: "/roles", type: "image" },
   { label: "Users", icon: "/users_icon.png", to: "/users", type: "image" },
   { label: "Alerts", icon: "/notifications_icon.png", to: "/notifications", type: "image", badge: unreadCount,  },
-{ label: "Service Providers", icon: "/service_lenders.png", to: "/services", type: "image" },
-{ label: "Contacts", icon: "/message-icon.png", to: "/contacts", type: "image" },
-
+  { label: "Service Providers", icon: "/service_lenders.png", to: "/services", type: "image" },
 ];
 
 

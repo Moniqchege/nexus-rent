@@ -84,7 +84,7 @@ model Property {
   price             Float
   beds              Int
   baths             Int
-  sqft              Int
+  sqft              Int?
   status            String             @default("active")
   amenities         Json?
   rating            Float?

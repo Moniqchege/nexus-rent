@@ -14,7 +14,7 @@ interface PropertyApi {
   price: number;
   beds: number;
   baths: number;
-  sqft: number;
+  sqft?: number | null;
   status: string;
   image?: string;
   createdAt: string;
@@ -53,16 +53,14 @@ export default function PropertyGrid({ properties, onRefresh, onSaveToggle }: Pr
     .toLowerCase()               
     .replace(/_/g, " ")          
     .replace(/\b\w/g, (l) => l.toUpperCase()); 
-}
-
-  
+  }
 
   const confirmDelete = (propertyId: number) => {
     setDeleteDialog({ open: true, propertyId });
   };
 
- const getStatusBadge = (status: string) => {
-  switch (status) {
+  const getStatusBadge = (status: string) => {
+   switch (status) {
     case 'Available':
       return { text: 'Available', color: 'var(--accent-success)' };
     case 'PENDING':
@@ -71,8 +69,8 @@ export default function PropertyGrid({ properties, onRefresh, onSaveToggle }: Pr
       return { text: 'Rented', color: 'var(--accent-danger)' };
     default:
       return { text: status?.toUpperCase() || 'UNKNOWN', color: 'var(--text-secondary)' };
-  }
-};
+   }
+  };
 
 
   return (
@@ -80,12 +78,11 @@ export default function PropertyGrid({ properties, onRefresh, onSaveToggle }: Pr
       {properties.length === 0 ? (
         <div
           style={{
-            padding: "120px 40px",
+            padding: "70px 40px",
             textAlign: "center",
             color: "var(--text-secondary)",
           }}
         >
-          <div style={{ fontSize: "48px", marginBottom: "24px" }}>🏠</div>
           <h3 style={{ color: "var(--neon-blue)", marginBottom: "12px" }}>No rentals yet</h3>
           <p>Add your first rental property</p>
           <Link
@@ -104,7 +101,7 @@ export default function PropertyGrid({ properties, onRefresh, onSaveToggle }: Pr
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+            gridTemplateColumns: "repeat(auto-fill, minmax(380px, 1fr))",
             gap: "20px",
           }}
         >
@@ -125,80 +122,92 @@ export default function PropertyGrid({ properties, onRefresh, onSaveToggle }: Pr
                   <div className="prop-img-inner">
                     {property.image ? (
                      <Image
-  src={
-    property.image && property.image.trim() !== "" && property.image !== "undefined"
-      ? property.image
-      : "/Apartments.jpg"
-  }
-  alt={property.title}
-  fill
-  className="prop-img-bg"
-  onError={(e) => {
-    e.currentTarget.src = "/Apartments.jpg";
-  }}
-/>
-                     ) : (
-                <div className="prop-img-placeholder prop-bg-1">
-                     <span style={{ fontSize: '60px', opacity: 0.15 }}>🏠</span>
-                </div>
-                )}
-                <div className="ai-badge">
-                 🤖 Score {property.Score}%
-               </div>
-               <div className="status-badge" style={{ 
-            position: 'absolute', 
-            bottom: '12px', 
-            left: '12px',
-            background: `rgba(0,0,0,0.2)`,
-            color: badge.color,
-            padding: '4px 10px',
-            borderRadius: '20px',
-            fontSize: '11px',
-            fontFamily: "'JetBrains Mono', monospace",
-            fontWeight: 600
-          }}>
+         src={
+           property.image && property.image.trim() !== "" && property.image !== "undefined"
+           ? property.image
+           : "/Apartments.jpg"
+         }
+         alt={property.title}
+         fill
+         className="prop-img-bg"
+         onError={(e) => {
+         e.currentTarget.src = "/Apartments.jpg";
+       }}
+       />
+        ) : (
+       <div className="prop-img-placeholder prop-bg-1">
+          <span style={{ fontSize: '60px', opacity: 0.15 }}>🏠</span>
+       </div>
+        )}
+        <div className="ai-badge">
+          🤖 Score {property.Score}%
+        </div>
+       <div 
+       className="status-badge" 
+       style={{ 
+         position: 'absolute', 
+         bottom: '1px', 
+         left: '12px',
+         background: 'rgba(52, 68, 70, 0.4)',
+         color: badge.color,
+         padding: '6px 10px',
+         borderRadius: '20px',
+         fontSize: '11px',
+         fontFamily: "'JetBrains Mono', monospace",
+         fontWeight: 600
+       }}>
             {badge.text}
-          </div>
-          <button className="save-btn"
-          onClick={() => {
+       </div>
+       <button className="save-btn"
+        onClick={() => {
         const newSaved = !isSavedForThis;
         setIsSaved(newSaved);
         onSaveToggle?.(property.id, newSaved); 
-      }}
+       }}
           >
             {isSaved ? '♥' : '♡'}
-          </button>
-                  </div>
-                </div>
-
-                <div className="prop-body">
-                  <div className="prop-price">
-                    ksh{property.price.toLocaleString()} <span>/month</span>
-                  </div>
-                  <div className="prop-name">{property.title}</div>
-                  <div className="prop-loc">📍 {property.location}</div>
-                  <div className="prop-meta">
-                    <div className="meta-item">
-                      <span className="meta-icon">⊞</span> {property.beds} Beds
-                    </div>
-                    <div className="meta-item">
-                      <span className="meta-icon">◎</span> {property.baths} Baths
-                    </div>
-                    <div className="meta-item">
-                      <span className="meta-icon">▣</span> {property.sqft.toLocaleString()} sqft
-                    </div>
-                  </div>
-                  {amenities.length > 0 && (
-  <div className="prop-amenities" style={{ 
-      marginTop: '12px',
-            paddingTop: '12px',
-            borderTop: '1px solid var(--border-glow)',
-            fontSize: '10px',
-            color: 'var(--text-secondary)'
-  }}>
-    {amenities.map(formatAmenity).join(', ')}
+        </button>
+       </div>
+       </div>
+       <div 
+       className="prop-body">
+       <div className="prop-price">
+           ksh{property.price.toLocaleString()} <span>/month</span>
+       </div>
+       <div className="prop-name">{property.title}</div>
+       <div className="prop-loc">📍 {property.location}</div>
+       <div className="prop-meta">
+       <div className="meta-item">
+          <span className="meta-icon">⊞</span> {property.beds} Beds
+       </div>
+       <div className="meta-item">
+         <span className="meta-icon">◎</span> {property.baths} Baths
+       </div>
+       {property.floor && (
+            <div className="meta-item">
+              <span className="meta-icon">⬆️</span> {property.floor} Floors
+            </div>
+          )}
+      {property.sqft != null && (
+  <div className="meta-item">
+    <span className="meta-icon">▣</span>{" "}
+    {property.sqft.toLocaleString()} sqft
   </div>
 )}
+       </div>
+         {amenities.length > 0 && (
+       <div 
+       className="prop-amenities" 
+       style={{ 
+         marginTop: '12px',
+         paddingTop: '12px',
+         borderTop: '1px solid var(--border-glow)',
+         fontSize: '10px',
+         color: 'var(--text-secondary)'
+       }}>
+         {amenities.map(formatAmenity).join(', ')}
+        </div>
+       )}
 
         {property.rating && (
           <div className="prop-rating" style={{

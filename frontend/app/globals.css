@@ -486,10 +486,11 @@ button::placeholder {
 
   .prop-price {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 600;
     color: var(--neon-blue);
     margin-bottom: 6px;
+    margin-top: -6px;
   }
 
   .prop-price span {

@@ -14,7 +14,8 @@ interface CreatePropertyInput {
   price: number;
   beds: number;
   baths: number;
-  sqft: number;
+  sqft?: number;
+  floor?: string;
   status?: string;
   image?: string;
   amenities?: string[];
@@ -27,6 +28,7 @@ interface UpdatePropertyInput {
   beds?: number;
   baths?: number;
   sqft?: number;
+  floor?: string;
   status?: string;
   image?: string;
   amenities?: string[];
@@ -59,6 +61,7 @@ router.get('/', requireAuth, async (req, res) => {
         beds: true,
         baths: true,
         sqft: true,
+        floor: true,
         status: true,
         image: true,
         amenities: true,
@@ -109,21 +112,18 @@ router.post('/', requireAuth, async (req, res) => {
       beds,
       baths,
       sqft,
+      floor,
       status = 'active',
       image,
       amenities = [],
     } = req.body as CreatePropertyInput;
 
-    if (!title || !location || price == null || beds == null || baths == null || sqft == null) {
-      return res.status(400).json({ error: 'Title, location, price, beds, baths, sqft are required' });
+    if (!title || !location || price == null || beds == null || baths == null) {
+      return res.status(400).json({ error: 'Title, location, price, beds, baths are required' });
     }
-
-    // Validate amenities against enum
     const validAmenities = await db.amenity.findMany({ select: { key: true } });
     const validKeys = validAmenities.map(a => a.key);
-
     const sanitizedAmenities = (amenities || []).filter(a => validKeys.includes(a));
-
     const property = await db.property.create({
       data: {
         title,
@@ -131,7 +131,8 @@ router.post('/', requireAuth, async (req, res) => {
         price,
         beds,
         baths,
-        sqft,
+        sqft: sqft ?? null,
+        floor,
         status,
         image,
         landlordId: userId,
@@ -145,6 +146,7 @@ router.post('/', requireAuth, async (req, res) => {
         beds: true,
         baths: true,
         sqft: true,
+        floor: true,
         status: true,
         image: true,
         amenities: true,
@@ -159,7 +161,6 @@ router.post('/', requireAuth, async (req, res) => {
   }
 });
 
-// Fetch amenities
 router.get('/amenities', requireAuth, async (req, res) => {
   try {
     const amenities = await db.amenity.findMany({
@@ -209,6 +210,7 @@ router.get('/:id', requireAuth, async (req, res) => {
         beds: true,
         baths: true,
         sqft: true,
+        floor: true,
         status: true,
         image: true,
         amenities: true,
@@ -246,8 +248,6 @@ router.patch('/:id', requireAuth, async (req, res) => {
     const propertyId = parseInt(Array.isArray(idParam) ? idParam[0] : idParam, 10);
 
     const { amenities, ...rest } = req.body as UpdatePropertyInput;
-
-    // Fetch existing property to ensure ownership
     const existing = await db.property.findFirst({
       where: {
         id: propertyId,
@@ -259,20 +259,20 @@ router.patch('/:id', requireAuth, async (req, res) => {
     });
 
     if (!existing) return res.status(404).json({ error: 'Property not found or access denied' });
-
-    // Only allow editable fields
     const editableFields: (keyof UpdatePropertyInput)[] = [
-      'title', 'location', 'price', 'beds', 'baths', 'sqft', 'status', 'image'
+      'title', 'location', 'price', 'beds', 'baths', 'sqft', 'floor', 'status', 'image'
     ];
     let updateData: Partial<UpdatePropertyInput> = {};
     const restAny = rest as Record<string, any>;
     for (const key of editableFields) {
-      if (restAny[key] !== undefined) updateData[key] = restAny[key];
+      if (restAny[key] !== undefined) {
+        updateData[key] =
+          key === 'sqft'
+            ? restAny[key] ?? null
+            : restAny[key];
+      }
     }
-
-    // Handle amenities if provided
     if (amenities) {
-      // Fetch all valid amenities from DB
       const validAmenities = await db.amenity.findMany({ select: { key: true } });
       const validKeys = validAmenities.map(a => a.key);
 
@@ -290,6 +290,7 @@ router.patch('/:id', requireAuth, async (req, res) => {
         beds: true,
         baths: true,
         sqft: true,
+        floor: true,
         status: true,
         image: true,
         amenities: true,
