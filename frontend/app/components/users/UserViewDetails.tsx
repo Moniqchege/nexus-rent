@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import ConfirmDialog from "../ui/ConfirmDialog";
 import { useAdminStore } from "@/app/store/adminStore";
+import DynamicTable from "../ui/DynamicTable";
 
 type UserLike = {
   id: number;
@@ -17,6 +18,14 @@ type UserLike = {
 };
 
 type DialogAction = "lock" | "unlock" | "killSessions" | "resetPassword" | null;
+
+const tabs = [
+  { key: "audit", label: "Audit Trail" },
+  { key: "permissions", label: "Permissions" },
+  { key: "assigned", label: "Assigned Properties" },
+] as const;
+
+type TabKey = typeof tabs[number]["key"];
 
 // ── Inline style tokens ──────────────────────────────────────────────────────
 const C = {
@@ -294,6 +303,7 @@ export default function UserViewDetails({ user }: { user: UserLike | null }) {
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [dialogAction, setDialogAction] = useState<DialogAction>(null);
 
+  const [tab, setTab] = useState<TabKey>("audit");
   const displayStatus = useMemo(() => {
     if (!user) return "-";
     return user.isLocked ? "Locked" : "Active";
@@ -420,8 +430,13 @@ export default function UserViewDetails({ user }: { user: UserLike | null }) {
                   style={s.actionBtn}
                   onClick={action}
                   disabled={storeLoading}
-                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = C.blue)}
-                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = C.cyan)}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.backgroundColor = "rgba(0, 165, 228, 0.18)";
+                  }}
+
+                 onMouseLeave={e => {
+                   e.currentTarget.style.backgroundColor = "rgba(0, 240, 255, 0.05)";
+                 }}
                 >
                   {icon}
                   {label}
@@ -430,25 +445,182 @@ export default function UserViewDetails({ user }: { user: UserLike | null }) {
             </div>
           </div>
 
-          {/* ── User Summary ── */}
-          <div style={s.summaryCard}>
-            <div style={s.summaryHeader}>
-              <h4 style={s.summaryTitle}>User Summary</h4>
+          {/* ── Audit / Permissions / Assigned Properties (Tabs) ── */}
+          <div
+            style={{
+              marginTop: 12,
+              border: `1px solid ${C.border}`,
+              borderRadius: 12,
+              overflow: "hidden",
+              backgroundColor: C.bgCard,
+            }}
+          >
+            <div style={{ padding: "14px 16px", borderBottom: `1px solid ${C.border}` }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 12,
+                  flexWrap: "wrap",
+                }}
+              >
+                <h4 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: C.blue }}>
+                  User Audit & Access
+                </h4>
+                <div style={{ color: C.textMuted, fontSize: 11 }}>{user.email || "-"}</div>
+              </div>
             </div>
-            <div style={s.summaryGrid}>
-              {[
-                ["Status", locked ? "Locked" : "Active"],
-                ["Role",   user.role || "-"],
-              ].map(([label, value]) => (
-                <div key={label} style={s.dataBox}>
-                  <div style={s.dataRow}>
-                    <span style={s.dataLabel}>{label}</span>
-                    <span style={s.dataValue}>{value}</span>
+
+            {/* Tabs (client-side state) */}
+            <div style={{ padding: "10px 12px", borderBottom: `1px solid ${C.border}` }}>
+              {(() => {
+                const tabs = [
+                  { key: "audit", label: "Audit Trail" },
+                  { key: "permissions", label: "Permissions" },
+                  { key: "assigned", label: "Assigned Properties" },
+                ] as const;
+
+                const [tab, setTab] = useState<(typeof tabs)[number]["key"]>("audit");
+
+                return (
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    {tabs.map((t) => {
+                      const active = t.key === tab;
+                      return (
+                        <button
+                          key={t.key}
+                          type="button"
+                          onClick={() => setTab(t.key)}
+                          style={{
+                            padding: "9px 14px",
+                            borderRadius: 12,
+                            border: `1px solid ${active ? "rgba(0,165,228,0.55)" : C.border}`,
+                            background: active ? "rgba(0,165,228,0.12)" : "rgba(0,0,0,0.15)",
+                            color: active ? C.cyan : C.textMuted,
+                            cursor: "pointer",
+                            fontWeight: 700,
+                            fontSize: 12,
+                          }}
+                        >
+                          {t.label}
+                        </button>
+                      );
+                    })}
                   </div>
-                </div>
-              ))}
+                );
+              })()}
+            </div>
+
+            <div style={{ padding: 16 }}>
+              {tab === "audit" && (
+                <DynamicTable<any>
+                  rows={(user as any).auditTrail ?? []}
+                  getRowId={(r) => r.id ?? `${r.type ?? "audit"}-${r.createdAt ?? ""}`}
+                  columns={useMemo(
+                    () => [
+                      {
+                        key: "createdAt",
+                        header: "Date",
+                        render: (row: any) =>
+                          row.createdAt ? new Date(row.createdAt).toLocaleString() : "-",
+                        sortValue: (row: any) => (row.createdAt ? new Date(row.createdAt).getTime() : 0),
+                      },
+                      {
+                        key: "action",
+                        header: "Action",
+                        render: (row: any) => row.action ?? row.type ?? "-",
+                        sortValue: (row: any) => String(row.action ?? row.type ?? ""),
+                      },
+                      {
+                        key: "actor",
+                        header: "Actor",
+                        render: (row: any) => row.actor ?? row.performedBy ?? "-",
+                      },
+                      {
+                        key: "details",
+                        header: "Details",
+                        render: (row: any) => row.details ?? row.metadata ?? "-",
+                      },
+                    ],
+                    []
+                  )}
+                  search={{ enabled: true, placeholder: "Search audit..." }}
+                  pagination={{ enabled: true, defaultPageSize: 5, pageSizeOptions: [5, 10, 20, 50, 100] }}
+                  noRecordsMessage="No audit trail entries"
+                />
+              )}
+
+              {tab === "permissions" && (
+                <DynamicTable<any>
+                  rows={(user as any).permissions ?? (user as any).role?.permissions ?? []}
+                  getRowId={(r) => r.id ?? `${r.key ?? r.name ?? "perm"}-${r.grantedAt ?? ""}`}
+                  columns={useMemo(
+                    () => [
+                      {
+                        key: "key",
+                        header: "Permission",
+                        render: (row: any) => row.key ?? row.name ?? "-",
+                        sortValue: (row: any) => String(row.key ?? row.name ?? ""),
+                      },
+                      {
+                        key: "description",
+                        header: "Description",
+                        render: (row: any) => row.label ?? row.description ?? "-",
+                      },
+                      {
+                        key: "source",
+                        header: "Source",
+                        render: (row: any) => row.source ?? row.grantedBy ?? row.role ?? "Role",
+                      },
+                    ],
+                    []
+                  )}
+                  search={{ enabled: true, placeholder: "Search permissions..." }}
+                  pagination={{ enabled: true, defaultPageSize: 5, pageSizeOptions: [5, 10, 20, 50, 100] }}
+                  noRecordsMessage="No permissions assigned"
+                />
+              )}
+
+              {tab === "assigned" && (
+                <DynamicTable<any>
+                  rows={(user as any).assignedProperties ?? (user as any).properties ?? []}
+                  getRowId={(r) => r.id ?? r.propertyId ?? r.slug ?? JSON.stringify(r)}
+                  columns={useMemo(
+                    () => [
+                      {
+                        key: "property",
+                        header: "Property",
+                        render: (row: any) => row.name ?? row.title ?? row.slug ?? row.id ?? "-",
+                        sortValue: (row: any) => String(row.name ?? row.title ?? row.slug ?? row.id ?? ""),
+                      },
+                      {
+                        key: "assignedAt",
+                        header: "Assigned At",
+                        render: (row: any) =>
+                          row.assignedAt ? new Date(row.assignedAt).toLocaleDateString() : row.createdAt ? new Date(row.createdAt).toLocaleDateString() : "-",
+                        sortValue: (row: any) => {
+                          const v = row.assignedAt ?? row.createdAt;
+                          return v ? new Date(v).getTime() : 0;
+                        },
+                      },
+                      {
+                        key: "role",
+                        header: "Assignment",
+                        render: (row: any) => row.role ?? row.type ?? "-",
+                      },
+                    ],
+                    []
+                  )}
+                  search={{ enabled: true, placeholder: "Search properties..." }}
+                  pagination={{ enabled: true, defaultPageSize: 5, pageSizeOptions: [5, 10, 20, 50, 100] }}
+                  noRecordsMessage="No assigned properties"
+                />
+              )}
+
             </div>
           </div>
+
 
         </div>
 

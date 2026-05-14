@@ -107,15 +107,15 @@ export default function UsersPage() {
           gap: 8,
           padding: "6px 12px",
           borderRadius: 999,
-          fontSize: 12,
+          fontSize: 10,
           fontWeight: 700,
           background: locked
-            ? "rgba(239,68,68,0.12)"
-            : "rgba(34,197,94,0.12)",
-          color: locked ? "#f87171" : "#22c55e",
+            ? "#80ebf2"
+            : "transparent",
+          color: locked ? "#171616" : "#00F0FF",
           border: locked
-            ? "1px solid rgba(230, 117, 117, 0.35)"
-            : "1px solid rgba(164, 236, 190, 0.35)",
+            ? "0.5px solid #00F0FF"
+            : "0.1px solid #00F0FF",
           width: "fit-content",
         }}
       >
@@ -124,10 +124,10 @@ export default function UsersPage() {
             width: 8,
             height: 8,
             borderRadius: "50%",
-            background: locked ? "#f87171" : "#22c55e",
+            background: locked ? "#1d1919" : "#00F0FF",
             boxShadow: locked
-              ? "0 0 8px rgba(110, 42, 42, 0.8)"
-              : "0 0 8px rgba(34,197,94,0.8)",
+              ? "0 0 8px #00F0FF"
+              : "0 0 8px #00F0FF",
           }}
         />
 
@@ -228,11 +228,11 @@ export default function UsersPage() {
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginTop: 12 }}>
         {(() => {
-          const cards = [
-            { label: "Total Users", value: userStats.totalUsers, variant: "blue" as const },
-            { label: "Active Users", value: userStats.activeUsers, variant: "green" as const },
-            { label: "Locked Users", value: userStats.lockedUsers, variant: "red" as const },
-          ];
+         const cards = [
+           { label: "Total Users", value: userStats.totalUsers },
+           { label: "Active Users", value: userStats.activeUsers },
+           { label: "Locked Users", value: userStats.lockedUsers },
+         ];
 
           return cards.map((c) => (
             <div
@@ -240,19 +240,9 @@ export default function UsersPage() {
               style={{
                 borderRadius: 20,
                 padding: "18px 16px",
-                border:
-                  c.variant === "blue"
-                    ? "1px solid rgba(56,189,248,0.45)"
-                    : c.variant === "green"
-                      ? "1px solid rgba(34,197,94,0.45)"
-                      : "1px solid rgba(248,113,113,0.45)",
+                border: "1px solid rgba(56,189,248,0.45)",
                 background: "linear-gradient(135deg, rgba(17,24,39,0.8), rgba(17,24,39,0.55))",
-                boxShadow:
-                  c.variant === "blue"
-                    ? "0 0 30px rgba(56,189,248,0.25)"
-                    : c.variant === "green"
-                      ? "0 0 30px rgba(34,197,94,0.25)"
-                      : "0 0 30px rgba(248,113,113,0.25)",
+                boxShadow: "0 0 0 1px rgba(255,255,255,0.02), 0 0 30px rgba(56,189,248,0.25)",
                 minHeight: 92,
                 display: "flex",
                 flexDirection: "column",
@@ -265,15 +255,10 @@ export default function UsersPage() {
               </div>
               <div
                 style={{
-                  fontSize: 26,
+                  fontSize: 24,
                   fontWeight: 800,
                   letterSpacing: "0.2px",
-                  color:
-                    c.variant === "blue"
-                      ? "#38bdf8"
-                      : c.variant === "green"
-                        ? "#22c55e"
-                        : "#f87171",
+                  color: "#38bdf8",
                 }}
               >
                 {c.value}

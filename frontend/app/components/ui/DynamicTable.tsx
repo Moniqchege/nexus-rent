@@ -350,7 +350,7 @@ const renderHeaderCellStyle = (
                                 onClick={() => a.onClick(row)}
                                 className="action-btn"
                                 style={{
-                                  padding: "9px 13px",
+                                  padding: "7px 16px",
                                   fontSize: 12,
                                   opacity: isDisabled ? 0.5 : 1,
                                 }}
