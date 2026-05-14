@@ -147,29 +147,8 @@ export default function UsersPage() {
         {
           key: "view",
           label: "View",
-          onClick: (row: any) => router.push(`/users/edit/${row.id}`),
+          onClick: (row: any) => router.push(`/users/view/${row.id}`),
         },
-        {
-          key: "edit",
-          label: "Edit",
-          onClick: (row: any) => router.push(`/users/edit/${row.id}`),
-        },
-        {
-          key: "lock",
-          label: "Lock",
-          onClick: (row: any) =>
-            openDialog(row.isLocked ? "unlock" : "lock", row.id),
-        },
-        // {
-        //   key: "killSessions",
-        //   label: "Kill Sessions",
-        //   onClick: (row: any) => openDialog("killSessions", row.id),
-        // },
-        // {
-        //   key: "resetPassword",
-        //   label: "Reset Password",
-        //   onClick: (row: any) => openDialog("resetPassword", row.id),
-        // },
       ] as any,
     [router]
   );
