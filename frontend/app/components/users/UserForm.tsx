@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAdminStore } from "../../store/adminStore";
 import { Role } from "../../store/adminStore";
+import { CustomDropdown } from "../ui/CustomDropdown";
 
 interface UserFormProps {
   onSubmit: (userData: any) => void;
@@ -22,6 +23,7 @@ export default function UserForm({ onSubmit, onCancel, editingUser, isEdit = fal
   const { roles, properties, fetchRoles, fetchProperties } = useAdminStore();
   const [leaseDocument, setLeaseDocument] = useState<File | null>(null);
   const [fileError, setFileError] = useState("");
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -82,27 +84,33 @@ export default function UserForm({ onSubmit, onCancel, editingUser, isEdit = fal
   }
 }, [editingUser, roles, properties]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
 
-  const formDataToSend = new FormData();
+  try {
+    setLoading(true);
 
-  formDataToSend.append("name", formData.name);
-  formDataToSend.append("email", formData.email);
-  formDataToSend.append("phone", formData.phone);
-  formDataToSend.append("plan", formData.plan);
-  formDataToSend.append("username", formData.username);
+    const formDataToSend = new FormData();
 
-  if (leaseDocument) {
-    formDataToSend.append("leaseDocument", leaseDocument);
+    formDataToSend.append("name", formData.name);
+    formDataToSend.append("email", formData.email);
+    formDataToSend.append("phone", formData.phone);
+    formDataToSend.append("plan", formData.plan);
+    formDataToSend.append("username", formData.username);
+
+    if (leaseDocument) {
+      formDataToSend.append("leaseDocument", leaseDocument);
+    }
+
+    formDataToSend.append(
+      "propertyAssignments",
+      JSON.stringify(propertyAssignments)
+    );
+
+    await onSubmit(formDataToSend);
+  } finally {
+    setLoading(false);
   }
-
-  formDataToSend.append(
-    "propertyAssignments",
-    JSON.stringify(propertyAssignments)
-  );
-
-  onSubmit(formDataToSend);
 };
 
   const addPropertyAssignment = () => {
@@ -144,7 +152,7 @@ export default function UserForm({ onSubmit, onCancel, editingUser, isEdit = fal
       <form onSubmit={handleSubmit} style={{ display: "grid", gap: "10px" }}>
         <div style={{
             display: "grid",
-            gridTemplateColumns: "1fr 1fr",
+            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
             gap: "16px"
         }}>
         <div>
@@ -195,7 +203,7 @@ export default function UserForm({ onSubmit, onCancel, editingUser, isEdit = fal
 
         <div style={{
             display: "grid",
-            gridTemplateColumns: "1fr 1fr",
+            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
             gap: "16px"
         }}>
              <div>
@@ -297,7 +305,6 @@ export default function UserForm({ onSubmit, onCancel, editingUser, isEdit = fal
     </p>
   )}
 </div>  
-
         {/* New Property Assignments Section */}
         <div style={{ marginTop: "24px" }}>
           <label style={{ 
@@ -310,7 +317,7 @@ export default function UserForm({ onSubmit, onCancel, editingUser, isEdit = fal
             WebkitBackgroundClip: "text",
             WebkitTextFillColor: "transparent"
           }}>
-            🏠 Property Assignments ({propertyAssignments.length})
+            🏠 Property Assignments 
           </label>
           <button
             type="button"
@@ -341,66 +348,45 @@ export default function UserForm({ onSubmit, onCancel, editingUser, isEdit = fal
           ) : (
             <div style={{ display: "grid", gap: "12px" }}>
               {propertyAssignments.map((assignment, index) => (
-                <div key={index} style={{
-                  display: "flex",
-                  gap: "12px",
-                  alignItems: "end",
-                  backgroundColor: "rgba(17,24,39,0.3)",
-                  padding: "16px",
-                  borderRadius: "12px",
-                  border: "1px solid var(--border-glow)"
-                }}>
+                <div
+                  key={index}
+                  className="property-assignment-row"
+                  style={{
+                   backgroundColor: "rgba(17,24,39,0.3)",
+                   padding: "16px",
+                   borderRadius: "12px",
+                   border: "1px solid var(--border-glow)",
+                 }}
+                >
                   <div style={{ flex: 1 }}>
                     <label style={{ display: "block", fontWeight: 600, fontSize: "12px", marginBottom: "6px", color: "var(--neon-blue)" }}>
                       Property
                     </label>
-                    <select
-                      value={assignment.propertyId}
-                      onChange={(e) => updatePropertyAssignment(index, "propertyId", parseInt(e.target.value))}
-                      style={{
-                        width: "100%",
-                        backgroundColor: "rgba(17,24,39,0.5)",
-                        border: "1px solid var(--border-glow)",
-                        borderRadius: "8px",
-                        padding: "10px 12px",
-                        fontSize: "14px",
-                        color: "var(--text-primary)"
-                      }}
-                      required
-                    >
-                      <option value={0}>Select Property</option>
-                      {properties.map((prop: any) => (
-                        <option key={prop.id} value={prop.id}>
-                          {prop.title} - {prop.location}
-                        </option>
-                      ))}
-                    </select>
+                    <CustomDropdown
+  options={properties}
+  value={assignment.propertyId}
+  onChange={(val) =>
+    updatePropertyAssignment(index, "propertyId", Number(val))
+  }
+  labelKey="title"
+  valueKey="id"
+  placeholder="Select Property"
+/>
                   </div>
                   <div style={{ flex: 1 }}>
                     <label style={{ display: "block", fontWeight: 600, fontSize: "12px", marginBottom: "6px", color: "var(--neon-blue)" }}>
                       Role for this Property
                     </label>
-                    <select
-                      value={assignment.roleId}
-                      onChange={(e) => updatePropertyAssignment(index, "roleId", parseInt(e.target.value))}
-                      style={{
-                        width: "100%",
-                        backgroundColor: "rgba(17,24,39,0.5)",
-                        border: "1px solid var(--border-glow)",
-                        borderRadius: "8px",
-                        padding: "10px 12px",
-                        fontSize: "14px",
-                        color: "var(--text-primary)"
-                      }}
-                      required
-                    >
-                      <option value={0}>Select Role</option>
-                      {roles.map((role: Role) => (
-                        <option key={role.id} value={role.id}>
-                          {role.name}
-                        </option>
-                      ))}
-                    </select>
+                    <CustomDropdown
+  options={roles}
+  value={assignment.roleId}
+  onChange={(val) =>
+    updatePropertyAssignment(index, "roleId", Number(val))
+  }
+  labelKey="name"
+  valueKey="id"
+  placeholder="Select Role"
+/>
                   </div>
                   <button
                     type="button"
@@ -410,14 +396,15 @@ export default function UserForm({ onSubmit, onCancel, editingUser, isEdit = fal
                       color: "#ef4444",
                       border: "1px solid rgba(239,68,68,0.3)",
                       borderRadius: "8px",
-                      padding: "10px 12px",
+                      padding: "10px 14px",
                       cursor: "pointer",
                       fontSize: "14px",
-                      minWidth: "44px",
+                      minWidth: "unset",
+                      whiteSpace: "nowrap",
                       height: "fit-content"
                     }}
                   >
-                    ×
+                    🗑️
                   </button>
                 </div>
               ))}
@@ -425,10 +412,10 @@ export default function UserForm({ onSubmit, onCancel, editingUser, isEdit = fal
           )}
         </div>
 
-
         <div style={{ display: "flex", gap: "16px", justifyContent: "flex-end"}}>
           <button
             type="button"
+            disabled={loading}
             onClick={onCancel}
             style={{
               backgroundColor: "transparent",
@@ -444,6 +431,7 @@ export default function UserForm({ onSubmit, onCancel, editingUser, isEdit = fal
           </button>
           <button
             type="submit"
+            disabled={loading} 
             style={{
               background: "linear-gradient(to right, var(--neon-blue), var(--neon-purple))",
               color: "white",
@@ -451,10 +439,11 @@ export default function UserForm({ onSubmit, onCancel, editingUser, isEdit = fal
               borderRadius: "12px",
               padding: "14px 28px",
               fontWeight: 600,
-              cursor: "pointer",
+              cursor: loading ? "not-allowed" : "pointer",
+              opacity: loading ? 0.6 : 1,
             }}
           >
-            {isEdit ? "Update User" : "Create User"}
+            {loading ? "Processing..." : isEdit ? "Update User" : "Create User"}
           </button>
         </div>
       </form>

@@ -188,6 +188,83 @@ router.post(
   }
 );
 
+// Lock / Unlock User Account
+router.post('/:id/lock', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = parseInt(req.params.id, 10);
+    const { locked } = req.body as { locked?: boolean };
+
+    if (typeof locked !== 'boolean') {
+      return res.status(400).json({ error: '`locked` (boolean) is required in the request body' });
+    }
+
+    const user = await db.user.findUnique({ where: { id: userId } });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const updated = await db.user.update({
+      where: { id: userId },
+      data: { isLocked: locked },
+      select: { id: true, name: true, email: true, isLocked: true },
+    });
+
+    if (locked) {
+      await db.session.deleteMany({ where: { user_id: userId } });
+    }
+
+    res.json({
+      message: locked ? 'User account locked' : 'User account unlocked',
+      user: updated,
+    });
+  } catch (error) {
+    console.error('Lock account error:', error);
+    res.status(500).json({ error: 'Failed to update account lock state' });
+  }
+});
+
+// Reset User Password
+router.post('/:id/reset-password', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = parseInt(req.params.id, 10);
+
+    const user = await db.user.findUnique({
+      where: { id: userId },
+      select: { id: true, name: true, email: true },
+    });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const plainPassword = generatePassword();
+    const hashedPassword = await bcrypt.hash(plainPassword, 12);
+
+    await db.user.update({
+      where: { id: userId },
+      data: {
+        password_hash: hashedPassword,
+        firstLogin: true, // force password change on next login
+      },
+    });
+
+    await db.session.deleteMany({ where: { user_id: userId } });
+
+    await transporter.sendMail({
+      from: `"Nexus Rent" <${process.env.SMTP_USER}>`,
+      to: user.email,
+      subject: 'Your Nexus Rent Password Has Been Reset',
+      html: `
+        <h3>Password Reset</h3>
+        <p>Hi ${user.name},</p>
+        <p>An administrator has reset your password.</p>
+        <p><strong>New Password:</strong> ${plainPassword}</p>
+        <p>You will be required to change your password on next login.</p>
+      `,
+    });
+
+    res.json({ message: `Password reset and emailed to ${user.email}` });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ error: 'Failed to reset user password' });
+  }
+});
+
 // GET /api/users/contacts - Get caretakers & property managers from same properties
 router.get('/contacts', requireAuth, async (req: Request, res: Response) => {
   try {
@@ -391,6 +468,23 @@ router.delete('/:id', requireAuth, async (req: Request, res: Response) => {
     } else {
       res.status(500).json({ error: 'Failed to delete user' });
     }
+  }
+});
+
+// Kill User Sessions
+router.delete('/:id/sessions', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = parseInt(req.params.id, 10);
+
+    const user = await db.user.findUnique({ where: { id: userId } });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const { count } = await db.session.deleteMany({ where: { user_id: userId } });
+
+    res.json({ message: `Terminated ${count} session(s) for user ${userId}` });
+  } catch (error) {
+    console.error('Kill sessions error:', error);
+    res.status(500).json({ error: 'Failed to kill user sessions' });
   }
 });
 

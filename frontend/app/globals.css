@@ -1292,6 +1292,29 @@ footer {
   background: transparent;
 }
 
+.property-assignment-row {
+  display: grid;
+  grid-template-columns: 1.5fr 1.5fr auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.property-delete-btn {
+  white-space: nowrap;
+  height: fit-content;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .property-assignment-row {
+    grid-template-columns: 1fr;
+  }
+
+  .property-delete-btn {
+    width: fit-content;
+  }
+}
+
   @media (max-width: 640px) {
   .popup-card {
     width: 100%;

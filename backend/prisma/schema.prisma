@@ -21,6 +21,7 @@ model User {
   firstLogin    Boolean  @default(true)
   createdAt     DateTime @default(now())
   leaseDocument String?
+  isLocked  Boolean  @default(false) 
   updatedAt     DateTime @updatedAt
 
   userProperties      UserProperty[]

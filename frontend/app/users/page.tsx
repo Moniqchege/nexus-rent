@@ -1,16 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAdminStore } from "../store/adminStore";
-import SearchBar from "../components/ui/SearchBar";
 import ConfirmDialog from "../components/ui/ConfirmDialog";
-import UserTable from "../components/users/UserTable";
+import DynamicTable from "../components/ui/DynamicTable";
 
 export default function UsersPage() {
-  const { fetchUsers, users, deleteUser, loading: storeLoading } = useAdminStore();
+  const {
+    fetchUsers,
+    users,
+    deleteUser,
+    loading: storeLoading,
+  } = useAdminStore();
+
   const router = useRouter();
-  const [search, setSearch] = useState("");
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
 
@@ -26,9 +31,10 @@ export default function UsersPage() {
   const handleConfirmDelete = async () => {
     if (selectedUserId !== null) {
       await deleteUser(selectedUserId);
-      setDialogOpen(false);
-      setSelectedUserId(null);
     }
+
+    setDialogOpen(false);
+    setSelectedUserId(null);
   };
 
   const handleCancelDelete = () => {
@@ -36,20 +42,108 @@ export default function UsersPage() {
     setSelectedUserId(null);
   };
 
-  const filteredUsers = users.filter((user) =>
-    user.name.toLowerCase().includes(search.toLowerCase()) ||
-    user.email.toLowerCase().includes(search.toLowerCase())
+  const columns = useMemo(
+    () => [
+      {
+        key: "index",
+        header: "#",
+        width: 50,
+        render: (_: any, index: number) => index + 1,
+      },
+      {
+        key: "name",
+        header: "Name",
+        render: (row: any) => (
+          <span style={{ color: "var(--neon-secondary)" }}>
+            {row.name || "-"}
+          </span>
+        ),
+        sortValue: (row: any) => row.name ?? "",
+      },
+      {
+        key: "email",
+        header: "Email",
+        render: (row: any) => row.email || "-",
+        sortValue: (row: any) => row.email ?? "",
+      },
+      {
+        key: "phone",
+        header: "Phone Number",
+        render: (row: any) => row.phone || "-",
+        sortValue: (row: any) => row.phone ?? "",
+      },
+      {
+        key: "createdAt",
+        header: "Created At",
+        render: (row: any) =>
+          row.createdAt
+            ? new Date(row.createdAt).toLocaleDateString()
+            : "-",
+        sortValue: (row: any) =>
+          row.createdAt
+            ? new Date(row.createdAt).getTime()
+            : 0,
+      },
+    ],
+    []
   );
+
+  const rowActions = useMemo(
+    () => [
+      {
+        key: "view",
+        label: "View",
+        onClick: (row: any) =>
+          router.push(`/users/edit/${row.id}`),
+      },
+      {
+        key: "edit",
+        label: "Edit",
+        onClick: (row: any) =>
+          router.push(`/users/edit/${row.id}`),
+      },
+      {
+        key: "delete",
+        label: "Delete",
+        onClick: (row: any) =>
+          handleDeleteClick(row.id),
+      },
+    ],
+    [router]
+  );
+
+  if (storeLoading) {
+    return (
+      <div
+        style={{
+          backgroundColor: "rgba(17,24,39,0.8)",
+          border: "1px solid var(--border-glow)",
+          borderRadius: "20px",
+          padding: "60px",
+          textAlign: "center",
+        }}
+      >
+        <div
+          style={{
+            color: "var(--neon-blue)",
+            fontSize: "16px",
+          }}
+        >
+          Loading users...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="dashboard-content">
       <div className="page-tag">👥 USERS MANAGEMENT</div>
+
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          // marginBottom: "24px",
         }}
       >
         <div className="section-label">ADMIN PANEL</div>
@@ -57,7 +151,8 @@ export default function UsersPage() {
         <button
           onClick={() => router.push("/users/new")}
           style={{
-            background: "linear-gradient(to right, var(--neon-blue), var(--neon-purple))",
+            background:
+              "linear-gradient(to right, var(--neon-blue), var(--neon-purple))",
             color: "white",
             border: "none",
             borderRadius: "12px",
@@ -71,21 +166,35 @@ export default function UsersPage() {
         </button>
       </div>
 
-      <div style={{ marginBottom: "24px" }}>
-        <h2 style={{ fontSize: "24px", fontWeight: 700, color: "var(--neon-blue)" }}>
-          User Accounts ({filteredUsers.length})
+      <div>
+        <h2
+          style={{
+            fontSize: "20px",
+            fontWeight: 700,
+            color: "var(--neon-blue)",
+          }}
+        >
+          User Accounts ({users.length})
         </h2>
       </div>
 
-      <SearchBar
-        value={search}
-        onChange={setSearch}
-        placeholder="Search users by name or email..."
-      />
-
-      <UserTable 
-        onDeleteClick={handleDeleteClick}
-        users={filteredUsers}
+      <DynamicTable<any>
+        rows={users}
+        getRowId={(r) => r.id}
+        columns={columns}
+        rowActions={rowActions}
+        search={{
+          enabled: true,
+          placeholder: "Search users by name, email or phone...",
+          getSearchText: (row) =>
+            `${row.name} ${row.email} ${row.phone}`.toLowerCase(),
+        }}
+        pagination={{
+          enabled: true,
+          defaultPageSize: 5,
+          pageSizeOptions: [5, 10, 20, 50, 100],
+        }}
+        noRecordsMessage="No users found"
       />
 
       <ConfirmDialog
@@ -98,4 +207,3 @@ export default function UsersPage() {
     </div>
   );
 }
-
