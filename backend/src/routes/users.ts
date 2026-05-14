@@ -32,6 +32,20 @@ interface UpdateUserInput {
   plan?: string;
 }
 
+// GET /api/users/stats - User statistics
+router.get('/stats', requireAuth, async (_req: Request, res: Response) => {
+  try {
+    const totalUsers = await db.user.count();
+    const lockedUsers = await db.user.count({ where: { isLocked: true } });
+    const activeUsers = totalUsers - lockedUsers;
+
+    res.json({ totalUsers, activeUsers, lockedUsers });
+  } catch (error) {
+    console.error('Failed to fetch user stats:', error);
+    res.status(500).json({ error: 'Failed to fetch user stats' });
+  }
+});
+
 // GET /api/users - List users
 router.get('/', requireAuth, async (req: Request, res: Response) => {
   try {
@@ -54,6 +68,7 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
         phone: true,
         plan: true,
         leaseDocument: true,
+        isLocked: true,
         createdAt: true,
         userProperties: {
           select: {
@@ -151,6 +166,7 @@ router.post(
           phone: true,
           plan: true,
           leaseDocument: true,
+          isLocked: true,
           firstLogin: true,
           createdAt: true,
         },
@@ -191,7 +207,7 @@ router.post(
 // Lock / Unlock User Account
 router.post('/:id/lock', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = parseInt(req.params.id, 10);
+    const userId = Number(req.params.id);
     const { locked } = req.body as { locked?: boolean };
 
     if (typeof locked !== 'boolean') {
@@ -224,7 +240,7 @@ router.post('/:id/lock', requireAuth, async (req: Request, res: Response) => {
 // Reset User Password
 router.post('/:id/reset-password', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = parseInt(req.params.id, 10);
+    const userId = Number(req.params.id);
 
     const user = await db.user.findUnique({
       where: { id: userId },
@@ -239,7 +255,7 @@ router.post('/:id/reset-password', requireAuth, async (req: Request, res: Respon
       where: { id: userId },
       data: {
         password_hash: hashedPassword,
-        firstLogin: true, // force password change on next login
+        firstLogin: true, 
       },
     });
 
@@ -268,9 +284,7 @@ router.post('/:id/reset-password', requireAuth, async (req: Request, res: Respon
 // GET /api/users/contacts - Get caretakers & property managers from same properties
 router.get('/contacts', requireAuth, async (req: Request, res: Response) => {
   try {
-    const currentUserId = (req as any).user.id; // adjust to match your auth middleware
-
-    // 1️⃣ Get the current user's property IDs
+    const currentUserId = (req as any).user.id; 
     const currentUserProperties = await db.userProperty.findMany({
       where: { userId: currentUserId },
       select: { propertyId: true },
@@ -284,7 +298,6 @@ router.get('/contacts', requireAuth, async (req: Request, res: Response) => {
       return res.json([]);
     }
 
-    // 2️⃣ Find users on the same properties with caretaker/manager roles
     const contacts = await db.userProperty.findMany({
       where: {
         propertyId: { in: propertyIds },
@@ -314,7 +327,6 @@ router.get('/contacts', requireAuth, async (req: Request, res: Response) => {
       },
     });
 
-    // 3️⃣ Deduplicate users (a user might share multiple properties with you)
     const seen = new Set<number>();
     const unique = contacts
       .filter(
@@ -325,23 +337,23 @@ router.get('/contacts', requireAuth, async (req: Request, res: Response) => {
         }
       )
       .map(
-  ({
-    user,
-    role,
-    property,
-  }: {
-    user: { id: number; name: string; email: string; phone: string | null };
-    role: { id: number; name: string };
-    property: { id: number; title: string; location: string } | null;
-  }) => ({
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    phone: user.phone,
-    role,
-    property, // now allowed to be null
-  })
-);
+        ({
+          user,
+          role,
+          property,
+        }: {
+          user: { id: number; name: string; email: string; phone: string | null };
+          role: { id: number; name: string };
+          property: { id: number; title: string; location: string } | null;
+        }) => ({
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          phone: user.phone,
+          role,
+          property, 
+        })
+      );
 
     res.json(unique);
   } catch (error) {
@@ -366,6 +378,7 @@ router.get('/:id', requireAuth, async (req: Request, res: Response) => {
         phone: true,
         plan: true,
         leaseDocument: true,
+        isLocked: true,
         createdAt: true,
         userProperties: {
           select: {
@@ -409,11 +422,7 @@ router.patch('/:id', requireAuth, async (req: Request, res: Response) => {
     const { id } = req.params;
     const userId = parseInt(Array.isArray(id) ? id[0] : id, 10);
     const { propertyAssignments, ...data } = req.body as any;
-
-    // Block email change if set
     if (data.email) delete data.email;
-
-    // 1️⃣ Update user basic info
     const user = await db.user.update({
       where: { id: userId },
       data,
@@ -424,16 +433,15 @@ router.patch('/:id', requireAuth, async (req: Request, res: Response) => {
         username: true,
         phone: true,
         plan: true,
+        leaseDocument: true,
+        isLocked: true,
         createdAt: true,
       },
     });
 
-    // 2️⃣ Update property assignments
     if (propertyAssignments && Array.isArray(propertyAssignments)) {
-      // Remove old assignments first
       await db.userProperty.deleteMany({ where: { userId } });
 
-      // Add new ones
       await db.userProperty.createMany({
         data: propertyAssignments.map((pa: any) => ({
           userId,
@@ -446,7 +454,7 @@ router.patch('/:id', requireAuth, async (req: Request, res: Response) => {
 
     res.json(user);
   } catch (error: any) {
-    console.error('Update user error:', error); // log full error for debugging
+    console.error('Update user error:', error); 
     if (error.code === 'P2025') {
       res.status(404).json({ error: 'User not found' });
     } else {
@@ -474,7 +482,7 @@ router.delete('/:id', requireAuth, async (req: Request, res: Response) => {
 // Kill User Sessions
 router.delete('/:id/sessions', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = parseInt(req.params.id, 10);
+    const userId = Number(req.params.id);
 
     const user = await db.user.findUnique({ where: { id: userId } });
     if (!user) return res.status(404).json({ error: 'User not found' });

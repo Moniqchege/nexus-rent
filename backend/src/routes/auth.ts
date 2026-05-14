@@ -82,11 +82,18 @@ router.post("/login", async (req: Request, res: Response) => {
         plan: true,
         password_hash: true,
         firstLogin: true,
+        isLocked: true,
       },
     });
 
     if (!user) {
       return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    if (user?.isLocked) {
+      return res.status(403).json({
+        error: 'Account has been locked. Contact administrator.'
+      });
     }
 
     const validPassword = await bcrypt.compare(password, user.password_hash);

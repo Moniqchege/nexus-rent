@@ -61,13 +61,24 @@ interface AdminState {
   leases: Lease[];
   loading: boolean;
   amenities: { id: number; key: string; label: string; category: string }[];
+
+  userStats: { totalUsers: number; activeUsers: number; lockedUsers: number };
+
   fetchUsers: (search?: string) => Promise<void>;
+  fetchUserStats: () => Promise<void>;
   fetchRoles: () => Promise<void>;
   updateUserRole: (userId: number, roleName: string) => Promise<void>;
+
   createUser: (setData: any) => Promise<void>;
   fetchUser: (userId: number) => Promise<any>;
   updateUser: (userId: number, setData: any) => Promise<void>;
+
+  lockUnlockUser: (userId: number, locked: boolean) => Promise<void>;
+  killUserSessions: (userId: number) => Promise<void>;
+  resetUserPassword: (userId: number) => Promise<void>;
+
   deleteUser: (userId: number) => Promise<void>;
+
   createRole: (role: Omit<Role, 'id'>) => Promise<void>;
   updateRole: (role: Role) => Promise<void>;
   deleteRole: (roleId: number) => Promise<void>;
@@ -92,6 +103,11 @@ export const useAdminStore = create<AdminState>()(
       roles: [],
       users: [],
       properties: [],
+      userStats: {
+        totalUsers: 0,
+        activeUsers: 0,
+        lockedUsers: 0,
+      },
       loading: false,
 
       fetchUsers: async (search = '') => {
@@ -164,6 +180,57 @@ export const useAdminStore = create<AdminState>()(
           }));
         } catch {
           // 
+        } finally {
+          set({ loading: false });
+        }
+      },
+
+      fetchUserStats: async () => {
+        try {
+          const res = await api.get('/api/users/stats');
+          set({ userStats: res.data });
+        } catch (error) {
+          console.error('fetchUserStats error:', error);
+        }
+      },
+
+      lockUnlockUser: async (userId: number, locked: boolean) => {
+        set({ loading: true });
+        try {
+          const res = await api.post(`/api/users/${userId}/lock`, { locked });
+          const updated = res.data?.user;
+          set(state => ({
+            users: state.users.map(u =>
+              u.id === userId
+                ? { ...u, isLocked: updated?.isLocked ?? locked }
+                : u
+            ),
+          }));
+          await get().fetchUserStats();
+        } catch (error) {
+          console.error('lockUnlockUser error:', error);
+        } finally {
+          set({ loading: false });
+        }
+      },
+
+      killUserSessions: async (userId: number) => {
+        set({ loading: true });
+        try {
+          await api.delete(`/api/users/${userId}/sessions`);
+        } catch (error) {
+          console.error('killUserSessions error:', error);
+        } finally {
+          set({ loading: false });
+        }
+      },
+
+      resetUserPassword: async (userId: number) => {
+        set({ loading: true });
+        try {
+          await api.post(`/api/users/${userId}/reset-password`);
+        } catch (error) {
+          console.error('resetUserPassword error:', error);
         } finally {
           set({ loading: false });
         }
