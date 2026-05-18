@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import ConfirmDialog from "../ui/ConfirmDialog";
 import { useAdminStore } from "@/app/store/adminStore";
@@ -142,9 +142,9 @@ const s = {
     padding: "2px 10px",
     borderRadius: "999px",
     textAlign: "center",
-    color: locked ? "#FCA5A5" : "#6EE7B7",
-    backgroundColor: locked ? "rgba(239,68,68,0.15)" : "rgba(16,185,129,0.15)",
-    border: `1px solid ${locked ? "rgba(239,68,68,0.3)" : "rgba(16,185,129,0.3)"}`,
+    color: locked ? "#000" : "#00F0FF",
+    backgroundColor: locked ? "#00F0FF" : "transparent",
+    border: `1px solid ${locked ? "#00F0FF" : "#00F0FF"}`,
   }),
 
   columnsWrap: {
@@ -295,10 +295,11 @@ const IconKill = () => (
 );
 
 // ── Component ─────────────────────────────────────────────────────────────
-export default function UserViewDetails({ user }: { user: UserLike | null }) {
+export default function UserViewDetails({ user: initialUser, }: { user: UserLike | null }) {
   const router = useRouter();
   const { lockUnlockUser, killUserSessions, resetUserPassword, loading: storeLoading } = useAdminStore();
 
+  const [user, setUser] = useState(initialUser);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [dialogAction, setDialogAction] = useState<DialogAction>(null);
@@ -322,14 +323,42 @@ export default function UserViewDetails({ user }: { user: UserLike | null }) {
     setDialogAction(null);
   };
 
-  const confirmAction = async () => {
-    if (selectedUserId == null || !dialogAction) return;
-    if (dialogAction === "lock")          await lockUnlockUser(selectedUserId, true);
-    else if (dialogAction === "unlock")   await lockUnlockUser(selectedUserId, false);
-    else if (dialogAction === "killSessions")  await killUserSessions(selectedUserId);
-    else if (dialogAction === "resetPassword") await resetUserPassword(selectedUserId);
-    closeDialog();
-  };
+  useEffect(() => {
+  setUser(initialUser);
+}, [initialUser]);
+
+ const confirmAction = async () => {
+  if (selectedUserId == null || !dialogAction || !user) return;
+
+  if (dialogAction === "lock") {
+    await lockUnlockUser(selectedUserId, true);
+
+    setUser({
+      ...user,
+      isLocked: true,
+    });
+  }
+
+  else if (dialogAction === "unlock") {
+    await lockUnlockUser(selectedUserId, false);
+
+    setUser({
+      ...user,
+      isLocked: false,
+    });
+  }
+
+  else if (dialogAction === "killSessions") {
+    await killUserSessions(selectedUserId);
+  }
+
+  else if (dialogAction === "resetPassword") {
+    await resetUserPassword(selectedUserId);
+  }
+
+  closeDialog();
+};
+
 
   if (!user) {
     return (
@@ -346,7 +375,6 @@ export default function UserViewDetails({ user }: { user: UserLike | null }) {
   const locked = Boolean(user.isLocked);
   const initials = (user.name ?? "?").charAt(0).toUpperCase();
 
-  // ── Dialog meta ──
   const dialogMeta: Record<Exclude<DialogAction, null>, { title: string; message: string; confirmText: string }> = {
     lock:          { title: "Lock User",           message: "This will lock the user account and invalidate their sessions.", confirmText: "Lock" },
     unlock:        { title: "Unlock User",          message: "This will unlock the user account.",                            confirmText: "Unlock" },
@@ -356,10 +384,7 @@ export default function UserViewDetails({ user }: { user: UserLike | null }) {
 
   return (
     <section style={{ ...s.page, paddingLeft: "0px" }}>
-      {/* Offset for sidebar on large screens via a wrapper div */}
         <div style={s.inner}>
-
-          {/* ── Top bar ── */}
           <div style={s.topBar}>
             <div>
               <h4 style={s.heading}>Users Management</h4>
@@ -378,7 +403,6 @@ export default function UserViewDetails({ user }: { user: UserLike | null }) {
 
           {/* ── Info card ── */}
           <div style={s.infoCard}>
-            {/* Avatar + name */}
             <div style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
               <div style={s.avatarWrap}>{initials}</div>
               <div style={s.nameBlock}>
@@ -393,7 +417,7 @@ export default function UserViewDetails({ user }: { user: UserLike | null }) {
                 {[
                   ["Email",    user.email    || "-"],
                   ["Phone",    user.phone    || "-"],
-                  ["Username", user.username || "-"],
+                  
                 ].map(([label, value]) => (
                   <div key={label} style={s.dataRow}>
                     <span style={s.dataLabel}>{label}</span>
@@ -404,9 +428,8 @@ export default function UserViewDetails({ user }: { user: UserLike | null }) {
 
               <div style={s.dataBox}>
                 {[
-                  ["Role",       user.role || "-"],
+                  ["Username", user.username || "-"],
                   ["Created At", user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "-"],
-                  ["User ID",    String(user.id)],
                 ].map(([label, value]) => (
                   <div key={label} style={s.dataRow}>
                     <span style={s.dataLabel}>{label}</span>
@@ -468,53 +491,44 @@ export default function UserViewDetails({ user }: { user: UserLike | null }) {
                 <h4 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: C.blue }}>
                   User Audit & Access
                 </h4>
-                <div style={{ color: C.textMuted, fontSize: 11 }}>{user.email || "-"}</div>
               </div>
             </div>
 
             {/* Tabs (client-side state) */}
-            <div style={{ padding: "10px 12px", borderBottom: `1px solid ${C.border}` }}>
-              {(() => {
-                const tabs = [
-                  { key: "audit", label: "Audit Trail" },
-                  { key: "permissions", label: "Permissions" },
-                  { key: "assigned", label: "Assigned Properties" },
-                ] as const;
+           <div style={{ paddingTop: 10, paddingLeft: 10,  display: "flex", gap: 8, flexWrap: "wrap" }}>
+  {tabs.map((t) => {
+    const active = t.key === tab;
 
-                const [tab, setTab] = useState<(typeof tabs)[number]["key"]>("audit");
-
-                return (
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    {tabs.map((t) => {
-                      const active = t.key === tab;
-                      return (
-                        <button
-                          key={t.key}
-                          type="button"
-                          onClick={() => setTab(t.key)}
-                          style={{
-                            padding: "9px 14px",
-                            borderRadius: 12,
-                            border: `1px solid ${active ? "rgba(0,165,228,0.55)" : C.border}`,
-                            background: active ? "rgba(0,165,228,0.12)" : "rgba(0,0,0,0.15)",
-                            color: active ? C.cyan : C.textMuted,
-                            cursor: "pointer",
-                            fontWeight: 700,
-                            fontSize: 12,
-                          }}
-                        >
-                          {t.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                );
-              })()}
-            </div>
+    return (
+      <button
+        key={t.key}
+        type="button"
+        onClick={() => setTab(t.key)}
+        style={{
+          padding: "9px 14px",
+          borderRadius: 12,
+          border: `1px solid ${
+            active ? "rgba(0,165,228,0.55)" : C.border
+          }`,
+          background: active
+            ? "rgba(0,165,228,0.12)"
+            : "rgba(0,0,0,0.15)",
+          color: active ? C.cyan : C.textMuted,
+          cursor: "pointer",
+          fontWeight: 700,
+          fontSize: 12,
+        }}
+      >
+        {t.label}
+      </button>
+    );
+  })}
+</div>
 
             <div style={{ padding: 16 }}>
               {tab === "audit" && (
                 <DynamicTable<any>
+                  key="audit-table"
                   rows={(user as any).auditTrail ?? []}
                   getRowId={(r) => r.id ?? `${r.type ?? "audit"}-${r.createdAt ?? ""}`}
                   columns={useMemo(
@@ -553,6 +567,7 @@ export default function UserViewDetails({ user }: { user: UserLike | null }) {
 
               {tab === "permissions" && (
                 <DynamicTable<any>
+                  key="permissions-table"
                   rows={(user as any).permissions ?? (user as any).role?.permissions ?? []}
                   getRowId={(r) => r.id ?? `${r.key ?? r.name ?? "perm"}-${r.grantedAt ?? ""}`}
                   columns={useMemo(
@@ -584,34 +599,34 @@ export default function UserViewDetails({ user }: { user: UserLike | null }) {
 
               {tab === "assigned" && (
                 <DynamicTable<any>
-                  rows={(user as any).assignedProperties ?? (user as any).properties ?? []}
+                  key="assigned-table"
+                  rows={(user as any).userProperties ?? []}
                   getRowId={(r) => r.id ?? r.propertyId ?? r.slug ?? JSON.stringify(r)}
-                  columns={useMemo(
-                    () => [
-                      {
-                        key: "property",
-                        header: "Property",
-                        render: (row: any) => row.name ?? row.title ?? row.slug ?? row.id ?? "-",
-                        sortValue: (row: any) => String(row.name ?? row.title ?? row.slug ?? row.id ?? ""),
-                      },
-                      {
-                        key: "assignedAt",
-                        header: "Assigned At",
-                        render: (row: any) =>
-                          row.assignedAt ? new Date(row.assignedAt).toLocaleDateString() : row.createdAt ? new Date(row.createdAt).toLocaleDateString() : "-",
-                        sortValue: (row: any) => {
-                          const v = row.assignedAt ?? row.createdAt;
-                          return v ? new Date(v).getTime() : 0;
-                        },
-                      },
-                      {
-                        key: "role",
-                        header: "Assignment",
-                        render: (row: any) => row.role ?? row.type ?? "-",
-                      },
-                    ],
-                    []
-                  )}
+                 columns={useMemo(
+  () => [
+    {
+      key: "property",
+      header: "Property",
+      render: (row: any) =>
+        row.property?.title ?? "-",
+      sortValue: (row: any) =>
+        String(row.property?.title ?? ""),
+    },
+    {
+      key: "location",
+      header: "Location",
+      render: (row: any) =>
+        row.property?.location ?? "-",
+    },
+    {
+      key: "role",
+      header: "Role",
+      render: (row: any) =>
+        row.role?.name ?? "-",
+    },
+  ],
+  []
+)}
                   search={{ enabled: true, placeholder: "Search properties..." }}
                   pagination={{ enabled: true, defaultPageSize: 5, pageSizeOptions: [5, 10, 20, 50, 100] }}
                   noRecordsMessage="No assigned properties"

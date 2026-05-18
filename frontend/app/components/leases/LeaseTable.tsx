@@ -74,10 +74,10 @@ export default function LeaseTable({ leases, onDeleteClick }: LeaseTableProps) {
               <td style={{ padding: "12px", textAlign: "right" }}>
                 <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
                   <button
-                    onClick={() => router.push(`/leases/${lease.id}`)}
+                    onClick={() => router.push(`/leases/${lease.id}/view`)}
                     className="action-btn"
                   >
-                    Edit
+                    View
                   </button>
                   <button
                     onClick={() => router.push(`/leases/${lease.id}/print`)}
