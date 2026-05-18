@@ -30,7 +30,7 @@ type TabKey = typeof tabs[number]["key"];
 // ── Inline style tokens ──────────────────────────────────────────────────────
 const C = {
   blue:        "#2A5CAA",
-  cyan:        "#00A5E4",
+  cyan:        "#00F0FF",
   bgPage:      "#0D1117",
   bgCard:      "#111827",
   bgCardAlt:   "rgba(0,165,228,0.06)",

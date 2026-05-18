@@ -114,7 +114,7 @@ export default function UsersPage() {
             : "transparent",
           color: locked ? "#171616" : "#00F0FF",
           border: locked
-            ? "0.5px solid #00F0FF"
+            ? "0.1px solid #00F0FF"
             : "0.1px solid #00F0FF",
           width: "fit-content",
         }}
@@ -255,7 +255,7 @@ export default function UsersPage() {
               </div>
               <div
                 style={{
-                  fontSize: 24,
+                  fontSize: 21,
                   fontWeight: 800,
                   letterSpacing: "0.2px",
                   color: "#38bdf8",
