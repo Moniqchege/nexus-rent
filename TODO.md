@@ -1,8 +1,6 @@
-# TODO - Payments Reports Update
-
-- [ ] Update `frontend/app/payments/reports/page.tsx` to consume correct backend endpoint for expenses/revenue/arrears/P&L (use `/api/payments/reports`).
-- [ ] Redesign MoM chart UI in `frontend/app/payments/reports/page.tsx` (clean spacing, grid/legend, better bar rendering).
-- [ ] Ensure Revenue / Arrears / Expenses / Net P&L metric cards read the correct backend values from `summary`.
-- [ ] Verify refresh + property/month filters update all dependent UI.
-- [ ] Run `next lint` and/or `next build` to validate.
+## TODO
+- [ ] Create shared configurable component `frontend/app/components/shared/ViewDetailsLayout.tsx` that renders the common “view details” page layout (top bar, info card shell, tabs shell, optional confirm dialog).
+- [ ] Refactor `frontend/app/components/leases/LeaseViewDetails.tsx` to use `ViewDetailsLayout` for its layout while keeping lease-specific data/actions/tabs.
+- [ ] Refactor `frontend/app/components/users/UserViewDetails.tsx` to use `ViewDetailsLayout` for its layout while keeping user-specific data/actions/tabs.
+- [ ] Run frontend lint/typecheck/build to ensure everything compiles.
 

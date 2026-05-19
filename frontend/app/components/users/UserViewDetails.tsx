@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import ViewDetailsLayout from "../shared/ViewDetailsLayout";
+
+
 import { useRouter } from "next/navigation";
 import ConfirmDialog from "../ui/ConfirmDialog";
 import { useAdminStore } from "@/app/store/adminStore";
