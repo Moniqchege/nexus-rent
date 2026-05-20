@@ -1,13 +1,6 @@
 "use client";
-
 import React, { useMemo, useState } from "react";
-
 import ConfirmDialog from "../ui/ConfirmDialog";
-
-
-
-
-
 
 export type TabKey = string;
 
@@ -61,7 +54,6 @@ type ConfirmConfig = {
   onCancel: () => void;
 };
 
-// Shared UI constants (keeps current styling consistent)
 const C = {
   blue: "#2A5CAA",
   cyan: "#00F0FF",
@@ -178,7 +170,7 @@ const s = {
     borderRadius: "999px",
     textAlign: "center",
     color:
-      tone === "active" ? "#000" : tone === "locked" ? "#000" : C.cyan,
+      tone === "active" ? "#00F0FF" : tone === "locked" ? "#000" : C.cyan,
     backgroundColor:
       tone === "active" ? "transparent" : tone === "locked" ? "#00F0FF" : "transparent",
     border: `1px solid #00F0FF`,
@@ -338,51 +330,76 @@ export default function ViewDetailsLayout({
 
         {emptyFallback ?? null}
 
-        <div style={s.infoCard}>
-          <div style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
-            <div style={s.avatarWrap}>{identity.avatarText}</div>
-            <div style={s.nameBlock}>
-              <h4 style={s.userName}>{identity.displayTitle}</h4>
-              {identity.badgeText ? (
-                <span style={s.statusBadge(identity.badgeTone ?? "neutral")}>{identity.badgeText}</span>
-              ) : null}
+       <div style={s.infoCard}>
+  <div
+    style={{
+      display: "flex",
+      width: "100%",
+      gap: "16px",
+      flexWrap: "wrap",
+      alignItems: "flex-start",
+    }}
+  >
+    <div style={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
+      <div style={s.avatarWrap}>{identity.avatarText}</div>
+
+      <div style={s.nameBlock}>
+        <h4 style={s.userName}>{identity.displayTitle}</h4>
+
+        {identity.badgeText ? (
+          <span style={s.statusBadge(identity.badgeTone ?? "neutral")}>
+            {identity.badgeText}
+          </span>
+        ) : null}
+      </div>
+    </div>
+
+    <div style={s.columnsWrap}>
+      {dataBoxes.map((box, idx) => (
+        <div key={idx} style={s.dataBox}>
+          {box.rows.map((r) => (
+            <div key={r.label} style={s.dataRow}>
+              <span style={s.dataLabel}>{r.label}</span>
+              <span style={s.dataValue}>{r.value}</span>
             </div>
-          </div>
-
-          <div style={s.columnsWrap}>
-            {dataBoxes.map((box, idx) => (
-              <div key={idx} style={s.dataBox}>
-                {box.rows.map((r) => (
-                  <div key={r.label} style={s.dataRow}>
-                    <span style={s.dataLabel}>{r.label}</span>
-                    <span style={s.dataValue}>{r.value}</span>
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
-
-          <div style={s.actionsWrap}>
-            {actions.map((a) => (
-              <button
-                key={a.key}
-                type="button"
-                style={s.actionBtn}
-                onClick={a.onClick}
-                disabled={a.disabled}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = "rgba(0, 165, 228, 0.18)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = "rgba(0, 240, 255, 0.05)";
-                }}
-              >
-                {a.icon}
-                {a.label}
-              </button>
-            ))}
-          </div>
+          ))}
         </div>
+      ))}
+    </div>
+  </div>
+
+  {/* ACTIONS BELOW */}
+  <div
+    style={{
+      width: "100%",
+      display: "flex",
+      justifyContent: "flex-end",
+    }}
+  >
+    <div style={s.actionsWrap}>
+      {actions.map((a) => (
+        <button
+          key={a.key}
+          type="button"
+          style={s.actionBtn}
+          onClick={a.onClick}
+          disabled={a.disabled}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor =
+              "rgba(0, 165, 228, 0.18)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor =
+              "rgba(0, 240, 255, 0.05)";
+          }}
+        >
+          {a.icon}
+          {a.label}
+        </button>
+      ))}
+    </div>
+  </div>
+</div>
 
         <div style={s.summaryShell}>
           <div style={s.summaryHeader}>

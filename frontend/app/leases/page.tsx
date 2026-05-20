@@ -1,22 +1,27 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAdminStore } from "@/app/store/adminStore";
-import SearchBar from "@/app/components/ui/SearchBar";
 import ConfirmDialog from "@/app/components/ui/ConfirmDialog";
-import LeaseTable from "@/app/components/leases/LeaseTable";
+import DynamicTable, {
+  type DynamicTableColumn,
+  type DynamicTableRowAction,
+} from "@/app/components/ui/DynamicTable";
+
+type LeaseRow = any;
 
 export default function LeasesPage() {
-  const { fetchLeases, leases, deleteLease, loading: storeLoading } = useAdminStore();
+  const { fetchLeases, leases, deleteLease } = useAdminStore();
   const router = useRouter();
+
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedLeaseId, setSelectedLeaseId] = useState<number | null>(null);
 
   useEffect(() => {
     fetchLeases();
-  }, []);
+  }, [fetchLeases]);
 
   const handleDeleteClick = (leaseId: number) => {
     setSelectedLeaseId(leaseId);
@@ -36,15 +41,73 @@ export default function LeasesPage() {
     setSelectedLeaseId(null);
   };
 
-  const filteredLeases = leases.filter((lease) =>
-    lease.property?.title?.toLowerCase().includes(search.toLowerCase()) ||
-    lease.tenant?.name?.toLowerCase().includes(search.toLowerCase()) ||
-    lease.status?.toLowerCase().includes(search.toLowerCase())
+  // Newly created/added leases should appear first by default.
+  const sortedLeases = useMemo(() => {
+    return [...leases].sort((a: any, b: any) => (b.id ?? 0) - (a.id ?? 0));
+  }, [leases]);
+
+  const columns: DynamicTableColumn<LeaseRow>[] = useMemo(
+    () => [
+       {
+        key: "index",
+        header: "#",
+        width: 50,
+        render: (_: any, index: number) => index + 1,
+      },
+      {
+        key: "property",
+        header: "Property",
+        render: (row: any) => (
+          <div>
+            <div style={{ fontSize: 14, whiteSpace: "nowrap" }}>{row.property?.title || "—"}</div>
+            <div style={{ fontSize: 11, color: "var(--text-secondary)" }}>{row.property?.location || ""}</div>
+          </div>
+        ),
+        sortValue: (row: any) => String(row.property?.title ?? ""),
+      },
+      {
+        key: "startDate",
+        header: "Start Date",
+        render: (row: any) => (row.startDate ? new Date(row.startDate).toLocaleDateString() : "—"),
+        sortValue: (row: any) => (row.startDate ? new Date(row.startDate).getTime() : 0),
+      },
+      {
+        key: "endDate",
+        header: "End Date",
+        render: (row: any) => (row.endDate ? new Date(row.endDate).toLocaleDateString() : "—"),
+        sortValue: (row: any) => (row.endDate ? new Date(row.endDate).getTime() : 0),
+      },
+      {
+        key: "rentAmount",
+        header: "Rent (KES)",
+        render: (row: any) => (row.rentAmount != null ? Number(row.rentAmount).toLocaleString() : "—"),
+        sortValue: (row: any) => Number(row.rentAmount ?? 0),
+      },
+      {
+        key: "billingCycle",
+        header: "Cycle",
+        render: (row: any) => String(row.billingCycle ?? "—"),
+        sortValue: (row: any) => String(row.billingCycle ?? ""),
+      },
+    ],
+    []
+  );
+
+  const rowActions: DynamicTableRowAction<LeaseRow>[] = useMemo(
+    () => [
+      {
+        key: "view",
+        label: "View",
+        onClick: (row: any) => router.push(`/leases/${row.id}/view`),
+      },
+    ],
+    [router]
   );
 
   return (
     <div className="dashboard-content">
       <div className="page-tag">📄 LEASE MANAGEMENT</div>
+
       <div
         style={{
           display: "flex",
@@ -73,17 +136,33 @@ export default function LeasesPage() {
 
       <div style={{ marginBottom: "24px" }}>
         <h2 style={{ fontSize: "24px", fontWeight: 700, color: "var(--neon-blue)" }}>
-          Lease Agreements ({filteredLeases.length})
+          Lease Agreements ({sortedLeases.length})
         </h2>
       </div>
 
-      <SearchBar
-        value={search}
-        onChange={setSearch}
-        placeholder="Search leases by property, tenant, or status..."
+      <DynamicTable<any>
+        rows={sortedLeases}
+        getRowId={(r) => r.id}
+        columns={columns}
+        rowActions={rowActions}
+        search={{
+          enabled: true,
+          placeholder: "Search leases by property, tenant, or status...",
+          getSearchText: (row: any) => {
+            const tenantName = Array.isArray(row.tenants)
+              ? row.tenants.map((t: any) => t?.tenant?.name ?? "").join(" ")
+              : "";
+            const singleTenantName = row.tenant?.name ?? "";
+            return `${row.property?.title ?? ""} ${singleTenantName} ${tenantName} ${row.status ?? ""}`.toLowerCase();
+          },
+        }}
+        pagination={{
+          enabled: true,
+          defaultPageSize: 5,
+          pageSizeOptions: [5, 10, 20, 50, 100],
+        }}
+        noRecordsMessage="No leases found"
       />
-
-      <LeaseTable leases={filteredLeases} onDeleteClick={handleDeleteClick} />
 
       <ConfirmDialog
         open={dialogOpen}
