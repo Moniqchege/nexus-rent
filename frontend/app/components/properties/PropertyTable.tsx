@@ -59,18 +59,18 @@ export default function PropertyGrid({ properties, onRefresh, onSaveToggle }: Pr
     setDeleteDialog({ open: true, propertyId });
   };
 
-  const getStatusBadge = (status: string) => {
-   switch (status) {
-    case 'Available':
-      return { text: 'Available', color: 'var(--accent-success)' };
+const getStatusBadge = (status: string) => {
+  switch (status?.toUpperCase()) {
+    case 'AVAILABLE':
+      return { text: 'Available', bgColor: '#22C55E' }; 
     case 'PENDING':
-      return { text: 'Pending', color: '#FFB84D' };
+      return { text: 'Pending', bgColor: '#F59E0B' }; 
     case 'RENTED':
-      return { text: 'Rented', color: 'var(--accent-danger)' };
+      return { text: 'Rented', bgColor: '#EF4444' }; 
     default:
-      return { text: status?.toUpperCase() || 'UNKNOWN', color: 'var(--text-secondary)' };
-   }
-  };
+      return { text: status || 'Unknown', bgColor: '#6B7280' }; 
+  }
+};
 
 
   return (
@@ -101,7 +101,7 @@ export default function PropertyGrid({ properties, onRefresh, onSaveToggle }: Pr
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(380px, 1fr))",
+            gridTemplateColumns: "repeat(auto-fill, minmax(350px, 1fr))",
             gap: "20px",
           }}
         >
@@ -115,7 +115,8 @@ export default function PropertyGrid({ properties, onRefresh, onSaveToggle }: Pr
                 key={property.id}
                 className="property-card"
                 style={{
-                  marginBottom: "52px"
+                  marginBottom: "52px",
+                  marginTop: "20px"
                 }}
               >
                 <div className="prop-img">
@@ -148,13 +149,15 @@ export default function PropertyGrid({ properties, onRefresh, onSaveToggle }: Pr
          position: 'absolute', 
          bottom: '1px', 
          left: '12px',
-         background: 'rgba(52, 68, 70, 0.4)',
-         color: badge.color,
-         padding: '6px 10px',
-         borderRadius: '20px',
+        background: badge.bgColor,
+         borderRadius: "18px",
+         color: '#ffffff',
+         padding: '5px 16px',
          fontSize: '11px',
          fontFamily: "'JetBrains Mono', monospace",
-         fontWeight: 600
+         fontWeight: 600,
+         marginBottom: '6px',
+         boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
        }}>
             {badge.text}
        </div>
@@ -171,30 +174,52 @@ export default function PropertyGrid({ properties, onRefresh, onSaveToggle }: Pr
        </div>
        <div 
        className="prop-body">
-       <div className="prop-price">
-           ksh{property.price.toLocaleString()} <span>/month</span>
-       </div>
-       <div className="prop-name">{property.title}</div>
+        <div
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: "8px",
+  }}
+>
+  <h3 className="prop-name">
+    {property.title}
+  </h3>
+
+  <span
+    style={{
+      color: "var(--primary)",
+      fontWeight: 700,
+      fontSize: "20px",
+    }}
+  >
+    ksh {property.price.toLocaleString()}
+  </span>
+</div>
        <div className="prop-loc">📍 {property.location}</div>
-       <div className="prop-meta">
-       <div className="meta-item">
-          <span className="meta-icon">⊞</span> {property.beds} Beds
-       </div>
-       <div className="meta-item">
-         <span className="meta-icon">◎</span> {property.baths} Baths
-       </div>
-       {property.floor && (
-            <div className="meta-item">
-              <span className="meta-icon">⬆️</span> {property.floor} Floors
-            </div>
-          )}
-      {property.sqft != null && (
-  <div className="meta-item">
-    <span className="meta-icon">▣</span>{" "}
-    {property.sqft.toLocaleString()} sqft
+       <div className="property-meta-grid">
+  <div className="meta-box">
+    🛏
+    <span>{property.beds} Beds</span>
   </div>
-)}
-       </div>
+
+  <div className="meta-box">
+    🛁
+    <span>{property.baths} Baths</span>
+  </div>
+
+  <div className="meta-box">
+    🏠
+    <span>{property.floor} Floors</span>
+  </div>
+
+  {property.sqft && (
+    <div className="meta-box">
+      ⬜
+      <span>{property.sqft.toLocaleString()} sqft</span>
+    </div>
+  )}
+</div>
          {amenities.length > 0 && (
        <div 
        className="prop-amenities" 
@@ -222,21 +247,21 @@ export default function PropertyGrid({ properties, onRefresh, onSaveToggle }: Pr
           </div>
         )}
                 </div>
-                 <div style={{ display: "flex", gap: "8px", marginTop: "auto", padding: "10px", justifyContent: "flex-end" }}>
-                    <Link
-                      href={`/my-rentals/edit/${property.id}`}
-                      className="action-btn"
-                    >
-                      Edit
-                    </Link>
-                    <button
-                      onClick={() => confirmDelete(property.id)}
-                      disabled={deletingId === property.id}
-                      className="action-btn"
-                    >
-                      {deletingId === property.id ? "Deleting..." : "Delete"}
-                    </button>
-                  </div>
+                <div className="card-actions">
+  <Link
+    href={`/my-rentals/edit/${property.id}`}
+    className="edit-btn"
+  >
+     Edit
+  </Link>
+
+  <button
+    onClick={() => confirmDelete(property.id)}
+    className="delete-btn"
+  >
+    🗑️
+  </button>
+</div>
               </div>
             );
           })}

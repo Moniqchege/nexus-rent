@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { X, MapPin, Home } from 'lucide-react';
 
 interface Property {
   id: number;
@@ -25,89 +26,127 @@ export default function PropertyPopup({ properties, onClose }: PropertyPopupProp
         left: 0,
         width: '100%',
         height: '100%',
-        background: 'radial-gradient(circle, rgba(124,58,237,0.12) 0%, transparent 70%)',
+        background: 'rgba(15, 23, 42, 0.5)',
+        backdropFilter: 'blur(4px)',
         zIndex: 1000,
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'flex-start',
-        paddingTop: '100px',
+        paddingTop: '80px',
+        padding: '80px 16px 24px',
+        overflowY: 'auto',
       }}
-      onClick={onClose} 
+      onClick={onClose}
     >
       <div
         className="popup-card"
         onClick={(e) => e.stopPropagation()}
+        style={{ background: '#ffffff' }}
       >
-          <button
+        <button
           onClick={onClose}
+          aria-label="Close"
           style={{
             position: 'absolute',
             top: '12px',
             right: '12px',
-            background: 'transparent',
-            border: 'none',
-            fontSize: '20px',
-            color: '#7C3AED',
+            background: 'var(--bg-muted)',
+            border: '1px solid var(--border-glow)',
+            borderRadius: 8,
+            width: 32,
+            height: 32,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'var(--text-secondary)',
             cursor: 'pointer',
           }}
         >
-          ✕
+          <X size={16} />
         </button>
-         <h2 style={{ color: '#fff', marginBottom: '12px' }}>Available Rentals</h2>
-        <div className="popup-scroll">
-
-        <div
-          className="properties-list"
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: '16px',
-          }}
-        >
-          {properties.map((prop) => (
-            <div
-              key={prop.id}
-              className="property-item"
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                borderRadius: '12px',
-                overflow: 'hidden',
-              }}
-            >
-              <div
-                className="prop-img"
-                style={{
-                  height: '120px',
-                  backgroundImage: `url(${prop.image})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                }}
-              />
-              <div style={{ padding: '10px', color: '#fff', flex: 1 }}>
-                <div style={{ fontWeight: 600 }}>{prop.name}</div>
-                <div style={{ fontSize: '12px', color: '#ccc' }}>{prop.location}</div>
-                <div style={{ fontWeight: 600, marginTop: '4px', color: '#7C3AED' }}>
-                  KES {prop.price.toLocaleString()}
-                </div>
-                <button
-                  style={{
-                    marginTop: '8px',
-                    padding: '6px 18px',
-                    borderRadius: '8px',
-                    border: 'none',
-                    background: '#7C3AED',
-                    color: '#fff',
-                    cursor: 'pointer',
-                  }}
-                >
-                  View Details
-                </button>
-              </div>
-            </div>
-          ))}
+        <div style={{ marginBottom: 16, paddingRight: 40 }}>
+          <h2 style={{ color: 'var(--text-primary)', fontSize: 20, fontWeight: 700, marginBottom: 4 }}>
+            Available Rentals
+          </h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: 13 }}>
+            Showing {properties.length} properties
+          </p>
         </div>
-  </div>
+
+        <div className="popup-scroll">
+          <div
+            className="properties-list"
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, 1fr)',
+              gap: '16px',
+            }}
+          >
+            {properties.map((prop) => (
+              <div
+                key={prop.id}
+                className="property-item"
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  borderRadius: '12px',
+                  overflow: 'hidden',
+                  background: '#ffffff',
+                }}
+              >
+                <div
+                  className="prop-img"
+                  style={{
+                    height: '120px',
+                    backgroundImage: `url(${prop.image})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundColor: 'var(--bg-muted)',
+                  }}
+                />
+                <div style={{ padding: '12px', flex: 1 }}>
+                  <div
+                    style={{
+                      fontWeight: 600,
+                      fontSize: 14,
+                      color: 'var(--text-primary)',
+                      marginBottom: 4,
+                    }}
+                  >
+                    {prop.name}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: 'var(--text-secondary)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      marginBottom: 6,
+                    }}
+                  >
+                    <MapPin size={12} />
+                    {prop.location}
+                  </div>
+                  <div
+                    style={{
+                      fontWeight: 700,
+                      color: 'var(--neon-blue)',
+                      marginBottom: 10,
+                      fontSize: 15,
+                    }}
+                  >
+                    KES {prop.price.toLocaleString()}
+                  </div>
+                  <button className="btn-primary" style={{ padding: '7px 14px', fontSize: 12 }}>
+                    <Home size={12} style={{ marginRight: 4 }} />
+                    View Details
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

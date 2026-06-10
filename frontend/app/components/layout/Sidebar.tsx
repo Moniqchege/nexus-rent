@@ -5,35 +5,46 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "@/app/store/authStore";
 import { useUIStore } from "@/app/store/uiStore";
 import api from "@/app/lib/api";
+import { X } from "lucide-react";
 
 export default function Sidebar() {
   const { user, logout } = useAuthStore();
   const router = useRouter();
-  const [active, setActive] = useState("/dashboard");
   const { isSidebarOpen, closeSidebar } = useUIStore();
   const sidebarRef = useRef<HTMLElement>(null);
   const [unreadCount, setUnreadCount] = useState(0);
-   const pathname = usePathname();
+  const pathname = usePathname();
 
   useEffect(() => {
     if (!user) return;
 
-    api.get("/notifications/reviews").then(({ data }) => {
-      setUnreadCount(data.length);
-    }).catch(() => setUnreadCount(0));
+    api
+      .get("/notifications/reviews")
+      .then(({ data }) => {
+        setUnreadCount(data.length);
+      })
+      .catch(() => setUnreadCount(0));
   }, [user]);
 
   const NAV = [
-  { label: "Overview", icon: "/overview.png", to: "/dashboard", type: "image" },
-  { label: "Apartments", icon: "/apartment_icon.png", to: "/my-rentals", type: "image" },
-  { label: "Payments", icon: "/payments_icon.png", to: "/payments", type: "image" },
-  { label: "Leases", icon: "/apartment_icon.png", to: "/leases", type: "image" },
-  { label: "Roles", icon: "/roles_icon.png", to: "/roles", type: "image" },
-  { label: "Users", icon: "/users_icon.png", to: "/users", type: "image" },
-  { label: "Alerts", icon: "/notifications_icon.png", to: "/notifications", type: "image", badge: unreadCount,  },
-  { label: "Service Providers", icon: "/service_lenders.png", to: "/services", type: "image" },
-];
-
+    { label: "Overview", icon: "/overview.png", to: "/dashboard" },
+    { label: "Apartments", icon: "/apartment_icon.png", to: "/my-rentals" },
+    { label: "Payments", icon: "/payments_icon.png", to: "/payments" },
+    { label: "Leases", icon: "/apartment_icon.png", to: "/leases" },
+    { label: "Roles", icon: "/roles_icon.png", to: "/roles" },
+    { label: "Users", icon: "/users_icon.png", to: "/users" },
+    {
+      label: "Alerts",
+      icon: "/notifications_icon.png",
+      to: "/notifications",
+      badge: unreadCount,
+    },
+    {
+      label: "Service Providers",
+      icon: "/service_lenders.png",
+      to: "/services",
+    },
+  ];
 
   const handleNavClick = (to: string) => {
     router.push(to);
@@ -43,10 +54,10 @@ export default function Sidebar() {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
-        isSidebarOpen && 
-        sidebarRef.current && 
+        isSidebarOpen &&
+        sidebarRef.current &&
         !sidebarRef.current.contains(event.target as Node) &&
-        !(event.target as Element).closest('.menu-btn')
+        !(event.target as Element).closest(".menu-btn")
       ) {
         closeSidebar();
       }
@@ -57,76 +68,131 @@ export default function Sidebar() {
   }, [isSidebarOpen, closeSidebar]);
 
   return (
-    <aside 
-      ref={sidebarRef}
-      className={`sidebar ${isSidebarOpen ? 'open' : ''}`} 
-      style={{ display: 'flex', flexDirection: 'column' }}
-    >
-      
-      {/* User info */}
-      <div style={{ textAlign: "center", marginBottom: 24, paddingBottom: 24, borderBottom: "1px solid var(--border-glow)" }}>
-        <div style={{
-          width: 56, height: 56, borderRadius: "50%",
-          display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, margin: "0 auto 12px"
-        }}>
-          <img
-  src="/profile_icon.png"
-  alt="Profile"
-  style={{
-    width: 56,
-    height: 56,
-    borderRadius: "50%",
-    objectFit: "cover"
-  }}
-/>
-        </div>
-        <div style={{ fontWeight: 600, fontSize: 14 }}>{user?.name ?? "Alex Kimani"}</div>
-        <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-          {user?.name ? "User" : "Tenant"} · Since Jan 2024
-        </div>
-      </div>
-
-      {/* Navigation */}
-      <nav className="sidebar-nav" style={{ flex: 1 }}>
-        {NAV.map(({ label, icon, to, badge, type }) => (
-          <button
-            key={to}
-            onClick={() => handleNavClick(to)}
-            className={`sidebar-item ${pathname === to ? "active" : ""}`}
-          >
-            <span style={{ fontSize: 18, display: "flex", alignItems: "center" }}>
-      {type === "image" ? (
-        <img 
-          src={icon} 
-          alt={label} 
-          style={{ width: 30, height: 30, objectFit: "contain" }}
-        />
-      ) : (
-        icon
-      )}
-    </span>
-            <span style={{ flex: 1, textAlign: "left" }}>{label}</span>
-            {badge && (
-              <span style={{ marginLeft: "auto", background: "var(--accent-danger)", color: "#fff", fontSize: 10, padding: "2px 6px", borderRadius: 12 }}>
-                {badge}
-              </span>
-            )}
-          </button>
-        ))}
-      </nav>
-
-      {/* Logout button at bottom */}
-      <button
-        onClick={() => logout()}
-        className="sidebar-item logout"
+    <>
+      <div
+        className={`sidebar-backdrop ${isSidebarOpen ? "show" : ""}`}
+        onClick={closeSidebar}
+        aria-hidden
+      />
+      <aside
+        ref={sidebarRef}
+        className={`sidebar ${isSidebarOpen ? "open" : ""}`}
+        style={{ display: "flex", flexDirection: "column" }}
       >
-        <img
-  src="/logout_icon.png"
-  alt="Logout"
-  style={{ width: 30, height: 30, objectFit: "contain" }}
-/>
-        Logout
-      </button>
-    </aside>
+        {/* User info */}
+        <div
+          style={{
+            textAlign: "center",
+            marginBottom: 20,
+            paddingBottom: 20,
+            borderBottom: "1px solid var(--border-glow)",
+            position: "relative",
+          }}
+        >
+          <button
+            onClick={closeSidebar}
+            aria-label="Close sidebar"
+            className="menu-btn"
+            style={{
+              position: "absolute",
+              top: -4,
+              right: 0,
+              background: "transparent",
+              border: "1px solid var(--border-glow)",
+              borderRadius: 8,
+              padding: 4,
+              color: "var(--text-secondary)",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <X size={16} />
+          </button>
+          <div
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: "50%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 24,
+              margin: "0 auto 10px",
+              background: "var(--bg-muted)",
+              border: "1px solid var(--border-glow)",
+            }}
+          >
+            <img
+              src="/profile_icon.png"
+              alt="Profile"
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: "50%",
+                objectFit: "cover",
+              }}
+            />
+          </div>
+          <div style={{ fontWeight: 600, fontSize: 14, color: "var(--text-primary)" }}>
+            {user?.name ?? "Alex Kimani"}
+          </div>
+          <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+            {user?.name ? "User" : "Tenant"} · Since Jan 2024
+          </div>
+        </div>
+
+        {/* Navigation */}
+        <nav className="sidebar-nav" style={{ flex: 1 }}>
+          {NAV.map(({ label, icon, to, badge }) => (
+            <button
+              key={to}
+              onClick={() => handleNavClick(to)}
+              className={`sidebar-item ${pathname === to ? "active" : ""}`}
+            >
+              <span
+                className="sidebar-icon"
+                style={{ display: "flex", alignItems: "center" }}
+              >
+                <img
+                  src={icon}
+                  alt={label}
+                  style={{ width: 20, height: 20, objectFit: "contain" }}
+                />
+              </span>
+              <span style={{ flex: 1, textAlign: "left" }}>{label}</span>
+              {badge ? (
+                <span
+                  style={{
+                    background: "var(--accent-danger)",
+                    color: "#fff",
+                    fontSize: 10,
+                    fontWeight: 700,
+                    padding: "2px 7px",
+                    borderRadius: 999,
+                  }}
+                >
+                  {badge}
+                </span>
+              ) : null}
+            </button>
+          ))}
+        </nav>
+
+        {/* Logout button at bottom */}
+        <button
+          onClick={() => logout()}
+          className="sidebar-item logout"
+        >
+          <img
+            src="/logout_icon.png"
+            alt="Logout"
+            style={{ width: 20, height: 20, objectFit: "contain" }}
+          />
+          Logout
+        </button>
+      </aside>
+    </>
   );
 }

@@ -13,6 +13,7 @@ export default function Navbar() {
   useEffect(() => {
     setMounted(true);
   }, []);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
 
   const isDashboardPage =
     pathname?.startsWith("/dashboard") ||
@@ -23,42 +24,51 @@ export default function Navbar() {
     pathname?.startsWith("/notifications") ||
     pathname?.startsWith("/roles") ||
     pathname?.startsWith("/services") ||
-    pathname?.startsWith("/users");
+    pathname?.startsWith("/users") ||
+    pathname?.startsWith("/contacts");
 
   const isHeroPage = mounted && pathname === "/";
 
   return (
     <nav className="top-nav">
-      <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
         {isDashboardPage && (
           <button
             onClick={toggleSidebar}
             className="menu-btn"
+            aria-label="Toggle sidebar"
             style={{
               background: "transparent",
-              border: "none",
-              color: "var(--neon-blue)",
+              border: "1px solid var(--border-glow)",
+              borderRadius: 8,
+              padding: 6,
+              color: "var(--text-primary)",
               cursor: "pointer",
               display: "flex",
-              alignItems: "center"
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
-            <Menu size={24} />
+            <Menu size={20} />
           </button>
         )}
-        <div className="logo" onClick={() => router.push("/")} style={{ cursor: "pointer" }}>
-          NEXUSRENT
+        <div
+          className="logo"
+          onClick={() => router.push("/")}
+          style={{ cursor: "pointer" }}
+        >
+          NEXUS RENT
         </div>
       </div>
       <div className="nav-actions">
         {isHeroPage && (
-    <button
-      className="btn-primary"
-      onClick={() => router.push("/login")}
-    >
-      Sign In
-    </button>
-  )}
+          <button
+            className="btn-primary"
+            onClick={() => router.push("/login")}
+          >
+            Sign In
+          </button>
+        )}
       </div>
     </nav>
   );

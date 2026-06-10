@@ -55,9 +55,9 @@ export function MultiSelectDropdown<T>({
         style={{
           padding: "12px 16px",
           borderRadius: "12px",
-          border: "1px solid var(--border-glow)",
-          background: "rgba(255,255,255,0.03)",
-          color: selectedLabels.length ? "var(--text-primary)" : "var(--text-secondary)",
+          border: "1px solid #d1d5db",
+          background: "#ffffff",
+          color: selectedLabels.length ? "#111827" : "#6b7280",
           fontSize: "13px",
           fontWeight: 500,
           cursor: "pointer",
@@ -66,6 +66,7 @@ export function MultiSelectDropdown<T>({
           alignItems: "center",
           minHeight: "46px",
           gap: "8px",
+          boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
         }}
       >
         {/* Selected tags or placeholder */}
@@ -84,7 +85,7 @@ export function MultiSelectDropdown<T>({
             transition: "transform 0.2s",
             borderLeft: "6px solid transparent",
             borderRight: "6px solid transparent",
-            borderTop: "6px solid var(--text-primary)",
+            borderTop: "6px solid #374151",
           }}
         />
       </div>
@@ -100,14 +101,14 @@ export function MultiSelectDropdown<T>({
             maxHeight: "250px",
             overflowY: "auto",
             borderRadius: "12px",
-            background: "rgb(17, 24, 39)",
-            border: "1px solid var(--border-glow)",
+            background: "#ffffff",
+            border: "1px solid #e5e7eb",
             zIndex: 9999,
-            boxShadow: "0 10px 25px -5px rgba(0,0,0,0.5)",
+            boxShadow: "0 10px 25px rgba(0,0,0,0.08)",
           }}
         >
           {options.length === 0 ? (
-            <div style={{ padding: "12px 16px", color: "var(--text-secondary)", fontSize: "13px" }}>
+            <div style={{ padding: "12px 16px", color: "#6b7280", fontSize: "13px" }}>
               No options available
             </div>
           ) : (
@@ -126,18 +127,18 @@ export function MultiSelectDropdown<T>({
                     display: "flex",
                     alignItems: "center",
                     gap: "10px",
-                    borderBottom: "1px solid rgba(255,255,255,0.05)",
-                    backgroundColor: isChecked ? "rgba(99,102,241,0.08)" : "transparent",
+                    borderBottom: "1px solid #f3f4f6",
+                    backgroundColor: isChecked ? "#eff6ff" : "#ffffff",
                   }}
                   onMouseEnter={(e) =>
                     (e.currentTarget.style.backgroundColor = isChecked
-                      ? "rgba(99,102,241,0.15)"
-                      : "rgba(255,255,255,0.06)")
+                      ? "#dbeafe"
+                      : "#f9fafb")
                   }
                   onMouseLeave={(e) =>
                     (e.currentTarget.style.backgroundColor = isChecked
-                      ? "rgba(99,102,241,0.08)"
-                      : "transparent")
+                      ? "#eff6ff"
+                      : "#ffffff")
                   }
                 >
                   {/* Custom checkbox */}
@@ -146,8 +147,8 @@ export function MultiSelectDropdown<T>({
                       width: "16px",
                       height: "16px",
                       borderRadius: "4px",
-                      border: isChecked ? "1px solid var(--neon-blue)" : "2px solid var(--border-glow)",
-                      backgroundColor: isChecked ? "var(--neon-blue)" : "transparent",
+                      border: isChecked ? "1px solid #2563eb" : "2px solid #d1d5db",
+                      backgroundColor: isChecked ? "#2563eb" : "#ffffff",
                       flexShrink: 0,
                       display: "flex",
                       alignItems: "center",
@@ -168,7 +169,7 @@ export function MultiSelectDropdown<T>({
                     )}
                   </div>
 
-                  <span style={{ color: "var(--text-primary)", fontSize: "14px" }}>
+                  <span style={{ color: "#111827", fontSize: "14px" }}>
                     {optLabel}
                   </span>
                 </div>

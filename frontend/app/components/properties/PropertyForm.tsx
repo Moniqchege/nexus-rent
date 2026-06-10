@@ -2,7 +2,7 @@
 
 import { PROPERTY_STATUS_OPTIONS } from "@/app/lib/utils";
 import { useAdminStore } from "@/app/store/adminStore";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { CustomDropdown } from "../ui/CustomDropdown";
 import { MultiSelectDropdown } from "../ui/MultiSelectDropdown";
 
@@ -42,56 +42,69 @@ export default function PropertyForm({
   submitLabel = "Create Property",
 }: PropertyFormProps) {
   const [data, setData] = useState<Partial<PropertyApi>>(() => ({
-  ...initialData,
-  amenities: initialData.amenities ?? [],
-}));
+    ...initialData,
+    amenities: initialData.amenities ?? [],
+  }));
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(
+    initialData.image || null
+  );
   const { amenities, fetchAmenities } = useAdminStore();
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-  const checkScreen = () => {
-    setIsMobile(window.innerWidth <= 768);
+    const checkScreen = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    checkScreen();
+    window.addEventListener("resize", checkScreen);
+
+    return () => window.removeEventListener("resize", checkScreen);
+  }, []);
+
+  useEffect(() => {
+    fetchAmenities();
+  }, []);
+
+  const formatLabel = (label: string) =>
+    label
+      .toLowerCase()
+      .split(" ")
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" ");
+
+  const amenityOptions: Option[] = amenities.map((a) => ({
+    label: formatLabel(a.label),
+    value: a.key,
+  }));
+
+  useEffect(() => {
+    if (initialData.amenities && amenities.length > 0) {
+      setData((prev) => {
+        if (prev.amenities && prev.amenities.length > 0) return prev;
+
+        const normalizedAmenities = initialData.amenities!.map(
+          (a) =>
+            amenities.find((opt) => opt.key.toLowerCase() === a.toLowerCase())
+              ?.key || a
+        );
+        return { ...prev, amenities: normalizedAmenities };
+      });
+    }
+  }, [initialData, amenities]);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setImageFile(file);
+      const previewURL = URL.createObjectURL(file);
+      setImagePreview(previewURL);
+      setData({ ...data, image: previewURL });
+    }
   };
-
-  checkScreen();
-
-  window.addEventListener("resize", checkScreen);
-
-  return () => window.removeEventListener("resize", checkScreen);
-}, []);
-
- useEffect(() => {
-  fetchAmenities();
-}, []);
-
-const formatLabel = (label: string) =>
-  label
-    .toLowerCase()
-    .split(" ")
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(" ");
-
-const amenityOptions: Option[] = amenities.map(a => ({
-  label: formatLabel(a.label),
-  value: a.key,
-}));
-
-useEffect(() => {
-  if (initialData.amenities && amenities.length > 0) {
-    setData(prev => {
-      // Don't overwrite if already set
-      if (prev.amenities && prev.amenities.length > 0) return prev;
-
-      const normalizedAmenities = initialData.amenities!.map(a =>
-        amenities.find(opt => opt.key.toLowerCase() === a.toLowerCase())?.key || a
-      );
-      return { ...prev, amenities: normalizedAmenities };
-    });
-  }
-}, [initialData, amenities]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,342 +122,503 @@ useEffect(() => {
     }
   };
 
-  return (
-    <div
-      style={{
-        backgroundColor: "rgba(17,24,39,0.95)",
-        backdropFilter: "blur(20px)",
-        border: "1px solid var(--border-glow)",
-        borderRadius: "24px",
-        padding: "25px",
-        maxWidth: "950px",
-        margin: "0 auto",
-        marginBottom: "42px",
-      }}
-    >
-      <h3
-        style={{
-        fontSize: "20px", 
-        fontWeight: 700, 
-        background: "linear-gradient(to right, var(--neon-blue), var(--neon-purple))",
-        WebkitBackgroundClip: "text",
-        WebkitTextFillColor: "transparent",
-        marginBottom: "14px",
-        }}
-      >
-        {isEdit ? "Edit Property" : "Create Property"}
-      </h3>
-
-      {error && <p style={{ color: "red" }}>{error}</p>}
-
-      <form onSubmit={handleSubmit} style={{ display: "grid", gap: "10px" }}>
-        {/* Title + Location */}
-        <div 
-        style={{ 
-          display: "grid", 
-          gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", 
-          gap: "16px" 
-          }}>
-          <div>
-            <label style={{ display: "block", fontWeight: 600, fontSize: "12px", marginBottom: "8px", color: "var(--neon-blue)" }}>
-            Title *
-          </label>
-            <input
-            type="text"
-            placeholder="Enter Apartment's Title"
-            value={data.title || ""}
-            onChange={(e) => setData({ ...data, title: e.target.value })}
-             style={{
-              width: "100%",
-              backgroundColor: "rgba(17,24,39,0.5)",
-              border: "1px solid var(--border-glow)",
-              borderRadius: "12px",
-              padding: "14px 20px",
-              fontSize: "14px",
-              color: "var(--text-primary)"
-            }}
-            required
-          />
-          </div>
-        <div>
-          <label style={{ display: "block", fontWeight: 600, fontSize: "14px", marginBottom: "8px", color: "var(--neon-blue)" }}>
-            Location *
-          </label>
-           <input
-            type="text"
-            placeholder="Location"
-            value={data.location || ""}
-            onChange={(e) => setData({ ...data, location: e.target.value })}
-             style={{
-              width: "100%",
-              backgroundColor: "rgba(17,24,39,0.5)",
-              border: "1px solid var(--border-glow)",
-              borderRadius: "12px",
-              padding: "14px 20px",
-              fontSize: "14px",
-              color: "var(--text-primary)"
-            }}
-            required
-          />
-        </div>
-        </div>
-
-        {/* Price + Beds */}
-        <div 
-        style={{ 
-          display: "grid", 
-          gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", 
-          gap: "16px" 
-          }}>
-          <div>
-            <label style={{ display: "block", fontWeight: 600, fontSize: "14px", marginBottom: "8px", color: "var(--neon-blue)" }}>
-            Price(Ksh /Month) *
-          </label>
-           <input
-            type="number"
-            placeholder="Price (KES)"
-            value={data.price || ""}
-            onChange={(e) =>
-              setData({ ...data, price: parseFloat(e.target.value) || 0 })
-            }
-            style={{
-              width: "100%",
-              backgroundColor: "rgba(17,24,39,0.5)",
-              border: "1px solid var(--border-glow)",
-              borderRadius: "12px",
-              padding: "14px 20px",
-              fontSize: "14px",
-              color: "var(--text-primary)"
-            }}
-            required
-          />
-          </div>
-          <div>
-            <label style={{ display: "block", fontWeight: 600, fontSize: "14px", marginBottom: "8px", color: "var(--neon-blue)" }}>
-            Floors *
-          </label>
-           <input
-            type="text"
-            placeholder="e.g. 1, 5, 10"
-            value={data.floor || ""}
-            onChange={(e) =>
-              setData({ ...data, floor: e.target.value })
-            }
-             style={{
-              width: "100%",
-              backgroundColor: "rgba(17,24,39,0.5)",
-              border: "1px solid var(--border-glow)",
-              borderRadius: "12px",
-              padding: "14px 20px",
-              fontSize: "14px",
-              color: "var(--text-primary)"
-            }}
-            required
-          />
-          </div>
-        </div>
-
-        {/* Beds + Baths */}
-        <div 
-        style={{ display: "grid", 
-        gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", 
-        gap: "16px" 
-        }}>
-          <div>
-            <label style={{ display: "block", fontWeight: 600, fontSize: "14px", marginBottom: "8px", color: "var(--neon-blue)" }}>
-            Bedrooms *
-          </label>
-           <input
-            type="number"
-            placeholder="Beds"
-            value={data.beds || ""}
-            onChange={(e) =>
-              setData({ ...data, beds: parseInt(e.target.value) || 0 })
-            }
-             style={{
-              width: "100%",
-              backgroundColor: "rgba(17,24,39,0.5)",
-              border: "1px solid var(--border-glow)",
-              borderRadius: "12px",
-              padding: "14px 20px",
-              fontSize: "14px",
-              color: "var(--text-primary)"
-            }}
-            required
-          />
-          </div>
-          <div>
-            <label style={{ display: "block", fontWeight: 600, fontSize: "14px", marginBottom: "8px", color: "var(--neon-blue)" }}>
-            Baths *
-          </label>
-            <input
-            type="number"
-            placeholder="Baths"
-            value={data.baths || ""}
-            onChange={(e) =>
-              setData({ ...data, baths: parseInt(e.target.value) || 0 })
-            }
-             style={{
-              width: "100%",
-              backgroundColor: "rgba(17,24,39,0.5)",
-              border: "1px solid var(--border-glow)",
-              borderRadius: "12px",
-              padding: "14px 20px",
-              fontSize: "14px",
-              color: "var(--text-primary)"
-            }}
-            required
-          />
-          </div>
-        </div>
-
-        {/* Baths + Sqft */}
-        <div 
-        style={{ 
-          display: "grid", 
-          gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", 
-          gap: "16px" }}>
-          <div>
-            <label style={{ display: "block", fontWeight: 600, fontSize: "14px", marginBottom: "8px", color: "var(--neon-blue)" }}>
-            Sqft 
-          </label>
-           <input
-            type="number"
-            placeholder="Sqft"
-            value={data.sqft || ""}
-            onChange={(e) =>
-              setData({ ...data, sqft: parseInt(e.target.value) || 0 })
-            }
-             style={{
-              width: "100%",
-              backgroundColor: "rgba(17,24,39,0.5)",
-              border: "1px solid var(--border-glow)",
-              borderRadius: "12px",
-              padding: "14px 20px",
-              fontSize: "14px",
-              color: "var(--text-primary)"
-            }}
-          />
-          </div>
-           <div>
-            <label style={{ display: "block", fontWeight: 600, fontSize: "14px", marginBottom: "8px", color: "var(--neon-blue)" }}>
-            Status *
-          </label>
-          <CustomDropdown
-  options={PROPERTY_STATUS_OPTIONS}
-  value={data.status || ""}
-  onChange={(value) => setData({ ...data, status: value })}
-  labelKey="label"
-  valueKey="value"
-  placeholder="Select status"
-/>
-          </div>
-        </div>
-
-        {/* Status + Amenities */}
-        <div 
-        style={{ 
-          display: "grid", 
-          gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", 
-          gap: "16px" }}>
-<div>
-  <label
+ return (
+  <div
     style={{
-      display: "block",
-      fontWeight: 600,
-      fontSize: "14px",
-      marginBottom: "8px",
-      color: "var(--neon-blue)",
+      maxWidth: "1200px",
+      margin: "0 auto",
+      padding: "20px",
     }}
   >
-    Amenities *
-  </label>
-<MultiSelectDropdown
-  options={amenityOptions}
-  values={data.amenities || []}
-  onChange={(values) =>
-    setData({ ...data, amenities: values })
-  }
-  labelKey="label"
-  valueKey="value"
-  placeholder="Select amenities"
-/>
-</div>
- </div>
-
-        {/* Image */}
-        <label style={{ display: "block", fontWeight: 600, fontSize: "14px", marginBottom: "8px", color: "var(--neon-blue)" }}>
-            Image 
-          </label>
-        <input
-          type="file"
-          accept="image/*"
-          placeholder="Image URL"
-          onChange={(e) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setImageFile(file);
-      // Optionally generate a preview URL
-      const previewURL = URL.createObjectURL(file);
-      setData({ ...data, image: previewURL });
-    }
+    {/* Header */}
+    <div
+  style={{
+    marginBottom: "32px",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: "16px",
   }}
-          style={{
-              width: "100%",
-              backgroundColor: "rgba(17,24,39,0.5)",
-              border: "1px solid var(--border-glow)",
-              borderRadius: "12px",
-              padding: "14px 20px",
-              fontSize: "16px",
-              color: "var(--text-primary)",
-              cursor: "pointer",
-            }}
-        />
+>
+  <div>
+    <h1
+      style={{
+        fontSize: "26px",
+        fontWeight: 700,
+        color: "var(--text-primary)",
+        marginBottom: "8px",
+      }}
+    >
+      {isEdit ? "Edit Property" : "Create Property"}
+    </h1>
 
-{/* Preview */}
-{data.image && (
-  <div style={{ marginTop: "10px" }}>
-    <img
-      src={data.image}
-      alt="Preview"
-      style={{ width: "150px", height: "150px", objectFit: "cover", borderRadius: "12px" }}
-    />
+    <p
+      style={{
+        color: "var(--text-secondary)",
+        fontSize: "12px",
+      }}
+    >
+      Add a new premium asset to your rental portfolio.
+    </p>
   </div>
-)}
-        {/* Actions */}
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
-          <button 
-          type="button" 
-          onClick={onCancel}
-          style={{
-              backgroundColor: "transparent",
-              color: "var(--text-secondary)",
+
+  <div
+    style={{
+      display: "inline-flex",
+      alignItems: "center",
+      gap: "8px",
+      background: "rgba(79,70,229,0.08)",
+      color: "var(--neon-blue)",
+      padding: "8px 14px",
+      borderRadius: "999px",
+      fontSize: "12px",
+      fontWeight: 600,
+      whiteSpace: "nowrap",
+    }}
+  >
+    ⚡ Smart Listing Enabled
+  </div>
+</div>
+
+
+    {error && (
+      <div
+        style={{
+          padding: "14px",
+          borderRadius: "12px",
+          marginBottom: "20px",
+          background: "rgba(239,68,68,.08)",
+          border: "1px solid rgba(239,68,68,.2)",
+          color: "#ef4444",
+        }}
+      >
+        {error}
+      </div>
+    )}
+
+    <form onSubmit={handleSubmit}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: isMobile ? "1fr" : "350px 1fr",
+          gap: "24px",
+        }}
+      >
+        {/* LEFT COLUMN */}
+        <div>
+          {/* Image Upload */}
+          <div
+            style={{
+              background: "rgba(255,255,255,0.6)",
+              backdropFilter: "blur(12px)",
               border: "1px solid var(--border-glow)",
-              borderRadius: "12px",
-              padding: "14px 28px",
-              fontWeight: 600,
-              cursor: "pointer",
+              borderRadius: "20px",
+              padding: "16px",
             }}
           >
-            Cancel
-          </button>
-          <button 
-          type="submit" 
-          disabled={loading}
-          style={{
-              background: "linear-gradient(to right, var(--neon-blue), var(--neon-purple))",
-              color: "white",
-              border: "none",
-              borderRadius: "12px",
-              padding: "14px 28px",
-              fontWeight: 600,
-              cursor: "pointer",
+            <label
+              style={{
+                display: "block",
+                fontWeight: 600,
+                marginBottom: "12px",
+              }}
+            >
+              Property Hero Image
+            </label>
+
+            <div
+              style={{
+                position: "relative",
+                height: "350px",
+                borderRadius: "16px",
+                overflow: "hidden",
+                border: "2px dashed var(--border-glow)",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                cursor: "pointer",
+              }}
+            >
+              {data.image ? (
+                <img
+                  src={data.image}
+                  alt="Preview"
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                  }}
+                />
+              ) : (
+                <div
+                  style={{
+                    textAlign: "center",
+                    color: "var(--text-secondary)",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: "40px",
+                      marginBottom: "12px",
+                    }}
+                  >
+                    ☁️
+                  </div>
+
+                  <div style={{ fontWeight: 600 }}>
+                    Click to Upload
+                  </div>
+
+                  <div
+                    style={{
+                      fontSize: "12px",
+                      marginTop: "6px",
+                    }}
+                  >
+                    JPG / PNG
+                  </div>
+                </div>
+              )}
+
+              <input
+                type="file"
+                accept="image/*"
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  opacity: 0,
+                  cursor: "pointer",
+                }}
+                onChange={(e) => {
+                  if (e.target.files?.[0]) {
+                    const file = e.target.files[0];
+                    setImageFile(file);
+
+                    const previewURL =
+                      URL.createObjectURL(file);
+
+                    setData({
+                      ...data,
+                      image: previewURL,
+                    });
+                  }
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Visibility */}
+          <div
+            style={{
+              marginTop: "20px",
+              background: "rgba(255,255,255,0.6)",
+              backdropFilter: "blur(12px)",
+              border: "1px solid var(--border-glow)",
+              borderRadius: "20px",
+              padding: "20px",
             }}
           >
-            {loading ? "Saving..." : submitLabel}
-          </button>
+            <h3
+              style={{
+                fontWeight: 700,
+                marginBottom: "16px",
+              }}
+            >
+              Visibility Settings
+            </h3>
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                marginBottom: "14px",
+              }}
+            >
+              <span>Public Listing</span>
+              <input type="checkbox" defaultChecked />
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+              }}
+            >
+              <span>Featured Asset</span>
+              <input type="checkbox" />
+            </div>
+          </div>
         </div>
-      </form>
-    </div>
-  );
+
+        {/* RIGHT COLUMN */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "24px",
+          }}
+        >
+          {/* General Details */}
+          <div
+            style={{
+              background: "rgba(255,255,255,0.6)",
+              backdropFilter: "blur(12px)",
+              border: "1px solid var(--border-glow)",
+              borderRadius: "20px",
+              padding: "24px",
+              zIndex: 20,
+            }}
+          >
+            <h3
+              style={{
+                fontWeight: 700,
+                marginBottom: "20px",
+                fontSize: "18px",
+              }}
+            >
+              General Details
+            </h3>
+
+            <div
+              style={{
+                display: "grid",
+                gap: "16px",
+              }}
+            >
+              <input
+                type="text"
+                placeholder="Property Title"
+                value={data.title || ""}
+                onChange={(e) =>
+                  setData({
+                    ...data,
+                    title: e.target.value,
+                  })
+                }
+                className="form-input"
+                required
+              />
+
+              <input
+                type="text"
+                placeholder="Location"
+                value={data.location || ""}
+                onChange={(e) =>
+                  setData({
+                    ...data,
+                    location: e.target.value,
+                  })
+                }
+                className="form-input"
+                required
+              />
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns:
+                    isMobile ? "1fr" : "1fr 1fr",
+                  gap: "16px",
+                }}
+              >
+                <input
+                  type="number"
+                  placeholder="Price (Ksh)"
+                  value={data.price || ""}
+                  onChange={(e) =>
+                    setData({
+                      ...data,
+                      price:
+                        parseFloat(e.target.value) || 0,
+                    })
+                  }
+                  className="form-input"
+                  required
+                />
+
+                <CustomDropdown
+                  options={PROPERTY_STATUS_OPTIONS}
+                  value={data.status || ""}
+                  onChange={(value) =>
+                    setData({
+                      ...data,
+                      status: value,
+                    })
+                  }
+                  labelKey="label"
+                  valueKey="value"
+                  placeholder="Select status"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Physical Specs */}
+          <div
+            style={{
+              background: "rgba(255,255,255,0.6)",
+              backdropFilter: "blur(12px)",
+              border: "1px solid var(--border-glow)",
+              borderRadius: "20px",
+              padding: "24px",
+            }}
+          >
+            <h3
+              style={{
+                fontWeight: 700,
+                marginBottom: "20px",
+                fontSize: "18px",
+              }}
+            >
+              Physical Specs
+            </h3>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns:
+                  isMobile
+                    ? "1fr 1fr"
+                    : "repeat(4,1fr)",
+                gap: "16px",
+              }}
+            >
+              <input
+                type="number"
+                placeholder="Beds"
+                value={data.beds || ""}
+                onChange={(e) =>
+                  setData({
+                    ...data,
+                    beds:
+                      parseInt(e.target.value) || 0,
+                  })
+                }
+                className="form-input"
+              />
+
+              <input
+                type="number"
+                placeholder="Baths"
+                value={data.baths || ""}
+                onChange={(e) =>
+                  setData({
+                    ...data,
+                    baths:
+                      parseInt(e.target.value) || 0,
+                  })
+                }
+                className="form-input"
+              />
+
+              <input
+                type="text"
+                placeholder="Floors"
+                value={data.floor || ""}
+                onChange={(e) =>
+                  setData({
+                    ...data,
+                    floor: e.target.value,
+                  })
+                }
+                className="form-input"
+              />
+
+              <input
+                type="number"
+                placeholder="Sqft"
+                value={data.sqft || ""}
+                onChange={(e) =>
+                  setData({
+                    ...data,
+                    sqft:
+                      parseInt(e.target.value) || 0,
+                  })
+                }
+                className="form-input"
+              />
+            </div>
+          </div>
+
+          {/* Amenities */}
+          <div
+            style={{
+              background: "rgba(255,255,255,0.6)",
+              backdropFilter: "blur(12px)",
+              border: "1px solid var(--border-glow)",
+              borderRadius: "20px",
+              padding: "24px",
+            }}
+          >
+            <h3
+              style={{
+                fontWeight: 700,
+                marginBottom: "20px",
+                fontSize: "18px",
+              }}
+            >
+              Amenities
+            </h3>
+
+            <MultiSelectDropdown
+              options={amenityOptions}
+              values={data.amenities || []}
+              onChange={(values) =>
+                setData({
+                  ...data,
+                  amenities: values,
+                })
+              }
+              labelKey="label"
+              valueKey="value"
+              placeholder="Select amenities"
+            />
+          </div>
+
+          {/* Actions */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: "12px",
+            }}
+          >
+            <button
+              type="button"
+              onClick={onCancel}
+              style={{
+                border: "1px solid var(--border-glow)",
+                background: "transparent",
+                padding: "12px 24px",
+                borderRadius: "12px",
+                cursor: "pointer",
+              }}
+            >
+              Cancel
+            </button>
+
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                background:
+                  "linear-gradient(to right, var(--neon-blue), var(--neon-purple))",
+                color: "white",
+                border: "none",
+                padding: "12px 24px",
+                borderRadius: "12px",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              {loading
+                ? "Saving..."
+                : submitLabel}
+            </button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+);
 }

@@ -16,7 +16,6 @@ export default function NewRentalPage() {
 
   return (
     <div className="dashboard-content">
-      <div className="page-tag">📊 PROPERTIES DASHBOARD</div>
         <div
         style={{
           display: "flex",
@@ -27,11 +26,11 @@ export default function NewRentalPage() {
         <div
           style={{
             fontWeight: 600,
-            fontSize: "16px",
+            fontSize: "14px",
             color: "var(--neon-blue)"
           }}
         >
-          MY PROPERTIES
+          ◈ MY PROPERTIES
         </div>
 
         <button
@@ -52,9 +51,9 @@ export default function NewRentalPage() {
       </div>
        <h2
         style={{
-          fontSize: "24px",
+          fontSize: "20px",
           fontWeight: 700,
-          color: "var(--neon-purple)",
+          color: "#000",
           marginBottom: "32px"
         }}
       >

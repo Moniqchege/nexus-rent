@@ -8,6 +8,7 @@ import DynamicTable, {
   type DynamicTableColumn,
   type DynamicTableRowAction,
 } from "@/app/components/ui/DynamicTable";
+import { Plus } from "lucide-react";
 
 type LeaseRow = any;
 
@@ -41,26 +42,38 @@ export default function LeasesPage() {
     setSelectedLeaseId(null);
   };
 
-  // Newly created/added leases should appear first by default.
   const sortedLeases = useMemo(() => {
     return [...leases].sort((a: any, b: any) => (b.id ?? 0) - (a.id ?? 0));
   }, [leases]);
 
   const columns: DynamicTableColumn<LeaseRow>[] = useMemo(
     () => [
-       {
+      {
         key: "index",
         header: "#",
-        width: 50,
-        render: (_: any, index: number) => index + 1,
+        width: 60,
+        render: (_: any, index: number) => (
+          <span style={{ color: "var(--text-secondary)" }}>{index + 1}</span>
+        ),
       },
       {
         key: "property",
         header: "Property",
         render: (row: any) => (
           <div>
-            <div style={{ fontSize: 14, whiteSpace: "nowrap" }}>{row.property?.title || "—"}</div>
-            <div style={{ fontSize: 11, color: "var(--text-secondary)" }}>{row.property?.location || ""}</div>
+            <div
+              style={{
+                fontSize: 14,
+                whiteSpace: "nowrap",
+                fontWeight: 600,
+                color: "var(--text-primary)",
+              }}
+            >
+              {row.property?.title || "—"}
+            </div>
+            <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+              {row.property?.location || ""}
+            </div>
           </div>
         ),
         sortValue: (row: any) => String(row.property?.title ?? ""),
@@ -68,19 +81,25 @@ export default function LeasesPage() {
       {
         key: "startDate",
         header: "Start Date",
-        render: (row: any) => (row.startDate ? new Date(row.startDate).toLocaleDateString() : "—"),
+        render: (row: any) =>
+          row.startDate ? new Date(row.startDate).toLocaleDateString() : "—",
         sortValue: (row: any) => (row.startDate ? new Date(row.startDate).getTime() : 0),
       },
       {
         key: "endDate",
         header: "End Date",
-        render: (row: any) => (row.endDate ? new Date(row.endDate).toLocaleDateString() : "—"),
+        render: (row: any) =>
+          row.endDate ? new Date(row.endDate).toLocaleDateString() : "—",
         sortValue: (row: any) => (row.endDate ? new Date(row.endDate).getTime() : 0),
       },
       {
         key: "rentAmount",
         header: "Rent (KES)",
-        render: (row: any) => (row.rentAmount != null ? Number(row.rentAmount).toLocaleString() : "—"),
+        align: "right",
+        render: (row: any) =>
+          row.rentAmount != null
+            ? Number(row.rentAmount).toLocaleString()
+            : "—",
         sortValue: (row: any) => Number(row.rentAmount ?? 0),
       },
       {
@@ -108,37 +127,19 @@ export default function LeasesPage() {
     <div className="dashboard-content">
       <div className="page-tag">📄 LEASE MANAGEMENT</div>
 
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
+      <div className="page-header-row">
         <div className="section-label">LEASES</div>
-
         <button
+          className="btn-primary"
           onClick={() => router.push("/leases/new")}
-          style={{
-            background: "linear-gradient(to right, var(--neon-blue), var(--neon-purple))",
-            color: "white",
-            border: "none",
-            borderRadius: "12px",
-            padding: "12px 24px",
-            fontWeight: 600,
-            cursor: "pointer",
-            fontSize: "14px",
-          }}
+          style={{ padding: "10px 18px" }}
         >
-          + New Lease
+          <Plus size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />
+          New Lease
         </button>
       </div>
 
-      <div style={{ marginBottom: "24px" }}>
-        <h2 style={{ fontSize: "24px", fontWeight: 700, color: "var(--neon-blue)" }}>
-          Lease Agreements ({sortedLeases.length})
-        </h2>
-      </div>
+      <h2 className="page-title">Lease Agreements ({sortedLeases.length})</h2>
 
       <DynamicTable<any>
         rows={sortedLeases}
@@ -153,7 +154,9 @@ export default function LeasesPage() {
               ? row.tenants.map((t: any) => t?.tenant?.name ?? "").join(" ")
               : "";
             const singleTenantName = row.tenant?.name ?? "";
-            return `${row.property?.title ?? ""} ${singleTenantName} ${tenantName} ${row.status ?? ""}`.toLowerCase();
+            return `${row.property?.title ?? ""} ${singleTenantName} ${tenantName} ${
+              row.status ?? ""
+            }`.toLowerCase();
           },
         }}
         pagination={{
@@ -174,4 +177,3 @@ export default function LeasesPage() {
     </div>
   );
 }
-

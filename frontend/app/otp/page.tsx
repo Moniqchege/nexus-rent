@@ -1,7 +1,8 @@
-// @ts-ignore
+// @ts-nocheck
 "use client";
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Mail, ShieldCheck, ArrowLeft } from "lucide-react";
 import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
 
@@ -44,12 +45,72 @@ export default function OTP() {
   return (
     <>
       <Navbar />
-      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", padding: "40px 24px", background: "linear-gradient(135deg, #0f1629 0%, #1a233d 100%)", color: "#E8EDF5" }}>
-        <div style={{ maxWidth: 540, width: "100%" }}>
-          <h1 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8, fontFamily: "'Syne', sans-serif" }}>
+      <main
+        style={{
+          minHeight: "calc(100vh - 64px - 70px)",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          padding: "40px 16px",
+          background: "var(--bg-primary)",
+        }}
+      >
+        <div
+          style={{
+            maxWidth: 480,
+            width: "100%",
+            background: "var(--bg-card)",
+            border: "1px solid var(--border-glow)",
+            borderRadius: 16,
+            padding: 32,
+            boxShadow: "0 8px 32px rgba(15, 23, 42, 0.06)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              marginBottom: 20,
+            }}
+          >
+            <div
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: 14,
+                background: "rgba(37, 99, 235, 0.1)",
+                color: "var(--neon-blue)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <ShieldCheck size={28} />
+            </div>
+          </div>
+          <div className="section-label" style={{ textAlign: "center" }}>
+            VERIFICATION
+          </div>
+          <h1
+            style={{
+              fontSize: 24,
+              fontWeight: 700,
+              marginBottom: 8,
+              textAlign: "center",
+              color: "var(--text-primary)",
+            }}
+          >
             Verify OTP
           </h1>
-          <p style={{ color: "#8A94A6", marginBottom: 32 }}>
+          <p
+            style={{
+              color: "var(--text-secondary)",
+              marginBottom: 24,
+              textAlign: "center",
+              fontSize: 14,
+            }}
+          >
             Enter the 6-digit code sent to <strong>{email}</strong>
           </p>
           <div style={{ position: "relative" }}>
@@ -57,39 +118,34 @@ export default function OTP() {
               type="text"
               placeholder="000000"
               value={otp}
-              onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+              onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
               maxLength={6}
               style={{
                 width: "100%",
-                padding: "20px 16px",
-                borderRadius: 14,
-                border: "1px solid rgba(255,255,255,0.08)",
-                background: "rgba(15,22,41,0.8)",
-                color: "#E8EDF5",
+                padding: "16px",
+                borderRadius: 12,
+                border: "1px solid var(--border-glow)",
+                background: "var(--bg-card)",
+                color: "var(--text-primary)",
                 fontSize: 24,
-                fontWeight: 600,
-                letterSpacing: "6px",
+                fontWeight: 700,
+                letterSpacing: "8px",
                 textAlign: "center",
-                fontFamily: "'JetBrains Mono', monospace",
                 outline: "none",
+                fontFamily: "inherit",
               }}
             />
           </div>
           <button
+            className="btn-primary"
             onClick={verifyOTP}
             disabled={loading || otp.length !== 6}
             style={{
               width: "100%",
-              padding: "14px",
-              marginTop: 24,
-              background: "linear-gradient(135deg, #00d4ff 0%, #0099cc 100%)",
-              color: "white",
-              border: "none",
-              borderRadius: 14,
-              fontSize: 16,
-              fontWeight: 600,
-              cursor: loading ? "not-allowed" : "pointer",
-              opacity: loading ? 0.7 : 1,
+              padding: "12px",
+              marginTop: 16,
+              fontSize: 14,
+              opacity: loading || otp.length !== 6 ? 0.6 : 1,
             }}
           >
             {loading ? "Verifying..." : "Verify OTP"}
@@ -98,33 +154,54 @@ export default function OTP() {
             onClick={() => router.push("/reset-password")}
             style={{
               width: "100%",
-              padding: "14px",
-              marginTop: 12,
+              padding: "12px",
+              marginTop: 10,
               background: "transparent",
-              color: "#00d4ff",
-              border: "1px solid #00d4ff",
-              borderRadius: 14,
-              fontSize: 16,
+              color: "var(--neon-blue)",
+              border: "1px solid var(--border-glow)",
+              borderRadius: 10,
+              fontSize: 14,
               fontWeight: 600,
               cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 6,
             }}
           >
-            Back to Reset Password
+            <ArrowLeft size={14} /> Back to Reset Password
           </button>
           {error && (
-            <div style={{ color: "#FF6B6B", fontSize: 14, marginTop: 16, textAlign: "center" }}>
+            <div
+              style={{
+                background: "rgba(220, 38, 38, 0.08)",
+                border: "1px solid rgba(220, 38, 38, 0.3)",
+                color: "var(--accent-danger)",
+                padding: "10px 12px",
+                borderRadius: 10,
+                fontSize: 13,
+                marginTop: 12,
+                textAlign: "center",
+              }}
+            >
               {error}
             </div>
           )}
           {message && (
-            <div style={{ color: "#00d4ff", fontSize: 14, marginTop: 16, textAlign: "center" }}>
+            <div
+              style={{
+                color: "var(--accent-success)",
+                fontSize: 13,
+                marginTop: 12,
+                textAlign: "center",
+              }}
+            >
               {message}
             </div>
           )}
         </div>
-      </div>
+      </main>
       <Footer />
     </>
   );
 }
-

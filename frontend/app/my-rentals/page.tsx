@@ -40,7 +40,6 @@ export default function MyRentalsPage() {
 
   return (
     <div className="dashboard-content">
-      <div className="page-tag">📊 PROPERTIES DASHBOARD</div>
       <div style={{ 
         display: "flex",
         justifyContent: "space-between",
@@ -63,8 +62,8 @@ export default function MyRentalsPage() {
           + New Rental
         </button>
         </div>
-          <div style={{ marginBottom: "24px" }}>
-        <h2 style={{ fontSize: "24px", fontWeight: 700, color: "var(--neon-blue)" }}>
+          <div style={{ marginBottom: "20px" }}>
+        <h2 style={{ fontSize: "24px", fontWeight: 700, color: "#000000" }}>
           Rental Portfolio
         </h2>
       </div>

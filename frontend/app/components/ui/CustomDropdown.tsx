@@ -51,9 +51,10 @@ export function CustomDropdown<T>({
         style={{
           padding: "12px 16px",
           borderRadius: "12px",
-          border: "1px solid var(--border-glow)",
-          background: "rgba(255,255,255,0.03)",
-          color: "var(--text-primary)",
+          border: "1px solid #e5e7eb",
+          background: "#ffffff",
+          color: "#111827",
+          boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
           fontSize: "13px",
           fontWeight: 500,
           cursor: "pointer",
@@ -70,7 +71,7 @@ export function CustomDropdown<T>({
             transition: "transform 0.2s",
             borderLeft: "6px solid transparent",
             borderRight: "6px solid transparent",
-            borderTop: "6px solid var(--text-primary)",
+            borderTop: "6px solid #6b7280",
           }}
         />
       </div>
@@ -86,10 +87,10 @@ export function CustomDropdown<T>({
             maxHeight: "250px",
             overflowY: "auto",
             borderRadius: "12px",
-            background: "rgb(17, 24, 39)",
-            border: "1px solid var(--border-glow)",
+            background: "#ffffff",
+            border: "1px solid #e5e7eb",
             zIndex: 9999,
-            boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.5)",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.12)",
           }}
         >
           {options.map((opt) => {
@@ -106,12 +107,12 @@ export function CustomDropdown<T>({
                 style={{
                   padding: "12px",
                   cursor: "pointer",
-                  color: "var(--text-primary)",
+                  color: "#111827",
                   fontSize: "14px",
-                  borderBottom: "1px solid rgba(255,255,255,0.05)"
+                  borderBottom: "1px solid #f3f4f6"
                 }}
                 onMouseEnter={(e) =>
-                  (e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)")
+                  (e.currentTarget.style.backgroundColor = "#f8fafc")
                 }
                 onMouseLeave={(e) =>
                   (e.currentTarget.style.backgroundColor = "transparent")

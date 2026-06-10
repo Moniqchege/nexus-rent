@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, ReactNode, useEffect } from "react";
+import { ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { AlertTriangle } from "lucide-react";
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -20,7 +21,7 @@ export default function ConfirmDialog({
   onConfirm,
   onCancel,
   confirmText = "Yes",
-  cancelText = "Cancel"
+  cancelText = "Cancel",
 }: ConfirmDialogProps) {
   if (!open) return null;
 
@@ -33,43 +34,81 @@ export default function ConfirmDialog({
         left: 0,
         width: "100vw",
         height: "100vh",
-        background: "rgba(0,0,0,0.5)",
+        background: "rgba(15, 23, 42, 0.5)",
+        backdropFilter: "blur(4px)",
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        zIndex: 1000
+        zIndex: 1000,
+        padding: 16,
       }}
       onClick={onCancel}
     >
       <div
         className="dialog-card"
         style={{
-          background: "#111827",
-          padding: "24px",
-          borderRadius: "16px",
-          minWidth: "300px",
-          maxWidth: "500px",
-          color: "#fff",
+          background: "#ffffff",
+          padding: 24,
+          borderRadius: 16,
+          width: "100%",
+          maxWidth: 420,
+          color: "var(--text-primary)",
           display: "flex",
           flexDirection: "column",
-          gap: "16px"
+          gap: 16,
+          boxShadow: "0 20px 50px rgba(15, 23, 42, 0.2)",
+          border: "1px solid var(--border-glow)",
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 style={{ fontSize: "18px", fontWeight: 700 }}>{title}</h2>
-        <p style={{ fontSize: "14px", color: "#ccc" }}>{message}</p>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: "rgba(220, 38, 38, 0.1)",
+              color: "var(--accent-danger)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            <AlertTriangle size={20} />
+          </div>
+          <h2
+            style={{
+              fontSize: 18,
+              fontWeight: 700,
+              color: "var(--text-primary)",
+            }}
+          >
+            {title}
+          </h2>
+        </div>
+        <p
+          style={{
+            fontSize: 14,
+            color: "var(--text-secondary)",
+            lineHeight: 1.55,
+          }}
+        >
+          {message}
+        </p>
 
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: 8,
+            flexWrap: "wrap",
+          }}
+        >
           <button
             onClick={onCancel}
-            style={{
-              background: "transparent",
-              border: "1px solid var(--border-glow)",
-              borderRadius: "12px",
-              padding: "10px 20px",
-              color: "#ccc",
-              cursor: "pointer"
-            }}
+            className="btn-ghost"
+            style={{ padding: "9px 18px" }}
           >
             {cancelText}
           </button>
@@ -77,13 +116,18 @@ export default function ConfirmDialog({
           <button
             onClick={onConfirm}
             style={{
-              background: "linear-gradient(to right, var(--neon-blue), var(--neon-purple))",
+              background: "var(--accent-danger)",
               border: "none",
-              borderRadius: "12px",
-              padding: "10px 20px",
+              borderRadius: 8,
+              padding: "9px 18px",
               color: "#fff",
-              cursor: "pointer"
+              fontWeight: 600,
+              fontSize: 14,
+              cursor: "pointer",
+              transition: "all 0.2s",
             }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "#b91c1c")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "var(--accent-danger)")}
           >
             {confirmText}
           </button>

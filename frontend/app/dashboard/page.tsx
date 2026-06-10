@@ -1,118 +1,115 @@
 "use client";
 import React from "react";
+import {
+  Building2,
+  TrendingUp,
+  Wallet,
+  Sparkles,
+  ArrowUpRight,
+  Users,
+  CheckCircle2,
+} from "lucide-react";
 
 export default function DashboardPage() {
   return (
     <div className="dashboard-content">
       <div className="page-tag">📊 ANALYTICS DASHBOARD</div>
 
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 12,
+          marginBottom: 8,
+        }}
+      >
+        <div className="section-label">OVERVIEW</div>
+      </div>
+      <h2
+        style={{
+          fontSize: 24,
+          fontWeight: 700,
+          color: "var(--text-primary)",
+          marginBottom: 24,
+        }}
+      >
+        Welcome back, here's what's happening today
+      </h2>
+
       {/* Stats Section */}
       <section className="stats-section">
         <div className="stats-row">
-          <div
-            className="overview-stat animate-in delay-1"
-            style={{ ["--top-color" as any]: "var(--neon-blue)" }}
-          >
+          <div className="overview-stat animate-in delay-1">
             <div
               style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                height: "2px",
-                backgroundColor: "var(--neon-blue)",
-                boxShadow: "0 0 10px var(--neon-blue)",
+                background: "rgba(37, 99, 235, 0.1)",
+                color: "var(--neon-blue)",
               }}
-            />
-            <div
               className="stat-icon"
-              style={{ backgroundColor: "rgba(0,240,255,0.1)" }}
             >
-              🏢
+              <Building2 size={20} />
             </div>
             <div className="ov-label">Total Properties</div>
             <div className="ov-value" style={{ color: "var(--neon-blue)" }}>
               2,847
             </div>
             <div className="ov-change" style={{ color: "var(--accent-success)" }}>
-              ↑ 12.4% this month
+              <ArrowUpRight size={12} /> 12.4% this month
             </div>
           </div>
 
           <div className="overview-stat animate-in delay-2">
             <div
               style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                height: "2px",
-                backgroundColor: "var(--neon-purple)",
-                boxShadow: "0 0 10px var(--neon-purple)",
+                background: "rgba(124, 58, 237, 0.1)",
+                color: "var(--neon-purple)",
               }}
-            />
-            <div
               className="stat-icon"
-              style={{ backgroundColor: "rgba(124,58,237,0.1)" }}
             >
-              📊
+              <Users size={20} />
             </div>
             <div className="ov-label">Occupancy Rate</div>
             <div className="ov-value" style={{ color: "var(--neon-purple)" }}>
               89.2%
             </div>
             <div className="ov-change" style={{ color: "var(--accent-success)" }}>
-              ↑ 3.1% vs last quarter
+              <ArrowUpRight size={12} /> 3.1% vs last quarter
             </div>
           </div>
 
           <div className="overview-stat animate-in delay-3">
             <div
               style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                height: "2px",
-                backgroundColor: "var(--accent-success)",
-                boxShadow: "0 0 10px var(--accent-success)",
+                background: "rgba(22, 163, 74, 0.1)",
+                color: "var(--accent-success)",
               }}
-            />
-            <div
               className="stat-icon"
-              style={{ backgroundColor: "rgba(0,255,163,0.1)" }}
             >
-              💰
+              <Wallet size={20} />
             </div>
             <div className="ov-label">Total Revenue</div>
             <div className="ov-value" style={{ color: "var(--accent-success)" }}>
               $1.4M
             </div>
             <div className="ov-change" style={{ color: "var(--accent-success)" }}>
-              ↑ 8.7% vs last month
+              <ArrowUpRight size={12} /> 8.7% vs last month
             </div>
           </div>
 
           <div className="overview-stat animate-in delay-4">
             <div
               style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                height: "2px",
-                backgroundColor: "var(--accent-danger)",
-                boxShadow: "0 0 10px var(--accent-danger)",
+                background: "rgba(217, 119, 6, 0.1)",
+                color: "var(--accent-warning)",
               }}
-            />
-            <div
               className="stat-icon"
-              style={{ backgroundColor: "rgba(255,59,129,0.1)" }}
             >
-              🤖
+              <Sparkles size={20} />
             </div>
             <div className="ov-label">AI Growth Index</div>
-            <div className="ov-value" style={{ color: "var(--accent-danger)" }}>
+            <div className="ov-value" style={{ color: "var(--accent-warning)" }}>
               +14.3%
             </div>
             <div className="ov-change" style={{ color: "var(--text-secondary)" }}>
@@ -123,38 +120,18 @@ export default function DashboardPage() {
       </section>
 
       {/* Charts */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: "24px",
-          margin: "30px 0",
-        }}
-      >
+      <div className="charts-row">
         {/* Line Chart */}
-        <div
-          style={{
-            backgroundColor: "rgba(17,24,39,0.8)",
-            border: "1px solid var(--border-glow)",
-            borderRadius: "20px",
-            padding: "24px",
-          }}
-        >
-          <div
-            style={{
-              fontSize: "14px",
-              fontWeight: 600,
-              marginBottom: "20px",
-              color: "var(--neon-blue)",
-            }}
-          >
+        <div className="chart-card">
+          <div className="chart-card-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <TrendingUp size={16} color="var(--neon-blue)" />
             Revenue Trend
           </div>
 
-          <svg viewBox="0 0 400 200" style={{ width: "100%", height: "180px" }}>
-            <line x1="0" y1="40" x2="400" y2="40" stroke="#1F2937" strokeWidth="1" />
-            <line x1="0" y1="100" x2="400" y2="100" stroke="#1F2937" strokeWidth="1" />
-            <line x1="0" y1="160" x2="400" y2="160" stroke="#1F2937" strokeWidth="1" />
+          <svg viewBox="0 0 400 200" style={{ width: "100%", height: "200px" }}>
+            <line x1="0" y1="40" x2="400" y2="40" stroke="#e3e8ef" strokeWidth="1" />
+            <line x1="0" y1="100" x2="400" y2="100" stroke="#e3e8ef" strokeWidth="1" />
+            <line x1="0" y1="160" x2="400" y2="160" stroke="#e3e8ef" strokeWidth="1" />
 
             <polyline
               points="20,140 80,110 160,90 240,80 320,95 380,70"
@@ -180,33 +157,20 @@ export default function DashboardPage() {
         </div>
 
         {/* Pie Chart */}
-        <div
-          style={{
-            backgroundColor: "rgba(17,24,39,0.8)",
-            border: "1px solid var(--border-glow)",
-            borderRadius: "20px",
-            padding: "24px",
-          }}
-        >
-          <div
-            style={{
-              fontSize: "14px",
-              fontWeight: 600,
-              marginBottom: "20px",
-              color: "var(--accent-success)",
-            }}
-          >
-            Occupancy Pie
+        <div className="chart-card">
+          <div className="chart-card-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <CheckCircle2 size={16} color="var(--accent-success)" />
+            Occupancy Rate
           </div>
 
-          <svg viewBox="0 0 200 200" style={{ width: "100%", height: "180px" }}>
+          <svg viewBox="0 0 200 200" style={{ width: "100%", height: "200px" }}>
             <circle
               cx="100"
               cy="100"
               r="75"
               fill="none"
-              stroke="#00FFA3"
-              strokeWidth="40"
+              stroke="var(--accent-success)"
+              strokeWidth="32"
               strokeLinecap="round"
               strokeDasharray="236 377"
             />
@@ -215,8 +179,8 @@ export default function DashboardPage() {
               cy="100"
               r="75"
               fill="none"
-              stroke="#374151"
-              strokeWidth="40"
+              stroke="#e3e8ef"
+              strokeWidth="32"
               strokeDasharray="141 472"
             />
             <text
@@ -225,7 +189,7 @@ export default function DashboardPage() {
               textAnchor="middle"
               fill="var(--text-primary)"
               fontSize="28"
-              fontWeight="600"
+              fontWeight="700"
             >
               89%
             </text>
@@ -238,14 +202,15 @@ export default function DashboardPage() {
               color: "var(--text-secondary)",
               display: "flex",
               gap: "16px",
+              flexWrap: "wrap",
             }}
           >
-            <div>
+            <div style={{ display: "flex", alignItems: "center" }}>
               <span
                 style={{
-                  width: "12px",
-                  height: "12px",
-                  backgroundColor: "#00FFA3",
+                  width: "10px",
+                  height: "10px",
+                  backgroundColor: "var(--accent-success)",
                   borderRadius: "50%",
                   display: "inline-block",
                   marginRight: "6px",
@@ -253,12 +218,11 @@ export default function DashboardPage() {
               ></span>
               Occupied
             </div>
-
-            <div>
+            <div style={{ display: "flex", alignItems: "center" }}>
               <span
                 style={{
-                  width: "12px",
-                  height: "12px",
+                  width: "10px",
+                  height: "10px",
                   backgroundColor: "var(--border-glow)",
                   borderRadius: "50%",
                   display: "inline-block",

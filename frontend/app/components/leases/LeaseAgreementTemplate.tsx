@@ -107,19 +107,19 @@ export default function LeaseAgreementTemplate({ lease, landlordName = "[Landlor
           <div style={{ display: "flex", marginBottom: "10px" }}>
             <span style={{ width: "160px", fontWeight: 600, fontSize: "13px" }}>Tenant:</span>
             <span style={{ flex: 1, borderBottom: "1px solid var(--border-glow)", paddingBottom: "2px", fontSize: "13px" }}>
-              {lease.tenant?.name || "[TENANT NAME]"}
+              {(lease as any).tenant?.name || (lease as any).tenants?.[0]?.tenant?.name || "[TENANT NAME]"}
             </span>
           </div>
           <div style={{ display: "flex", marginBottom: "10px" }}>
             <span style={{ width: "160px", fontWeight: 600, fontSize: "13px" }}>Tenant Phone:</span>
             <span style={{ flex: 1, borderBottom: "1px solid var(--border-glow)", paddingBottom: "2px", fontSize: "13px" }}>
-              {lease.tenant?.phone || "[PHONE]"}
+              {(lease as any).tenant?.phone || (lease as any).tenants?.[0]?.tenant?.phone || "[PHONE]"}
             </span>
           </div>
           <div style={{ display: "flex", marginBottom: "10px" }}>
             <span style={{ width: "160px", fontWeight: 600, fontSize: "13px" }}>Tenant Email:</span>
             <span style={{ flex: 1, borderBottom: "1px solid var(--border-glow)", paddingBottom: "2px", fontSize: "13px" }}>
-              {lease.tenant?.email || "[EMAIL]"}
+              {(lease as any).tenant?.email || (lease as any).tenants?.[0]?.tenant?.email || "[EMAIL]"}
             </span>
           </div>
         </div>

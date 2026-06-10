@@ -4,8 +4,7 @@ export default function Footer() {
       <p
         style={{
           marginTop: "4px",
-          fontSize: "11px",
-          opacity: 0.5,
+          fontSize: "12px",
         }}
       >
         © {new Date().getFullYear()} Nexus Rent. All rights reserved.
