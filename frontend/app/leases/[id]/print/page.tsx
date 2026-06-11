@@ -46,9 +46,8 @@ export default function PrintLeasePage() {
 
   return (
     <div className="dashboard-content">
-      <div className="page-tag">📄 PRINT AGREEMENT</div>
       <div style={{ marginBottom: "24px" }}>
-        <h2 style={{ fontSize: "24px", fontWeight: 700, color: "var(--neon-blue)" }}>
+        <h2 style={{ fontSize: "20px", fontWeight: 700, color: "var(--neon-blue)" }}>
           Lease Agreement — {lease.property?.title}
         </h2>
         <p style={{ fontSize: "13px", color: "var(--text-secondary)", marginTop: "6px" }}>
