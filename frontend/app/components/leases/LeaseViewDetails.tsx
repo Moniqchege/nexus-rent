@@ -266,7 +266,7 @@ export default function LeaseViewDetails({
   </button>
 
   <button
-    onClick={() => router.push(`/leases/${lease.id}`)}
+    onClick={() => router.push(`/leases/${lease.id}/upload`)}
     disabled={storeLoading}
     style={{ ...styles.btn, ...styles.btnFlex }}
   >
