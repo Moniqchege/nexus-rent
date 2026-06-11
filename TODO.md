@@ -1,11 +1,8 @@
-- [x] Inspect existing lease list UI (frontend/app/leases/page.tsx) and DynamicTable usage
-- [x] Replace leases page table with DynamicTable (no summary cards)
-
-- [x] Configure DynamicTable columns + row actions (View/Print) and Delete via existing ConfirmDialog
-- [x] Enable search, pagination, and sorting (implement sortValue in columns)
-
-- [x] Ensure newly added leases appear first (default sort by id DESC)
-
-- [ ] Run frontend lint/typecheck (if available) and sanity-check navigation
-- [ ] Verify delete flow and search/pagination/sorting behavior in browser
-
+- [x] Analyze project structure and identify padding issues
+- [x] Find sidebar, dashboard-layout, main, and footer styles
+- [x] Remove padding from sidebar (left side) - changed from `padding: 20px 16px` to `padding: 0`
+- [x] Remove padding from main content area (right side and bottom) - changed from `padding: 24px 24px 80px` to `padding: 0`
+- [x] Remove bottom padding from main content area (also handled in same change)
+- [x] Make footer static (fixed at bottom, not scrolling) - added `position: fixed; bottom: 0; left: 0; right: 0; z-index: 30;`
+- [x] Add `padding-bottom: 60px` to body so content doesn't hide behind the fixed footer
+- [x] Verify changes work properly

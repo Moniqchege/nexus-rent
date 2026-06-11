@@ -1,15 +1,189 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import DynamicTable from "../ui/DynamicTable";
 import type { Lease } from "@/types/lease";
 import { useAdminStore } from "@/app/store/adminStore";
-import ViewDetailsLayout, { TabKey } from "../shared/ViewDetailsLayout";
 
 type LeaseLike = Lease;
 
-type DialogAction = "terminate" | "null";
+const styles: Record<string, React.CSSProperties> = {
+  page: {
+    minHeight: "100vh",
+    background: "#fcf8ff",
+    color: "#1b1b24",
+    fontFamily: "Inter, sans-serif",
+  },
+
+  container: {
+    padding: "24px 32px",
+  },
+
+  back: {
+    color: "#0F52BA",
+    cursor: "pointer",
+    fontWeight: 500,
+    marginBottom: "16px",
+    display: "inline-block",
+  },
+
+  headerRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-end",
+    flexWrap: "wrap",
+    gap: "16px",
+  },
+
+  title: {
+    fontSize: "26px",
+    fontWeight: 700,
+    margin: 0,
+  },
+
+  subtitle: {
+    color: "#464555",
+    marginTop: "6px",
+    fontSize: "16px",
+  },
+
+  actionRow: {
+    display: "flex",
+    gap: "10px",
+    flexWrap: "wrap",
+  },
+
+  btnFlex: {
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
+},
+
+icon: {
+  fontSize: "16px",   
+  lineHeight: "1",
+  display: "inline-flex",
+},
+
+  btn: {
+    padding: "10px 14px",
+    borderRadius: "10px",
+    border: "1px solid #c7c4d8",
+    background: "#ffffff",
+    cursor: "pointer",
+  },
+
+  btnPrimary: {
+    padding: "10px 16px",
+    borderRadius: "10px",
+    border: "none",
+    background: "#2aabe4",
+    color: "white",
+    cursor: "pointer",
+    boxShadow: "0 4px 12px rgba(53,37,205,0.15)",
+  },
+
+  card: {
+  marginTop: "24px",
+  background: "#ffffff",
+  border: "1px solid #c7c4d8",
+  borderRadius: "16px",
+  padding: "20px 28px",
+
+  display: "grid",
+  gridTemplateColumns: "1fr auto 1fr",
+  alignItems: "center",
+  gap: "24px",
+},
+
+divider: {
+  width: "1px",
+  height: "70%",
+  background: "#E5E7EB",   
+  justifySelf: "center",
+  alignSelf: "center",
+  opacity: 0.9,
+},
+
+  avatar: {
+    width: "52px",
+    height: "52px",
+    borderRadius: "16px",
+    background: "#0F52BA",
+    color: "white",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "28px",
+    fontWeight: 700,
+  },
+
+ badge: {
+  padding: "4px 13px",
+  borderRadius: "999px",
+  fontSize: "12px",
+  fontWeight: 400,
+
+  color: "#16a34a",          
+  border: "1px solid #F2F3F5", 
+
+  background: "#F2F3F5",  
+  letterSpacing: "0.5px",
+},
+
+  rent: {
+    fontSize: "22px",
+    fontWeight: 700,
+    color: "#0F52BA",
+  },
+
+  tabs: {
+    marginTop: "28px",
+    borderRadius: "16px",
+    border: "1px solid #c7c4d8",
+    background: "#fff",
+    overflow: "hidden",
+  },
+
+  tabHeader: {
+    display: "flex",
+    borderBottom: "1px solid #c7c4d8",
+  },
+
+  tabBtn: {
+    padding: "14px 18px",
+    cursor: "pointer",
+    fontWeight: 600,
+    color: "#464555",
+    background: "transparent",
+    border: "none",
+    borderBottom: "2px solid transparent",
+  },
+
+  tabBtnActive: {
+    color: "#0F52BA",
+    borderBottom: "2px solid #0F52BA",
+  },
+
+  content: {
+    padding: "18px",
+  },
+
+  backBtn: {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "6px",
+  padding: "8px 12px",
+  borderRadius: "10px",
+  border: "1px solid #c7c4d8",
+  background: "transparent",
+  color: "#0F52BA",
+  cursor: "pointer",
+  fontSize: "14px",
+  fontWeight: 500,
+},
+};
 
 export default function LeaseViewDetails({
   lease: initialLease,
@@ -20,250 +194,244 @@ export default function LeaseViewDetails({
   const { loading: storeLoading } = useAdminStore();
 
   const [lease, setLease] = useState<LeaseLike | null>(initialLease);
-  const [tabKey, setTabKey] = useState<TabKey>("tenants");
+  const [tab, setTab] = useState<"tenants" | "meta">("tenants");
 
   useEffect(() => {
     setLease(initialLease);
   }, [initialLease]);
 
-  const tabs = useMemo(
-    () => [
-      { key: "tenants" as const, label: "Tenants" },
-      { key: "meta" as const, label: "Lease Meta" },
-    ],
-    []
-  );
-
-  const isActive = Boolean(lease?.status === "active");
-  const initials = (lease?.property?.title ?? "?").charAt(0).toUpperCase();
-
   if (!lease) {
-    return <ViewDetailsLayout
-      header={{
-        title: "Leases Management",
-        subtitle: "Lease details",
-        backHref: "/leases",
-        backLabel: "← Back",
-      }}
-      identity={{ avatarText: "?", displayTitle: "Lease not found" }}
-      dataBoxes={[]}
-      actions={[]}
-      tabs={[]}
-      tabsTitle=""
-      initialTabKey={"tenants"}
-      emptyFallback={
-        <div style={{ padding: "60px", textAlign: "center", color: "#00F0FF" }}>
-          Lease not found
-        </div>
-      }
-    />;
+    return (
+      <div style={styles.page}>
+        <div style={styles.container}>Lease not found</div>
+      </div>
+    );
   }
 
-  const leaseMetaRows = [
+  const initials = (lease.property?.title ?? "?")[0].toUpperCase();
+  const isActive = lease.status === "active";
+
+  const metaRows = [
     {
       key: "rent",
       label: "Rent",
-      value: `${lease.rentAmount?.toLocaleString?.() ?? "-"} KES`,
+      value: `${lease.rentAmount?.toLocaleString?.() ?? "-"} ksh`,
     },
-    {
-      key: "late",
-      label: "Late Fee %",
-      value: `${lease.lateFeePercent ?? 0}%`,
-    },
-    {
-      key: "grace",
-      label: "Grace Days",
-      value: `${lease.graceDays ?? 0} days`,
-    },
+    { key: "late", label: "Late Fee %", value: `${lease.lateFeePercent ?? 0}%` },
+    { key: "grace", label: "Grace Days", value: `${lease.graceDays ?? 0}` },
     {
       key: "signed",
-      label: "Signed Document",
-      value: lease.signedDocumentUrl ? "Uploaded" : "Not uploaded",
+      label: "Signed",
+      value: lease.signedDocumentUrl ? "Verified" : "Not uploaded",
     },
   ];
 
   return (
-    <ViewDetailsLayout
-      header={{
-        title: "Leases Management",
-        subtitle: "Lease details",
-        backHref: "/leases",
-        backLabel: "← Back",
-      }}
-      identity={{
-        avatarText: initials,
-        displayTitle: lease.property?.title || "-",
-        badgeText: lease.status ? lease.status.toUpperCase() : "-",
-        badgeTone: isActive ? "active" : "neutral",
-      }}
-      dataBoxes={[
-        {
-          rows: [
-            {
-              label: "Start Date",
-              value: lease.startDate
-                ? new Date(lease.startDate).toLocaleDateString()
-                : "-",
-            },
-            {
-              label: "End Date",
-              value: lease.endDate
-                ? new Date(lease.endDate).toLocaleDateString()
-                : "-",
-            },
-          ],
-        },
-        {
-          rows: [
-            {
-              label: "Rent (KES)",
-              value: lease.rentAmount?.toLocaleString?.() ?? "-",
-            },
-            { label: "Cycle", value: lease.billingCycle || "-" },
-          ],
-        },
-      ]}
-      actions={[
-        {
-          key: "edit",
-          label: "Edit",
-          icon: (
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+    <div style={styles.page}>
+      <div style={styles.container}>
+        {/* Back */}
+       <button
+  type="button"
+  style={styles.backBtn}
+  onClick={() => router.push("/leases")}
+>
+  <span
+    className="material-symbols-outlined"
+    style={{ fontSize: "18px", lineHeight: 1 }}
+  >
+    arrow_back
+  </span>
+  Back to Leases
+</button>
+
+        {/* Header */}
+        <div style={styles.headerRow}>
+          <div>
+            <h1 style={styles.title}>Leases Management</h1>
+            <div style={styles.subtitle}>
+              Detailed lease agreement and metadata
+            </div>
+          </div>
+
+         <div style={styles.actionRow}>
+  <button
+    onClick={() => router.push(`/leases/${lease.id}/print`)}
+    disabled={storeLoading}
+    style={{ ...styles.btn, ...styles.btnFlex }}
+  >
+    <span style={styles.icon} className="material-symbols-outlined">
+      print
+    </span>
+    Print
+  </button>
+
+  <button
+    onClick={() => router.push(`/leases/${lease.id}`)}
+    disabled={storeLoading}
+    style={{ ...styles.btn, ...styles.btnFlex }}
+  >
+    <span style={styles.icon} className="material-symbols-outlined">
+      upload_file
+    </span>
+    Signed Upload
+  </button>
+
+  <button
+    style={{ ...styles.btnPrimary, ...styles.btnFlex }}
+    onClick={() => router.push(`/leases/${lease.id}`)}
+    disabled={storeLoading}
+  >
+    <span style={styles.icon} className="material-symbols-outlined">
+      edit
+    </span>
+    Edit Lease
+  </button>
+</div>
+        </div>
+
+        {/* Identity Card */}
+       <div style={styles.card}>
+  {/* LEFT SIDE */}
+  <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
+    <div style={styles.avatar}>{initials}</div>
+
+    <div>
+      <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+        <h2 style={{ margin: 0, fontSize: "18px", fontWeight: 600 }}>
+          {lease.property?.title}
+        </h2>
+
+        <span
+          style={{
+            ...styles.badge,
+            color: isActive ? "#16a34a" : "#6b7280",
+            border: isActive ? "1px solid #F2F3F5" : "1px solid #9ca3af",
+          }}
+        >
+          {lease.status?.toUpperCase()}
+        </span>
+      </div>
+
+      <div style={{ color: "#464555", marginTop: "6px", fontSize: "14px" }}>
+        {lease.property?.location ?? "-"}
+      </div>
+    </div>
+  </div>
+
+  {/* DIVIDER */}
+  <div style={styles.divider} />
+
+  {/* RIGHT SIDE */}
+  <div
+    style={{
+      display: "flex",
+    justifyContent: "flex-start",
+    gap: "154px",
+    alignItems: "center",
+    }}
+  >
+    <div>
+      <div style={{ fontSize: "11px", color: "#777" }}>
+        Lease Period
+      </div>
+      <div style={{ fontWeight: 600 }}>
+        {lease.startDate
+          ? new Date(lease.startDate).toLocaleDateString()
+          : "-"}{" "}
+        →{" "}
+        {lease.endDate
+          ? new Date(lease.endDate).toLocaleDateString()
+          : "-"}
+      </div>
+    </div>
+
+    <div>
+      <div style={{ fontSize: "11px", color: "#777" }}>
+        Monthly Rent
+      </div>
+      <div style={styles.rent}>
+        ksh {lease.rentAmount?.toLocaleString?.() ?? "-"}
+      </div>
+    </div>
+  </div>
+</div>
+
+        {/* Tabs */}
+        <div style={styles.tabs}>
+          <div style={styles.tabHeader}>
+            <button
+              style={{
+                ...styles.tabBtn,
+                ...(tab === "tenants" ? styles.tabBtnActive : {}),
+              }}
+              onClick={() => setTab("tenants")}
             >
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-            </svg>
-          ),
-          onClick: () => router.push(`/leases/${lease.id}`),
-          disabled: storeLoading,
-        },
-        {
-          key: "print",
-          label: "Print",
-          icon: (
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+              Tenants
+            </button>
+
+            <button
+              style={{
+                ...styles.tabBtn,
+                ...(tab === "meta" ? styles.tabBtnActive : {}),
+              }}
+              onClick={() => setTab("meta")}
             >
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-              <polyline points="14 2 14 8 20 8" />
-              <line x1="16" y1="13" x2="8" y2="13" />
-              <line x1="16" y1="17" x2="8" y2="17" />
-              <line x1="10" y1="9" x2="8" y2="9" />
-            </svg>
-          ),
-          onClick: () => router.push(`/leases/${lease.id}/print`),
-          disabled: storeLoading,
-        },
-        {
-          key: "signed",
-          label: "Signed Upload",
-          icon: (
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M5 12h14" />
-              <path d="m12 5 7 7-7 7" />
-            </svg>
-          ),
-          onClick: () => router.push(`/leases/${lease.id}`),
-          disabled: storeLoading,
-        },
-      ]}
-      tabsTitle="Lease Tenants & Meta"
-      tabs={[
-        {
-          key: "tenants",
-          label: "Tenants",
-          content: (
-            <DynamicTable<any>
-              key="lease-tenants-table"
-              rows={lease.tenants ?? []}
-              getRowId={(r) => r.tenantId ?? r.id ?? JSON.stringify(r)}
-              columns={
-                [
+              Lease Meta
+            </button>
+          </div>
+
+          <div style={styles.content}>
+            {tab === "tenants" && (
+              <DynamicTable<any>
+                rows={lease.tenants ?? []}
+                getRowId={(r) => r.tenantId ?? r.id}
+                columns={[
                   {
                     key: "name",
                     header: "Tenant",
-                    render: (row: any) => row.tenant?.name ?? "-",
-                    sortValue: (row: any) =>
-                      String(row.tenant?.name ?? ""),
+                    render: (r: any) => r.tenant?.name ?? "-",
                   },
                   {
                     key: "email",
                     header: "Email",
-                    render: (row: any) => row.tenant?.email ?? "-",
+                    render: (r: any) => r.tenant?.email ?? "-",
                   },
                   {
                     key: "phone",
                     header: "Phone",
-                    render: (row: any) => row.tenant?.phone ?? "-",
+                    render: (r: any) => r.tenant?.phone ?? "-",
                   },
-                ] as any
-              }
-              search={{ enabled: true, placeholder: "Search tenants..." }}
-              pagination={{
-                enabled: true,
-                defaultPageSize: 5,
-                pageSizeOptions: [5, 10, 20, 50, 100],
-              }}
-              noRecordsMessage="No tenants on this lease"
-            />
-          ),
-        },
-        {
-          key: "meta",
-          label: "Lease Meta",
-          content: (
-            <DynamicTable<any>
-              key="lease-meta-table"
-              rows={leaseMetaRows}
-              getRowId={(r) => r.key}
-              columns={
-                [
-                  {
-                    key: "label",
-                    header: "Field",
-                    render: (row: any) => row.label ?? "-",
-                  },
-                  {
-                    key: "value",
-                    header: "Value",
-                    render: (row: any) => row.value ?? "-",
-                  },
-                ] as any
-              }
-              search={{ enabled: false }}
-              pagination={{ enabled: false, pageSizeOptions: [5], defaultPageSize: 5 }}
-              noRecordsMessage="No lease metadata"
-            />
-          ),
-        },
-      ]}
-      initialTabKey={tabKey}
-      confirm={null}
-    />
+                ]}
+                search={{ enabled: true, placeholder: "Search tenants..." }}
+                pagination={{
+                  enabled: true,
+                  defaultPageSize: 5,
+                  pageSizeOptions: [5, 10, 20, 50, 100],
+                }}
+                noRecordsMessage="No tenants found"
+              />
+            )}
+
+            {tab === "meta" && (
+              <DynamicTable<any>
+                rows={metaRows}
+                getRowId={(r) => r.key}
+                columns={[
+                  { key: "label", header: "Field", render: (r) => r.label },
+                  { key: "value", header: "Value", render: (r) => r.value },
+                ]}
+                search={{ enabled: false }}
+                pagination={{
+                  enabled: false,
+                  defaultPageSize: 5,
+                  pageSizeOptions: [5],
+                }}
+                noRecordsMessage="No metadata"
+              />
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
-

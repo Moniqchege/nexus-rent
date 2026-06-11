@@ -22,7 +22,7 @@
   --text-muted: #64748b;
 
   /* Brand colors (kept for any references) */
-  --neon-blue: #2563eb;
+  --neon-blue: #0F52BA;
   --neon-purple: #7c3aed;
   --accent-danger: #dc2626;
   --accent-success: #16a34a;
@@ -355,7 +355,7 @@ a:hover {
 
 .hero-card-illustration {
   width: 100%;
-  /* max-width: 520px; */
+  max-width: 520px;
   background: var(--bg-card);
   border: 1px solid var(--border-glow);
   border-radius: 20px;
@@ -1279,12 +1279,12 @@ a:hover {
   display: grid;
   grid-template-columns: 260px 1fr;
   gap: 0;
-  max-width: 1440px;
+  /* max-width: 1440px; */
   margin: 0 auto;
 }
 
 .dashboard-layout main {
-  padding: 24px 24px 80px;
+  padding: 0 24px 0;
   min-height: calc(100vh - 64px);
 }
 
@@ -1480,6 +1480,12 @@ a:hover {
 
 /* Footer */
 footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  z-index: 100;
+  
   text-align: center;
   padding: 16px 24px;
   border-top: 1px solid var(--border-glow);
