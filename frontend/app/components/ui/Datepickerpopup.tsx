@@ -220,11 +220,11 @@ export default function DatePickerPopup({
         }}
          style={{
     ...styles.trigger,
-    borderColor: open
-      ? "rgba(70, 71, 72, 0.7)"
-      : displayValue
-      ? "rgba(82, 81, 84, 0.5)"
-      : "var(--border-glow, rgba(59,130,246,0.3))",
+   borderColor: open
+  ? "#4f46e5"
+  : displayValue
+  ? "#d1d5db"
+  : "#e5e7eb",
 
     boxShadow: open
       ? "0 0 0 3px rgba(59,130,246,0.08)"
@@ -292,92 +292,102 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     fontSize: "12px",
     marginBottom: "8px",
-    color: "var(--neon-blue)",
+    color: "#4f46e5",
   },
+
   trigger: {
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
   width: "100%",
-  backgroundColor: "rgba(17,24,39,0.5)",
-  border: "1px solid",
+  backgroundColor: "#ffffff",
+
+  borderWidth: "1px",
+  borderStyle: "solid",
+  borderColor: "#e5e7eb", 
+
   borderRadius: "12px",
   padding: "13px 18px",
   cursor: "pointer",
   transition: "border-color 0.2s, box-shadow 0.2s",
-  color: "var(--text-primary, #f1f5f9)",
+  color: "#111827",
   fontSize: "14px",
   userSelect: "none",
 },
+
   placeholder: {
-    color: "var(--text-secondary, #94a3b8)",
+    color: "#9ca3af",
     fontSize: "14px",
   },
+
   valueText: {
     fontSize: "14px",
-    background: "var(--text-secondary, #94a3b8)",
-    WebkitBackgroundClip: "text",
-    WebkitTextFillColor: "transparent",
+    color: "#111827",
     fontWeight: 600,
   },
+
   popup: {
     zIndex: 99999,
-    background: "rgba(11,17,32,0.98)",
-    border: "1px solid rgba(59,130,246,0.3)",
-    borderRadius: "20px",
-    padding: "15px",
+    background: "#ffffff",
+    border: "1px solid #e5e7eb",
+    borderRadius: "16px",
+    padding: "14px",
     width: "272px",
-    backdropFilter: "blur(20px)",
-    boxShadow: "0 24px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(59,130,246,0.06) inset",
+    boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
     display: "flex",
     flexDirection: "column",
     gap: "12px",
   },
+
   header: {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
   },
+
   navBtn: {
     width: "28px",
     height: "28px",
     borderRadius: "8px",
-    border: "1px solid rgba(59,130,246,0.3)",
-    background: "rgba(17,24,39,0.5)",
-    color: "#94a3b8",
+    border: "1px solid #e5e7eb",
+    background: "#f9fafb",
+    color: "#374151",
     cursor: "pointer",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     fontSize: "16px",
     lineHeight: 1,
-    transition: "border-color 0.15s, color 0.15s",
+    transition: "all 0.15s",
   },
+
   monthLabel: {
     fontSize: "13px",
     fontWeight: 700,
-    background: "linear-gradient(to right, #3b82f6, #8b5cf6)",
-    WebkitBackgroundClip: "text",
-    WebkitTextFillColor: "transparent",
+    color: "#111827",
   },
+
   weekdayGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(7, 1fr)",
     gap: "2px",
   },
+
   weekday: {
     textAlign: "center",
     fontSize: "10px",
     fontWeight: 700,
     letterSpacing: "0.06em",
-    color: "#64748b",
+    color: "#9ca3af",
     paddingBottom: "4px",
   },
+
   daysGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(7, 1fr)",
     gap: "3px",
   },
+
   dayCell: {
     aspectRatio: "1",
     display: "flex",
@@ -386,8 +396,10 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: "8px",
     fontSize: "12px",
     position: "relative",
-    transition: "background 0.15s, color 0.15s",
+    transition: "all 0.15s",
+    color: "#111827",
   },
+
   todayDot: {
     position: "absolute",
     bottom: "3px",
@@ -396,31 +408,6 @@ const styles: Record<string, React.CSSProperties> = {
     width: "3px",
     height: "3px",
     borderRadius: "50%",
-    background: "#8b5cf6",
-  },
-  footer: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    borderTop: "1px solid rgba(59,130,246,0.2)",
-    paddingTop: "10px",
-  },
-  todayBtn: {
-    fontSize: "12px",
-    color: "#3b82f6",
-    cursor: "pointer",
-    background: "none",
-    border: "none",
-    fontWeight: 600,
-    padding: 0,
-  },
-  clearBtn: {
-    fontSize: "12px",
-    color: "#64748b",
-    cursor: "pointer",
-    background: "none",
-    border: "none",
-    padding: 0,
-    transition: "color 0.15s",
+    background: "#4f46e5",
   },
 };

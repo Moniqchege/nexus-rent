@@ -35,7 +35,7 @@ const Section = ({ title, icon, children }: any) => (
       backgroundColor: "#ffffff",
       border: "1px solid #e5e7eb",
       borderRadius: "16px",
-      overflow: "hidden",
+      overflow: "visible",
       marginBottom: "24px",
       boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
     }}
@@ -159,7 +159,7 @@ export default function LeaseForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} style={{ width: "100%", margin: "0 auto" }}>
+    <form onSubmit={handleSubmit} style={{ width: "100%", marginBottom: "34px" }}>
 
       {/* ERROR */}
       {error && (
@@ -212,19 +212,21 @@ export default function LeaseForm({
             />
           </div>
 
-          <DatePickerPopup
-            label="Start Date"
-            required
-            value={data.startDate}
-            onChange={(val) => setData({ ...data, startDate: val })}
-          />
+          <div>
+  <label style={labelStyle}>Start Date *</label>
+  <DatePickerPopup
+    value={data.startDate}
+    onChange={(val) => setData({ ...data, startDate: val })}
+  />
+</div>
 
-          <DatePickerPopup
-            label="End Date"
-            required
-            value={data.endDate}
-            onChange={(val) => setData({ ...data, endDate: val })}
-          />
+<div>
+  <label style={labelStyle}>End Date *</label>
+  <DatePickerPopup
+    value={data.endDate}
+    onChange={(val) => setData({ ...data, endDate: val })}
+  />
+</div>
         </div>
       </Section>
 
@@ -285,7 +287,7 @@ export default function LeaseForm({
             />
           </div>
 
-          <div>
+          <div style={{ position: 'relative', zIndex: 5000 }}>
             <label style={labelStyle}>Status</label>
             <CustomDropdown
               options={STATUS_OPTIONS}
@@ -295,6 +297,7 @@ export default function LeaseForm({
               }
               labelKey="label"
               valueKey="value"
+              
             />
           </div>
         </div>

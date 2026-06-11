@@ -70,9 +70,41 @@ export default function EditLeasePage() {
 
   return (
     <div className="dashboard-content">
-      <div className="page-tag">📄 EDIT LEASE</div>
-      <div style={{ marginBottom: "24px" }}>
-        <h2 style={{ fontSize: "24px", fontWeight: 700, color: "var(--neon-blue)" }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <div
+          style={{
+            fontWeight: 600,
+            fontSize: "16px",
+            color: "var(--neon-blue)"
+          }}
+        >
+          LEASES
+        </div>
+
+        <button
+          onClick={() => router.push("/leases")}
+          style={{
+            background: "linear-gradient(to right, var(--neon-blue), var(--neon-purple))",
+            color: "white",
+            border: "none",
+            borderRadius: "12px",
+            fontWeight: 600,
+            cursor: "pointer",
+            padding: "12px 24px",
+            fontSize: "14px"
+          }}
+        >
+          ← Back
+        </button>
+      </div>
+      <div style={{ marginBottom: "24px", display: "flex", alignItems: "center"}}>
+        <h2 style={{ fontSize: "20px", fontWeight: 700, color: "#000000" }}>
           Edit Lease Agreement
         </h2>
       </div>
@@ -84,113 +116,6 @@ export default function EditLeasePage() {
         onSuccess={handleUpdate}
         onCancel={() => router.push("/leases")}
       />
-
-      {/* Signed Document Upload Section */}
-      <div
-        style={{
-          backgroundColor: "rgba(17,24,39,0.95)",
-          backdropFilter: "blur(20px)",
-          border: "1px solid var(--border-glow)",
-          borderRadius: "24px",
-          padding: "25px",
-          maxWidth: "950px",
-          margin: "24px auto 0",
-        }}
-      >
-        <h3
-          style={{
-            fontSize: "18px",
-            fontWeight: 700,
-            color: "var(--neon-purple)",
-            marginBottom: "14px",
-          }}
-        >
-          Signed Lease Document
-        </h3>
-
-        {lease.signedDocumentUrl && (
-          <div style={{ marginBottom: "16px" }}>
-            <a
-              href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}${lease.signedDocumentUrl}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                color: "var(--neon-blue)",
-                textDecoration: "underline",
-                fontSize: "14px",
-              }}
-            >
-              View Current Signed Document
-            </a>
-          </div>
-        )}
-
-        <div style={{ marginBottom: "12px" }}>
-          <label
-            style={{
-              display: "block",
-              fontWeight: 600,
-              fontSize: "12px",
-              marginBottom: "8px",
-              color: "var(--neon-blue)",
-            }}
-          >
-            Upload Signed Document (PDF or DOCX)
-          </label>
-          <input
-            type="file"
-            accept=".pdf,.doc,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (!file) return;
-              const allowedTypes = [
-                "application/pdf",
-                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                "application/msword",
-              ];
-              if (!allowedTypes.includes(file.type)) {
-                setUploadError("Only PDF or DOCX files are allowed");
-                setSignedFile(null);
-                return;
-              }
-              setUploadError("");
-              setSignedFile(file);
-            }}
-            style={{
-              width: "100%",
-              backgroundColor: "rgba(17,24,39,0.5)",
-              border: "1px solid var(--border-glow)",
-              borderRadius: "12px",
-              padding: "12px",
-              color: "var(--text-primary)",
-            }}
-          />
-          {uploadError && (
-            <p style={{ color: "#ef4444", fontSize: "12px", marginTop: "6px" }}>
-              {uploadError}
-            </p>
-          )}
-        </div>
-
-        <button
-          onClick={handleUploadSigned}
-          disabled={!signedFile}
-          style={{
-            background: signedFile
-              ? "linear-gradient(to right, var(--neon-blue), var(--neon-purple))"
-              : "rgba(17,24,39,0.5)",
-            color: "white",
-            border: "none",
-            borderRadius: "12px",
-            padding: "12px 24px",
-            fontWeight: 600,
-            cursor: signedFile ? "pointer" : "not-allowed",
-            fontSize: "14px",
-          }}
-        >
-          Upload Signed Document
-        </button>
-      </div>
     </div>
   );
 }
