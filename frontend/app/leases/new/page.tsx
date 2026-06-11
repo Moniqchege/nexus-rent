@@ -15,7 +15,6 @@ export default function NewLeasePage() {
 
   return (
     <div className="dashboard-content">
-      <div className="page-tag">📄 NEW LEASE</div>
       <div
         style={{
           display: "flex",
@@ -58,9 +57,9 @@ export default function NewLeasePage() {
 >
   <h2
     style={{
-      fontSize: "24px",
+      fontSize: "20px",
       fontWeight: 700,
-      color: "var(--neon-blue)",
+      color: "#000000",
     }}
   >
     Create Lease Agreement

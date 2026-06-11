@@ -95,7 +95,6 @@ export default function LeasesPage() {
       {
         key: "rentAmount",
         header: "Rent (KES)",
-        align: "right",
         render: (row: any) =>
           row.rentAmount != null
             ? Number(row.rentAmount).toLocaleString()
@@ -125,21 +124,31 @@ export default function LeasesPage() {
 
   return (
     <div className="dashboard-content">
-      <div className="page-tag">📄 LEASE MANAGEMENT</div>
-
-      <div className="page-header-row">
-        <div className="section-label">LEASES</div>
+      <div style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center"
+      }}>
+        <div className="section-label">◈ LEASES</div>
         <button
-          className="btn-primary"
           onClick={() => router.push("/leases/new")}
-          style={{ padding: "10px 18px" }}
+          style={{ 
+            background: "linear-gradient(to right, var(--neon-blue), var(--neon-purple))",
+            color: "white",
+            border: "none",
+            borderRadius: "12px",
+            padding: "12px 24px",
+            fontWeight: 600,
+            cursor: "pointer",
+            fontSize: "14px",
+          }}
         >
           <Plus size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />
           New Lease
         </button>
       </div>
 
-      <h2 className="page-title">Lease Agreements ({sortedLeases.length})</h2>
+      <h2 style={{ fontSize: "24px", fontWeight: 700, color: "#000000", marginBottom: "16px" }}>Lease Agreements</h2>
 
       <DynamicTable<any>
         rows={sortedLeases}

@@ -29,12 +29,12 @@ export default function Sidebar() {
   const NAV = [
     { label: "Overview", icon: "/overview.png", to: "/dashboard" },
     { label: "Apartments", icon: "/apartment_icon.png", to: "/my-rentals" },
-    { label: "Payments", icon: "/payments_icon.png", to: "/payments" },
     { label: "Leases", icon: "/apartment_icon.png", to: "/leases" },
+    { label: "Finances", icon: "/payments_icon.png", to: "/payments" },
     { label: "Roles", icon: "/roles_icon.png", to: "/roles" },
     { label: "Users", icon: "/users_icon.png", to: "/users" },
     {
-      label: "Alerts",
+      label: "Notifications",
       icon: "/notifications_icon.png",
       to: "/notifications",
       badge: unreadCount,

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { FaUser, FaEye, FaEyeSlash, FaLock, FaShieldAlt, FaCheckCircle } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "../store/authStore";
-import "../login/theme.css";
+import "./theme.css";
 import Footer from "../components/layout/Footer";
 import Navbar from "../components/layout/Navbar";
 
@@ -192,13 +192,25 @@ const validatePassword = (pwd: string) => {
           <div className="login-left">
             <div className="login-glow" />
             <div className="hero-left">
-              <div className="page-tag">◈ NEXUS ACCESS</div>
-              <h1 className="section-title">
-                Secure <span>Entry</span> Required
+              <div className="page-tag" style={{ color: "#ffffff" }}>◈ NEXUS ACCESS</div>
+              <h1 style={{ color: "#ffffff" }}>
+                Secure <span className="accent-text">Entry</span> Required
               </h1>
-              <p className="animate-in delay-2">
-                Enter your credentials to access the Nexus rental platform. Two-factor authentication keeps your account secure.
+              <p className="animate-in delay-2" style={{ color: "#ffffff", fontSize: '18px' }}>
+                Enter your credentials to access the Nexus rental platform. Our institutional-grade infrastructure and two-factor authentication keeps your investment portfolio and sensitive tenant data secure.
               </p>
+              <div className="security-icons-group">
+                <div className="security-icon">
+                  <FaShieldAlt />
+                </div>
+                <div className="security-icon">
+                  <FaCheckCircle />
+                </div>
+                <div className="security-icon">
+                  <FaLock />
+                </div>
+                <span className="encryption-label" style={{ color: "#ffffff" }}>AES-256 Encrypted Tunnel</span>
+              </div>
             </div>
           </div>
 
@@ -207,26 +219,30 @@ const validatePassword = (pwd: string) => {
             <div className="login-card-inner">
             {!requiresOtp && !firstLogin && (
               <>
-                <div className="section-label">Credentials</div>
+                <h2 className="login-card-title">Identity Verification</h2>
+                <p className="login-card-subtitle">Access the institutional dashboard</p>
+
+                <div className="section-label">Work Email</div>
                 {/* Email */}
                 <div className="login-input-group">
                   <FaUser className="login-input-icon" />
                   <input
                     className="login-input"
-                    placeholder="Email address"
+                    placeholder="name@nexus.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     type="email"
                   />
                 </div>
 
+                <div className="section-label">Password</div>
                 {/* Password */}
                 <div className="login-input-group">
                   <FaLock className="login-input-icon" />
                   <input
                     className="login-input"
                     type={showPassword ? "text" : "password"}
-                    placeholder="Password"
+                    placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                   />
@@ -244,14 +260,22 @@ const validatePassword = (pwd: string) => {
                   disabled={loading}
                 >
                   {loading ? "Authenticating..." : "Access Nexus"}
+                  {!loading && <span className="ml-2">›</span>}
                 </button>
+
+                {/* Footer Links */}
+                <div className="login-footer-links">
+                  <a href="#" className="link-primary">Request First Access</a>
+                  <a href="#" className="link-secondary">Forgot Password?</a>
+                </div>
               </>
             )}
 
             {/* OTP Verification */}
             {!firstLogin && requiresOtp && (
               <div className="otp-section">
-                <div className="section-label">Verification</div>
+                <h2 className="login-card-title">Verification</h2>
+                <div className="section-label">Enter Code</div>
                 <div className="login-input-group">
                   <FaShieldAlt className="login-input-icon" />
                   <input
@@ -275,15 +299,16 @@ const validatePassword = (pwd: string) => {
             {/* First Login Password Reset */}
             {firstLogin && (
               <div className="otp-section">
-                <div className="section-label">First Access</div>
+                <h2 className="login-card-title">First Access</h2>
                 <p style={{color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '16px', textAlign: 'center'}}>
                   Set your secure password to complete first-time setup.
                 </p>
+                <div className="section-label">Create Password</div>
                 <div className="login-input-group">
   <FaShieldAlt className="login-input-icon" />
   <input
     className="login-input"
-    type={showNewPassword ? "text" : "password"}  // use new toggle
+    type={showNewPassword ? "text" : "password"} 
     placeholder="Create new password"
     value={newPassword}
     onChange={(e) => {
@@ -342,4 +367,3 @@ const validatePassword = (pwd: string) => {
     </>
   );
 }
-
