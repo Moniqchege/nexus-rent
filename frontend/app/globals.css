@@ -1574,7 +1574,7 @@ footer .footer-logo {
 }
 
 .table-head th {
-  color: var(--text-secondary);
+  color: #0F52BA;
   font-family: 'Inter', sans-serif;
   font-size: 11px;
   font-weight: 700;

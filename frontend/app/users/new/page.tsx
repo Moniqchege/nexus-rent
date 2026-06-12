@@ -15,8 +15,6 @@ export default function NewUserPage() {
 
   return (
     <div className="dashboard-content">
-      <div className="page-tag">👥 USERS MANAGEMENT</div>
-
       {/* Section label with back button */}
       <div
         style={{

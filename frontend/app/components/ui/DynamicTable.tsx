@@ -214,6 +214,7 @@ export default function DynamicTable<T>({
         borderRadius: 16,
         overflow: "hidden",
         boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04)",
+        marginTop: "24px",
       }}
     >
       {search?.enabled && (

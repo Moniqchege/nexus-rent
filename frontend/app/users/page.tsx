@@ -110,12 +110,12 @@ export default function UsersPage() {
           fontSize: 10,
           fontWeight: 700,
           background: locked
-            ? "#80ebf2"
+            ? "#0F52BA"
             : "transparent",
-          color: locked ? "#171616" : "#00F0FF",
+          color: locked ? "#171616" : "#0F52BA",
           border: locked
-            ? "0.1px solid #00F0FF"
-            : "0.1px solid #00F0FF",
+            ? "0.1px solid #0F52BA"
+            : "0.1px solid #0F52BA",
           width: "fit-content",
         }}
       >
@@ -124,10 +124,10 @@ export default function UsersPage() {
             width: 8,
             height: 8,
             borderRadius: "50%",
-            background: locked ? "#1d1919" : "#00F0FF",
+            background: locked ? "#1d1919" : "#0F52BA",
             boxShadow: locked
-              ? "0 0 8px #00F0FF"
-              : "0 0 8px #00F0FF",
+              ? "0 0 8px #0F52BA"
+              : "0 0 8px #0F52BA",
           }}
         />
 
@@ -181,8 +181,6 @@ export default function UsersPage() {
 
   return (
     <div className="dashboard-content">
-      <div className="page-tag">👥 USERS MANAGEMENT</div>
-
       <div
         style={{
           display: "flex",
@@ -209,6 +207,8 @@ export default function UsersPage() {
           + New User
         </button>
       </div>
+
+      <h2 style={{ fontSize: "24px", fontWeight: 700, color: "#000000", marginBottom: "16px" }}>User Management</h2>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
         <div>
@@ -240,9 +240,9 @@ export default function UsersPage() {
               style={{
                 borderRadius: 20,
                 padding: "18px 16px",
-                border: "1px solid rgba(56,189,248,0.45)",
-                background: "linear-gradient(135deg, rgba(17,24,39,0.8), rgba(17,24,39,0.55))",
-                boxShadow: "0 0 0 1px rgba(255,255,255,0.02), 0 0 30px rgba(56,189,248,0.25)",
+                background: "#ffffff",
+                border: "1px solid #f1f5f9",
+                boxShadow: "0 4px 20px rgba(15, 23, 42, 0.06)",
                 minHeight: 92,
                 display: "flex",
                 flexDirection: "column",
@@ -250,21 +250,28 @@ export default function UsersPage() {
                 gap: 6,
               }}
             >
-              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", fontWeight: 600 }}>
-                {c.label}
-              </div>
-              <div
-                style={{
-                  fontSize: 21,
-                  fontWeight: 800,
-                  letterSpacing: "0.2px",
-                  color: "#38bdf8",
-                }}
-              >
-                {c.value}
-              </div>
+            <div
+              style={{
+                fontSize: 13,
+                color: "#6b7280",
+                fontWeight: 600,
+              }}
+            >
+              {c.label}
             </div>
-          ));
+
+            <div
+              style={{
+               fontSize: 21,
+               fontWeight: 800,
+               letterSpacing: "0.2px",
+               color: "var(--neon-purple)",
+              }}
+            >
+               {c.value}
+            </div>
+           </div>
+         ));
         })()}
       </div>
 
