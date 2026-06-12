@@ -99,7 +99,7 @@ export default function RolesPage() {
       {
         key: "view",
         label: "View",
-        onClick: (row: Role) => router.push(`/roles/edit/${row.id}`),
+        onClick: (row: Role) => router.push(`/roles/view/${row.id}`),
       },
       {
         key: "edit",

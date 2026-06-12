@@ -129,20 +129,20 @@ export default function UserForm({ onSubmit, onCancel, editingUser, isEdit = fal
 
   return (
     <div style={{
-      backgroundColor: "rgba(17,24,39,0.95)",
+      backgroundColor: "#ffffff",
       backdropFilter: "blur(20px)",
-      border: "1px solid var(--border-glow)",
+      border: "1px solid #e5e7eb",
+      boxShadow: "0 8px 30px rgba(0,0,0,0.06)",
       borderRadius: "24px",
       padding: "25px",
-      maxWidth: "950px",
-      margin: "0 auto"
     }}>
       <h3 style={{ 
-        fontSize: "20px", 
+        fontSize: "18px", 
         fontWeight: 700, 
-        background: "linear-gradient(to right, var(--neon-blue), var(--neon-purple))",
+        background: "linear-gradient(180deg, #ffffff 0%, #f9fafb 100%)",
+        color: "#000000",
         WebkitBackgroundClip: "text",
-        WebkitTextFillColor: "transparent",
+        WebkitTextFillColor: "#000000",
         marginBottom: "14px",
         // textAlign: "center"
       }}>
@@ -165,7 +165,7 @@ export default function UserForm({ onSubmit, onCancel, editingUser, isEdit = fal
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             style={{
               width: "100%",
-              backgroundColor: "rgba(17,24,39,0.5)",
+              backgroundColor: "#ffffff",
               border: "1px solid var(--border-glow)",
               borderRadius: "12px",
               padding: "14px 20px",
@@ -187,7 +187,7 @@ export default function UserForm({ onSubmit, onCancel, editingUser, isEdit = fal
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             style={{
               width: "100%",
-              backgroundColor: "rgba(17,24,39,0.5)",
+              backgroundColor: "#ffffff",
               border: "1px solid var(--border-glow)",
               borderRadius: "12px",
               padding: "14px 20px",
@@ -216,7 +216,7 @@ export default function UserForm({ onSubmit, onCancel, editingUser, isEdit = fal
             onChange={(e) => setFormData({ ...formData, username: e.target.value })}
             style={{
               width: "100%",
-              backgroundColor: "rgba(17,24,39,0.5)",
+              backgroundColor: "#ffffff",
               border: "1px solid var(--border-glow)",
               borderRadius: "12px",
               padding: "14px 20px",
@@ -245,7 +245,7 @@ export default function UserForm({ onSubmit, onCancel, editingUser, isEdit = fal
     required
     style={{
       width: "100%",
-      backgroundColor: "rgba(17,24,39,0.5)",
+      backgroundColor: "#ffffff",
       border: "1px solid var(--border-glow)",
       borderRadius: "12px",
       padding: "14px 20px",
@@ -256,161 +256,274 @@ export default function UserForm({ onSubmit, onCancel, editingUser, isEdit = fal
 </div>
         </div>   
 
-        <div>
-  <label style={{
-    display: "block",
-    fontWeight: 600,
-    fontSize: "14px",
-    marginBottom: "8px",
-    color: "var(--neon-blue)"
-  }}>
-    Lease Document (PDF or DOCX)
-  </label>
+        <section style={{ marginTop: "16px" }}>
+  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px" }}>
+    <span style={{
+      width: "4px",
+      height: "20px",
+      backgroundColor: "#0F52BA",
+      borderRadius: "4px"
+    }} />
+    <h3 style={{
+      fontSize: "12px",
+      fontWeight: 700,
+      textTransform: "uppercase",
+      color: "#0F52BA",
+      letterSpacing: "0.08em"
+    }}>
+      Lease Document
+    </h3>
+  </div>
 
-  <input
-    type="file"
-    accept=".pdf,.doc,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    onChange={(e) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
+  <div style={{ position: "relative" }}>
+    <input
+      id="lease-upload"
+      type="file"
+      accept=".pdf,.doc,.docx,image/jpeg,image/jpg,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      style={{ display: "none" }}
+      onChange={(e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
 
-      const allowedTypes = [
-        "application/pdf",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "application/msword"
-      ];
+        const allowedTypes = [
+          "application/pdf",
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "application/msword",
+          "image/jpeg",
+          "image/jpg"
+        ];
 
-      if (!allowedTypes.includes(file.type)) {
-        setFileError("Only PDF or DOCX files are allowed");
-        setLeaseDocument(null);
-        return;
-      }
+        const maxSize = 10 * 1024 * 1024; // 10MB
 
-      setFileError("");
-      setLeaseDocument(file);
-    }}
-    style={{
-      width: "100%",
-      backgroundColor: "rgba(17,24,39,0.5)",
-      border: "1px solid var(--border-glow)",
-      borderRadius: "12px",
-      padding: "12px",
-      color: "var(--text-primary)"
-    }}
-  />
+        if (!allowedTypes.includes(file.type)) {
+          setFileError("Only PDF, DOCX or JPG files are allowed");
+          setLeaseDocument(null);
+          return;
+        }
+
+        if (file.size > maxSize) {
+          setFileError("File size must be 10MB or less");
+          setLeaseDocument(null);
+          return;
+        }
+
+        setFileError("");
+        setLeaseDocument(file);
+      }}
+    />
+
+    <label
+      htmlFor="lease-upload"
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        width: "100%",
+        height: "130px",
+        border: "2px dashed #e5e7eb",
+        borderRadius: "16px",
+        backgroundColor: "#f9fafb",
+        cursor: "pointer",
+        transition: "all 0.2s ease",
+        textAlign: "center"
+      }}
+      onMouseEnter={(e) => {
+        (e.currentTarget as HTMLLabelElement).style.borderColor = "#0F52BA";
+        (e.currentTarget as HTMLLabelElement).style.backgroundColor = "#eff6ff";
+      }}
+      onMouseLeave={(e) => {
+        (e.currentTarget as HTMLLabelElement).style.borderColor = "#e5e7eb";
+        (e.currentTarget as HTMLLabelElement).style.backgroundColor = "#f9fafb";
+      }}
+    >
+      <span
+        className="material-symbols-outlined"
+        style={{
+          fontSize: "32px",
+          color: "#9ca3af",
+          marginBottom: "8px",
+          transition: "color 0.2s ease"
+        }}
+      >
+        cloud_upload
+      </span>
+
+      <p style={{ fontSize: "14px", color: "#6b7280" }}>
+        <span style={{ fontWeight: 600, color: "#0F52BA" }}>
+          Click to upload
+        </span>{" "}
+        or drag and drop
+      </p>
+
+      <p style={{ fontSize: "11px", color: "#9ca3af", marginTop: "4px" }}>
+        PDF, DOCX or JPG (MAX. 10MB)
+      </p>
+    </label>
+  </div>
 
   {fileError && (
-    <p style={{ color: "#ef4444", fontSize: "12px", marginTop: "6px" }}>
+    <p style={{ color: "#ef4444", fontSize: "12px", marginTop: "8px" }}>
       {fileError}
     </p>
   )}
-</div>  
+
+  {leaseDocument && (
+    <p style={{ marginTop: "8px", fontSize: "12px", color: "#6b7280" }}>
+      Selected: <strong>{leaseDocument.name}</strong>
+    </p>
+  )}
+</section>
+
         {/* New Property Assignments Section */}
         <div style={{ marginTop: "24px" }}>
-          <label style={{ 
-            display: "block", 
-            fontWeight: 600, 
-            fontSize: "16px", 
-            marginBottom: "16px", 
-            color: "var(--neon-purple)",
-            background: "linear-gradient(to right, var(--neon-blue), var(--neon-purple))",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent"
-          }}>
-            🏠 Property Assignments 
-          </label>
+  {/* HEADER ROW */}
+  <div
+    style={{
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: "16px",
+    }}
+  >
+    <label
+      style={{
+        fontWeight: 600,
+        fontSize: "16px",
+        color: "transparent",
+        WebkitBackgroundClip: "text",
+        WebkitTextFillColor: "#0F52BA",
+      }}
+    >
+      <span className="w-1 h-6 bg-primary rounded-full"></span>
+       Property Assignments
+    </label>
+
+    <button
+      type="button"
+      onClick={addPropertyAssignment}
+      style={{
+        backgroundColor: "#ffffff",
+        color: "#0F52BA",
+        border: "1px solid #e5e7eb",
+        borderRadius: "10px",
+        padding: "10px 16px",
+        fontWeight: 600,
+        cursor: "pointer",
+        fontSize: "13px",
+        whiteSpace: "nowrap",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+      }}
+    >
+      + Add Assignment
+    </button>
+  </div>
+
+  {/* EMPTY STATE */}
+  {propertyAssignments.length === 0 ? (
+    <div
+      style={{
+        padding: "24px",
+        textAlign: "center",
+        color: "#6b7280",
+        border: "1px dashed #e5e7eb",
+        borderRadius: "12px",
+        backgroundColor: "#fafafa",
+      }}
+    >
+      No properties assigned. Click “Add Assignment” to begin.
+    </div>
+  ) : (
+    /* ASSIGNMENT LIST */
+    <div style={{ display: "grid", gap: "12px" }}>
+      {propertyAssignments.map((assignment, index) => (
+        <div
+          key={index}
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr auto",
+            gap: "12px",
+            alignItems: "end",
+            backgroundColor: "#ffffff",
+            padding: "14px",
+            borderRadius: "12px",
+            border: "1px solid #e5e7eb",
+          }}
+        >
+          {/* PROPERTY */}
+          <div>
+            <label
+              style={{
+                display: "block",
+                fontWeight: 600,
+                fontSize: "12px",
+                marginBottom: "6px",
+                color: "#0F52BA",
+              }}
+            >
+              Property
+            </label>
+
+            <CustomDropdown
+              options={properties}
+              value={assignment.propertyId}
+              onChange={(val) =>
+                updatePropertyAssignment(index, "propertyId", Number(val))
+              }
+              labelKey="title"
+              valueKey="id"
+              placeholder="Select Property"
+            />
+          </div>
+
+          {/* ROLE */}
+          <div>
+            <label
+              style={{
+                display: "block",
+                fontWeight: 600,
+                fontSize: "12px",
+                marginBottom: "6px",
+                color: "#0F52BA",
+              }}
+            >
+              Role
+            </label>
+
+            <CustomDropdown
+              options={roles}
+              value={assignment.roleId}
+              onChange={(val) =>
+                updatePropertyAssignment(index, "roleId", Number(val))
+              }
+              labelKey="name"
+              valueKey="id"
+              placeholder="Select Role"
+            />
+          </div>
+
+          {/* DELETE */}
           <button
             type="button"
-            onClick={addPropertyAssignment}
+            onClick={() => removePropertyAssignment(index)}
             style={{
-              backgroundColor: "rgba(17,24,39,0.5)",
-              color: "var(--neon-blue)",
-              border: "1px solid var(--border-glow)",
-              borderRadius: "12px",
-              padding: "12px 20px",
-              fontWeight: 600,
+              backgroundColor: "#ffffff",
+              color: "#ef4444",
+              border: "1px solid rgba(239,68,68,0.2)",
+              borderRadius: "10px",
+              padding: "10px 12px",
               cursor: "pointer",
-              marginBottom: "16px"
+              height: "42px",
+              alignSelf: "end",
             }}
           >
-            + Add Property Assignment
+            <span className="material-symbols-outlined">delete</span>
           </button>
-          {propertyAssignments.length === 0 ? (
-            <div style={{
-              padding: "24px",
-              textAlign: "center",
-              color: "var(--text-secondary)",
-              border: "1px dashed var(--border-glow)",
-              borderRadius: "12px"
-            }}>
-              No properties assigned. Click above to add.
-            </div>
-          ) : (
-            <div style={{ display: "grid", gap: "12px" }}>
-              {propertyAssignments.map((assignment, index) => (
-                <div
-                  key={index}
-                  className="property-assignment-row"
-                  style={{
-                   backgroundColor: "rgba(17,24,39,0.3)",
-                   padding: "16px",
-                   borderRadius: "12px",
-                   border: "1px solid var(--border-glow)",
-                 }}
-                >
-                  <div style={{ flex: 1 }}>
-                    <label style={{ display: "block", fontWeight: 600, fontSize: "12px", marginBottom: "6px", color: "var(--neon-blue)" }}>
-                      Property
-                    </label>
-                    <CustomDropdown
-  options={properties}
-  value={assignment.propertyId}
-  onChange={(val) =>
-    updatePropertyAssignment(index, "propertyId", Number(val))
-  }
-  labelKey="title"
-  valueKey="id"
-  placeholder="Select Property"
-/>
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <label style={{ display: "block", fontWeight: 600, fontSize: "12px", marginBottom: "6px", color: "var(--neon-blue)" }}>
-                      Role for this Property
-                    </label>
-                    <CustomDropdown
-  options={roles}
-  value={assignment.roleId}
-  onChange={(val) =>
-    updatePropertyAssignment(index, "roleId", Number(val))
-  }
-  labelKey="name"
-  valueKey="id"
-  placeholder="Select Role"
-/>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => removePropertyAssignment(index)}
-                    style={{
-                      backgroundColor: "rgba(239,68,68,0.2)",
-                      color: "#ef4444",
-                      border: "1px solid rgba(239,68,68,0.3)",
-                      borderRadius: "8px",
-                      padding: "10px 14px",
-                      cursor: "pointer",
-                      fontSize: "14px",
-                      minWidth: "unset",
-                      whiteSpace: "nowrap",
-                      height: "fit-content"
-                    }}
-                  >
-                    🗑️
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
+      ))}
+    </div>
+  )}
+</div>
 
         <div style={{ display: "flex", gap: "16px", justifyContent: "flex-end"}}>
           <button

@@ -214,7 +214,6 @@ export default function DynamicTable<T>({
         borderRadius: 16,
         overflow: "hidden",
         boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04)",
-        marginTop: "24px",
       }}
     >
       {search?.enabled && (
@@ -339,7 +338,9 @@ export default function DynamicTable<T>({
               </tr>
             ) : (
               pagedData.map((row, idx) => {
-                const id = getRowId(row);
+                // const id = getRowId(row);
+                const rawId = getRowId(row);
+                const id = rawId ?? (row as any)?.id ?? (row as any)?.key ?? idx;
                 const disabled = selection?.getDisabled?.(row) ?? false;
                 const rowSelected = hasSelection
                   ? selection!.selectedIds.has(id)
@@ -460,7 +461,9 @@ export default function DynamicTable<T>({
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {pagedData.map((row, idx) => {
-              const id = getRowId(row);
+              // const id = getRowId(row);
+              const rawId = getRowId(row);
+              const id = rawId ?? (row as any)?.id ?? (row as any)?.key ?? idx;
               return (
                 <div
                   key={String(id)}

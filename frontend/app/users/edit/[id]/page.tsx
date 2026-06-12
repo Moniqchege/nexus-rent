@@ -32,9 +32,8 @@ export default function EditUserPage() {
 
   return (
     <div className="dashboard-content">
-      <div className="page-tag">👥 USERS MANAGEMENT</div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ fontWeight: 600, fontSize: "16px", color: "var(--neon-blue)" }}>
+        <div style={{ fontWeight: 600, fontSize: "12px", color: "var(--neon-blue)" }}>
           ADMIN PANEL
         </div>
         <button 
@@ -53,7 +52,7 @@ export default function EditUserPage() {
           ← Back
         </button>
       </div>
-      <h2 style={{ fontSize: "24px", fontWeight: 700, color: "var(--neon-purple)", marginBottom: "32px" }}>
+      <h2 style={{ fontSize: "18px", fontWeight: 700, color: "#000000", marginBottom: "32px" }}>
         Edit User
       </h2>
       <UserForm 

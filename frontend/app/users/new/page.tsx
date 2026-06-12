@@ -26,7 +26,7 @@ export default function NewUserPage() {
         <div
           style={{
             fontWeight: 600,
-            fontSize: "16px",
+            fontSize: "14px",
             color: "var(--neon-blue)"
           }}
         >
@@ -53,9 +53,9 @@ export default function NewUserPage() {
       {/* Main heading */}
       <h2
         style={{
-          fontSize: "24px",
+          fontSize: "18px",
           fontWeight: 700,
-          color: "var(--neon-purple)",
+          color: "#000000",
           marginBottom: "32px"
         }}
       >

@@ -105,31 +105,21 @@ export default function UsersPage() {
           display: "inline-flex",
           alignItems: "center",
           gap: 8,
-          padding: "6px 12px",
+          padding: "6px 18px",
           borderRadius: 999,
           fontSize: 10,
           fontWeight: 700,
           background: locked
             ? "#0F52BA"
             : "transparent",
-          color: locked ? "#171616" : "#0F52BA",
+          color: locked ? "#ffffff" : "#0F52BA",
           border: locked
             ? "0.1px solid #0F52BA"
             : "0.1px solid #0F52BA",
           width: "fit-content",
         }}
       >
-        <div
-          style={{
-            width: 8,
-            height: 8,
-            borderRadius: "50%",
-            background: locked ? "#1d1919" : "#0F52BA",
-            boxShadow: locked
-              ? "0 0 8px #0F52BA"
-              : "0 0 8px #0F52BA",
-          }}
-        />
+        
 
         {locked ? "Locked" : "Active"}
       </div>
