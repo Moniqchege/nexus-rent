@@ -84,8 +84,6 @@ export default function NotificationsPage() {
 
   return (
     <div className="dashboard-content">
-      <div className="page-tag">📡 SENT MESSAGES</div>
-
       <div className="page-header-row">
         <div>
           <div className="section-label">NOTIFICATIONS</div>

@@ -19,6 +19,14 @@ export default function NotificationsLayout({
     { name: 'Surveys', href: '/notifications/surveys', icon: '🛡️' },
   ];
 
+  const getActiveTab = () => {
+  if (pathname.startsWith("/notifications/reviews")) return "/notifications/reviews";
+  if (pathname.startsWith("/notifications/surveys")) return "/notifications/surveys";
+  return "/notifications";
+};
+
+const active = getActiveTab();
+
   const activeTab = tabs.find(tab => pathname === tab.href || pathname.startsWith(tab.href + '/')) || tabs[0];
 
   return (
@@ -29,42 +37,74 @@ export default function NotificationsLayout({
           <Sidebar />
           <main>
             <div className="glass-panel" style={{ marginTop: '24px', padding: '16px 24px' }}>
-              <div className="tabs-container" style={{
-                display: 'flex',
-                gap: '28px',
-                borderBottom: '1px solid var(--border-glow)',
-                paddingBottom: '12px'
-              }}>
-                {tabs.map((tab) => (
-                 <button
-  key={tab.href}
-  onClick={() => router.push(tab.href)}
-style={{
-  padding: '8px 46px',
-  borderRadius: '8px 8px 0 0',
-  background: pathname === tab.href ? 'rgba(17, 24, 39, 0.7)' : 'transparent',
-  borderBottom: pathname === tab.href
-    ? '2px solid var(--neon-blue)'
-    : '2px solid transparent',
-  boxShadow: pathname === tab.href
-    ? '0 4px 10px -2px rgba(0, 225, 255, 0.3)'
-    : 'none',
-  color: pathname === tab.href
-    ? 'var(--neon-blue)'
-    : 'var(--text-secondary)',
-  cursor: 'pointer',
-  fontWeight: 500,
-  fontSize: '14px',
-  display: 'flex',
-  alignItems: 'center',
-  gap: '4px',
-  transition: 'all 0.3s ease'
-}}
+             <div
+  style={{
+    display: "flex",
+    gap: 6,
+    borderBottom: "1px solid #E5E7EB",
+    paddingBottom: 10,
+  }}
 >
-  {tab.icon} {tab.name}
-</button>
-                ))}
-              </div>
+ {tabs.map((tab) => {
+  const isActive = active === tab.href;
+  const isDefaultTab = tab.href === "/notifications";
+
+  return (
+    <button
+      key={tab.href}
+      onClick={() => router.push(tab.href)}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+
+        padding: "8px 14px",
+        borderRadius: 8,
+
+        fontSize: 14,
+        fontWeight: 500,
+
+        cursor: "pointer",
+        transition: "all 0.15s ease",
+
+        border: "1px solid transparent",
+
+        // 🔑 IMPORTANT CHANGE:
+        background: isActive
+          ? "#F3F6FF"
+          : "white", // default is ALWAYS white when not active
+
+        color: isActive ? "#1D4ED8" : "#374151",
+      }}
+      onMouseEnter={(e) => {
+        if (!isActive) {
+          e.currentTarget.style.background = "#F9FAFB";
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!isActive) {
+          e.currentTarget.style.background = "white";
+        }
+      }}
+    >
+      <span style={{ fontSize: 16 }}>{tab.icon}</span>
+      <span>{tab.name}</span>
+
+      {isActive && (
+        <span
+          style={{
+            width: 6,
+            height: 6,
+            borderRadius: "50%",
+            background: "#1D4ED8",
+            marginLeft: 4,
+          }}
+        />
+      )}
+    </button>
+  );
+})}
+</div>
             </div>
             {children}
           </main>
