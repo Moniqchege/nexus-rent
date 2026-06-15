@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAuthStore } from "../store/authStore";
 import api from "../lib/api";
 import { useRouter } from "next/navigation";
 import { Plus, Mail } from "lucide-react";
@@ -36,16 +35,12 @@ export default function NotificationsPage() {
   const [pages, setPages] = useState(0);
   const router = useRouter();
 
-  const { user } = useAuthStore();
-
   const fetchSentNotifications = async (pageNum = 1) => {
     try {
       setLoading(true);
       setError("");
-
       const res = await api.get(`/api/notifications/sent?page=${pageNum}&limit=${limit}`);
       const data = res.data as SentResponse;
-
       setSentNotifications(data.notifications);
       setTotal(data.pagination.total);
       setPages(data.pagination.pages);
@@ -61,161 +56,283 @@ export default function NotificationsPage() {
     fetchSentNotifications(page);
   }, [page]);
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
+  const formatDate = (dateString: string) =>
+    new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
       day: "numeric",
       hour: "2-digit",
       minute: "2-digit",
     });
-  };
 
-  const truncateMessage = (message: string, max = 60) => {
-    if (!message) return "";
-    return message.length > max
-      ? message.slice(0, max).trim() + "…"
-      : message;
-  };
-
-  const getStatus = (notification: SentNotification) => {
-    return notification.isRead ? "Read" : "Unread";
-  };
+  const truncate = (str: string, max = 64) =>
+    str.length > max ? str.slice(0, max).trim() + "…" : str;
 
   return (
-    <div className="dashboard-content">
-      <div className="page-header-row">
-        <div>
-          <div className="section-label">NOTIFICATIONS</div>
+    <>
+      {/* Card header — matches the reference's p-8 border-b header pattern */}
+      <div
+        style={{
+          padding: "28px 32px",
+          borderBottom: "1px solid #e5eeff",
+          background: "#f8f9ff",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+          <div
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: "12px",
+              background: "rgba(99,14,212,0.1)",
+              color: "#630ed4",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 22 }}>
+              sensors
+            </span>
+          </div>
+          <div>
+            <h3
+              style={{
+                fontSize: "18px",
+                fontWeight: 700,
+                color: "#0b1c30",
+                margin: 0,
+              }}
+            >
+              Sent Messages
+            </h3>
+            <p style={{ fontSize: "13px", color: "#4a4455", marginTop: "2px" }}>
+              All outbound notifications sent to residents.
+            </p>
+          </div>
         </div>
+
         <button
-          className="btn-primary"
           onClick={() => router.push("/notifications/send")}
-          style={{ padding: "10px 18px" }}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            padding: "10px 18px",
+            background: "#630ed4",
+            color: "#ffffff",
+            border: "none",
+            borderRadius: "10px",
+            fontWeight: 600,
+            fontSize: "14px",
+            cursor: "pointer",
+            fontFamily: "'Inter', sans-serif",
+            boxShadow: "0 4px 14px rgba(99,14,212,0.25)",
+          }}
         >
-          <Plus size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />
+          <Plus size={16} />
           New Message
         </button>
       </div>
 
-      <h2 className="page-title">Sent Messages</h2>
-
+      {/* Card body */}
       {loading ? (
-        <div className="glass-panel" style={{ textAlign: "center", padding: "48px" }}>
-          <span style={{ color: "var(--text-secondary)" }}>Loading sent messages...</span>
+        <div
+          style={{
+            padding: "80px",
+            textAlign: "center",
+            color: "#7b7487",
+            fontSize: "14px",
+          }}
+        >
+          Loading sent messages…
         </div>
       ) : sentNotifications.length === 0 ? (
         <div
-          className="glass-panel"
           style={{
+            padding: "80px 32px",
             textAlign: "center",
-            padding: "48px 24px",
-            color: "var(--text-secondary)",
           }}
         >
           <div
             style={{
-              width: 64,
-              height: 64,
-              borderRadius: 16,
-              background: "rgba(37, 99, 235, 0.08)",
-              color: "var(--neon-blue)",
+              width: 56,
+              height: 56,
+              borderRadius: "14px",
+              background: "#eff4ff",
+              color: "#630ed4",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               margin: "0 auto 16px",
             }}
           >
-            <Mail size={28} />
+            <Mail size={24} />
           </div>
-          <div style={{ fontSize: 15, color: "var(--text-primary)", fontWeight: 600 }}>
+          <div
+            style={{
+              fontSize: "16px",
+              fontWeight: 600,
+              color: "#0b1c30",
+              marginBottom: "8px",
+            }}
+          >
             No sent messages yet
           </div>
-          <div style={{ marginTop: 12, fontSize: 14 }}>
-            <a
-              href="/notifications/send"
-              style={{
-                color: "var(--neon-blue)",
-                textDecoration: "none",
-                fontWeight: 600,
-              }}
-            >
-              Send your first message →
-            </a>
+          <div style={{ fontSize: "14px", color: "#4a4455", marginBottom: "24px" }}>
+            Start communicating with residents by sending your first notification.
           </div>
+          <button
+            onClick={() => router.push("/notifications/send")}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "10px 20px",
+              background: "#630ed4",
+              color: "#ffffff",
+              border: "none",
+              borderRadius: "10px",
+              fontWeight: 600,
+              fontSize: "14px",
+              cursor: "pointer",
+              fontFamily: "'Inter', sans-serif",
+            }}
+          >
+            <Plus size={15} />
+            Send your first message
+          </button>
         </div>
       ) : (
-        <div className="glass-panel" style={{ overflow: "auto", padding: 0 }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead className="table-head">
-              <tr>
-                <th style={{ padding: "12px", width: 50 }}>#</th>
-                <th style={{ padding: "12px" }}>Date</th>
-                <th style={{ padding: "12px" }}>Message</th>
-                <th style={{ padding: "12px" }}>Recipients</th>
-                <th style={{ padding: "12px" }}>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sentNotifications.map((notification, index) => (
-                <tr
-                  key={notification.id}
+        <>
+          {/* Table head */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "48px 160px 1fr 130px 100px",
+              padding: "10px 32px",
+              borderBottom: "1px solid #e5eeff",
+              background: "#f8f9ff",
+            }}
+          >
+            {["#", "Date", "Message", "Recipients", "Status"].map((h) => (
+              <span
+                key={h}
+                style={{
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  color: "#7b7487",
+                  letterSpacing: "0.06em",
+                  textTransform: "uppercase",
+                }}
+              >
+                {h}
+              </span>
+            ))}
+          </div>
+
+          {/* Rows */}
+          {sentNotifications.map((n, i) => (
+            <div
+              key={n.id}
+              style={{
+                display: "grid",
+                gridTemplateColumns: "48px 160px 1fr 130px 100px",
+                padding: "14px 32px",
+                borderBottom:
+                  i < sentNotifications.length - 1
+                    ? "1px solid #e5eeff"
+                    : "none",
+                alignItems: "center",
+                transition: "background 0.1s",
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.background = "#f8f9ff")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.background = "transparent")
+              }
+            >
+              <span style={{ fontSize: "13px", color: "#7b7487", fontWeight: 500 }}>
+                {i + 1}
+              </span>
+              <span style={{ fontSize: "13px", color: "#4a4455" }}>
+                {formatDate(n.sentAt)}
+              </span>
+              <span
+                style={{ fontSize: "14px", color: "#0b1c30", fontWeight: 500 }}
+              >
+                {truncate(n.title)}
+              </span>
+              <span style={{ fontSize: "13px", color: "#4a4455" }}>
+                {n.recipientCount ?? n.recipientIds.length} recipient
+                {(n.recipientCount ?? n.recipientIds.length) !== 1 ? "s" : ""}
+              </span>
+              <span>
+                <span
                   style={{
-                    borderBottom: "1px solid var(--border-glow)",
+                    display: "inline-block",
+                    padding: "3px 10px",
+                    borderRadius: "20px",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    background: n.isRead ? "#e5eeff" : "#fce7f3",
+                    color: n.isRead ? "#630ed4" : "#9d174d",
                   }}
                 >
-                  <td
+                  {n.isRead ? "Read" : "Unread"}
+                </span>
+              </span>
+            </div>
+          ))}
+
+          {/* Pagination footer */}
+          {pages > 1 && (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "16px 32px",
+                borderTop: "1px solid #e5eeff",
+                background: "#f8f9ff",
+              }}
+            >
+              <span style={{ fontSize: "13px", color: "#7b7487" }}>
+                Page {page} of {pages} — {total} total
+              </span>
+              <div style={{ display: "flex", gap: "8px" }}>
+                {[
+                  { label: "Previous", disabled: page === 1, action: () => setPage((p) => p - 1) },
+                  { label: "Next", disabled: page === pages, action: () => setPage((p) => p + 1) },
+                ].map(({ label, disabled, action }) => (
+                  <button
+                    key={label}
+                    onClick={action}
+                    disabled={disabled}
                     style={{
-                      padding: "12px",
-                      color: "var(--text-secondary)",
-                      fontSize: 13,
-                    }}
-                  >
-                    {index + 1}
-                  </td>
-                  <td
-                    style={{
-                      padding: "12px",
-                      fontSize: 13,
-                      color: "var(--text-secondary)",
-                    }}
-                  >
-                    {formatDate(notification.sentAt)}
-                  </td>
-                  <td
-                    style={{
-                      padding: "12px",
-                      fontSize: 13,
-                      color: "var(--text-primary)",
+                      padding: "6px 14px",
+                      borderRadius: "8px",
+                      border: "1px solid #ccc3d8",
+                      background: disabled ? "#f8f9ff" : "#ffffff",
+                      color: disabled ? "#7b7487" : "#0b1c30",
+                      fontSize: "13px",
                       fontWeight: 500,
+                      cursor: disabled ? "not-allowed" : "pointer",
+                      fontFamily: "'Inter', sans-serif",
                     }}
                   >
-                    {truncateMessage(notification.title, 60)}
-                  </td>
-                  <td
-                    style={{
-                      padding: "12px",
-                      fontSize: 13,
-                      color: "var(--text-primary)",
-                    }}
-                  >
-                    {notification.recipientCount ?? notification.recipientIds.length}
-                  </td>
-                  <td style={{ padding: "12px" }}>
-                    <button
-                      className={`status-btn ${
-                        notification.isRead ? "status-read" : "status-unread"
-                      }`}
-                    >
-                      {getStatus(notification)}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
       )}
-    </div>
+    </>
   );
 }
