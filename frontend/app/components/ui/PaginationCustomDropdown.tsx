@@ -76,7 +76,7 @@ export function PaginationCustomDropdown<T>({
           padding: "8px 10px",
           borderRadius: "12px",
           border: "1px solid var(--border-glow)",
-          background: "rgba(255,255,255,0.03)",
+          background: "#ffffff",
           color: "var(--text-primary)",
           fontSize: "13px",
           fontWeight: 500,
@@ -127,7 +127,7 @@ export function PaginationCustomDropdown<T>({
             overflowY: "auto",
 
             borderRadius: "12px",
-            background: "rgb(17, 24, 39)",
+            background: "#ffffff",
             border: "1px solid var(--border-glow)",
 
             zIndex: 9999,

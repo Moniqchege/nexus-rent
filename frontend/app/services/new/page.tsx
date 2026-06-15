@@ -3,16 +3,27 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import api from '@/app/lib/api';
-import { ServiceForm } from '@/app/components/services/ServiceForm';
+import { ServiceForm, ServiceFormData } from '@/app/components/services/ServiceForm';
 
 export default function NewServiceProviderPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
-  const handleCreateProvider = async (data: any) => {
+  const [formData, setFormData] = useState<ServiceFormData>({
+    name: '',
+    phone: '',
+    email: '',
+    categoryId: '',
+    hourlyRate: '',
+    location: '',
+    bio: '',
+    image: '',
+  });
+
+  const handleCreateProvider = async () => {
     setLoading(true);
     try {
-      await api.post('/api/services/providers', data);
+      await api.post('/api/services/providers', formData);
       router.push('/services');
     } catch (error) {
       console.error('Error creating provider:', error);
@@ -23,21 +34,19 @@ export default function NewServiceProviderPage() {
 
   return (
     <div className="dashboard-content">
-      <div className="page-tag">🏦 SERVICE LENDERS</div>
-
-      {/* Section label + back button (MATCH ROLES) */}
+      {/* Header */}
       <div
         style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
         }}
       >
         <div
           style={{
             fontWeight: 600,
-            fontSize: "16px",
-            color: "var(--neon-blue)"
+            fontSize: '12px',
+            color: 'var(--neon-blue)',
           }}
         >
           PROVIDERS MANAGEMENT
@@ -46,37 +55,43 @@ export default function NewServiceProviderPage() {
         <button
           onClick={() => router.push('/services')}
           style={{
-            background: "linear-gradient(to right, var(--neon-blue), var(--neon-purple))",
-            color: "white",
-            border: "none",
-            borderRadius: "12px",
+            background: 'linear-gradient(to right, var(--neon-blue), var(--neon-purple))',
+            color: 'white',
+            border: 'none',
+            borderRadius: '12px',
             fontWeight: 600,
-            cursor: "pointer",
-            padding: "12px 24px",
-            fontSize: "14px"
+            cursor: 'pointer',
+            padding: '12px 24px',
+            fontSize: '14px',
           }}
         >
           ← Back
         </button>
       </div>
 
-      {/* Main heading */}
+      {/* Title */}
       <h2
         style={{
-          fontSize: "24px",
+          fontSize: '18px',
           fontWeight: 700,
-          color: "var(--neon-purple)",
-          marginBottom: "20px"
+          color: '#000000',
+          marginBottom: '20px',
         }}
       >
         Create Service Provider
       </h2>
 
-      {/* FORM (reused like RoleForm) */}
+      {/* FORM */}
       <ServiceForm
-        onSubmit={handleCreateProvider}
+        value={formData}
+        onChange={setFormData}
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleCreateProvider();
+        }}
         onCancel={() => router.push('/services')}
         loading={loading}
+        mode="create"
       />
     </div>
   );
