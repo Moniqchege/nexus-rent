@@ -3,9 +3,9 @@
 import { useState } from "react";
 import DynamicTable from "@/app/components/ui/DynamicTable";
 
-interface Action {
+export interface Action {
   label: string;
-  icon?: string;
+  icon?: React.ReactNode;
   variant?: "default" | "primary";
   onClick: () => void;
   disabled?: boolean;
@@ -16,6 +16,12 @@ interface Metric {
   value: React.ReactNode;
 }
 
+type SearchConfig<T> = {
+  enabled: boolean;
+  placeholder?: string;
+  getSearchText?: (row: T) => string;
+};
+
 interface TabConfig {
   key: string;
   label: string;
@@ -23,7 +29,7 @@ interface TabConfig {
     rows: any[];
     columns: any[];
     getRowId?: (row: any) => string | number;
-    search?: boolean;
+    search?: SearchConfig<any>;
   };
   content?: React.ReactNode;
 }
@@ -225,11 +231,7 @@ export default function ViewDetails({
                         tab.table.getRowId ??
                         ((r) => r.id)
                       }
-                      search={{
-                        enabled:
-                          tab.table.search ??
-                          true,
-                      }}
+                      search={tab.table.search}
                       pagination={{
                         enabled: true,
                         defaultPageSize: 10,

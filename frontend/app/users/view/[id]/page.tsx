@@ -106,7 +106,9 @@ export default function UserViewPage() {
               render: (r: any) => r.actor ?? "-",
             },
           ],
-          search: false,
+          search: {
+           enabled: false,
+          }
         },
       },
       {
@@ -126,7 +128,9 @@ export default function UserViewPage() {
               render: (r: any) => r.description ?? "-",
             },
           ],
-          search: false,
+          search: {
+           enabled: false,
+          }
         },
       },
       {
@@ -146,7 +150,9 @@ export default function UserViewPage() {
               render: (r: any) => r.property?.location ?? "-",
             },
           ],
-          search: false,
+          search: {
+           enabled: false,
+          }
         },
       },
     ],

@@ -54,12 +54,11 @@ const groupedPermissions = permissions.reduce(
 
   return (
     <div style={{
-      backgroundColor: "rgba(17,24,39,0.95)",
+      backgroundColor: "#ffffff",
       backdropFilter: "blur(20px)",
       border: "1px solid var(--border-glow)",
       borderRadius: "24px",
       padding: "25px",
-      maxWidth: "950px",
       marginBottom: "32px"
     }}>
       <h3 style={{ 
@@ -91,7 +90,7 @@ const groupedPermissions = permissions.reduce(
       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
       style={{
         width: "100%",
-        backgroundColor: "rgba(17,24,39,0.5)",
+        backgroundColor: "#ffffff",
         border: "1px solid var(--border-glow)",
         borderRadius: "12px",
         padding: "10px 20px",
@@ -113,7 +112,7 @@ const groupedPermissions = permissions.reduce(
       onChange={(e) => setFormData({ ...formData, code: e.target.value })}
       style={{
         width: "100%",
-        backgroundColor: "rgba(17,24,39,0.5)",
+        backgroundColor: "#ffffff",
         border: "1px solid var(--border-glow)",
         borderRadius: "12px",
         padding: "10px 20px",
@@ -136,7 +135,7 @@ const groupedPermissions = permissions.reduce(
             rows={2}
             style={{
               width: "100%",
-              backgroundColor: "rgba(17,24,39,0.5)",
+              backgroundColor: "#ffffff",
               border: "1px solid var(--border-glow)",
               borderRadius: "12px",
               padding: "10px 20px",
@@ -246,9 +245,9 @@ createPortal(
       </button>
 
       {/* Header */}
-      <h2 style={{ color: "#fff", marginBottom: "12px" }}>
+      <h3 style={{ color: "#000000", marginBottom: "12px" }}>
         Select Permissions
-      </h2>
+      </h3>
 
       {/* Scrollable content */}
       <div className="popup-scroll">
@@ -275,7 +274,7 @@ createPortal(
                   border: "1px solid var(--border-glow)",
                   borderRadius: "12px",
                   padding: "12px",
-                  background: "rgba(17,24,39,0.6)"
+                  background: "#ffffff"
                 }}
               >
                 {/* Parent */}
@@ -285,7 +284,7 @@ createPortal(
                     alignItems: "center",
                     gap: "10px",
                     fontWeight: 400,
-                    color: "var(--neon-purple)",
+                    color: "var(--neon-blue)",
                     cursor: "pointer"
                   }}
                 >
@@ -316,9 +315,9 @@ createPortal(
                       });
                     }}
                     style={{
-                      width: "14px",
-                      height: "14px",
-                      accentColor: "var(--neon-purple)"
+                      width: "12px",
+                      height: "12px",
+                      accentColor: "var(--neon-blue)"
                     }}
                   />
                   {category}
@@ -340,7 +339,7 @@ createPortal(
                         display: "flex",
                         alignItems: "center",
                         gap: "10px",
-                        color: "#ddd",
+                        color: "var(--text-primary)",
                         cursor: "pointer"
                       }}
                     >
@@ -364,9 +363,9 @@ createPortal(
                           });
                         }}
                         style={{
-                          width: "14px",
-                          height: "14px",
-                          accentColor: "var(--neon-purple)"
+                          width: "12px",
+                          height: "12px",
+                          accentColor: "var(--neon-blue)"
                         }}
                       />
                       {perm.label}
@@ -393,7 +392,7 @@ createPortal(
             padding: "10px 20px",
             borderRadius: "8px",
             border: "none",
-            background: "var(--neon-purple)",
+            background: "linear-gradient(to right, var(--neon-blue), var(--neon-purple))",
             color: "#fff",
             cursor: "pointer"
           }}

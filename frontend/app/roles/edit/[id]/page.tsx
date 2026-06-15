@@ -36,9 +36,8 @@ export default function EditRolePage() {
 
   return (
     <div className="dashboard-content">
-      <div className="page-tag">🎭 ROLES & PERMISSIONS</div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ fontWeight: 600, fontSize: "16px", color: "var(--neon-blue)" }}>
+        <div style={{ fontWeight: 600, fontSize: "12px", color: "var(--neon-blue)" }}>
           ACCESS CONTROL
         </div>
         <button onClick={() => router.push("/roles")} style={{
@@ -54,7 +53,7 @@ export default function EditRolePage() {
           ← Back
         </button>
       </div>
-      <h2 style={{ fontSize: "24px", fontWeight: 700, color: "var(--neon-purple)", marginBottom: "20px" }}>
+      <h2 style={{ fontSize: "18px", fontWeight: 700, color: "#000000", marginBottom: "18px" }}>
         Edit Role
       </h2>
       <RoleForm onSubmit={handleUpdate} onCancel={() => router.push("/roles")} editingRole={editingRole} />

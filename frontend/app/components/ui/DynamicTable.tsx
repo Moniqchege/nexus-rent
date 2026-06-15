@@ -8,7 +8,7 @@ export type DynamicTableColumn<T> = {
   header: React.ReactNode;
   width?: number | string;
   align?: "left" | "right" | "center";
-  render: (row: T, rowIndex: number) => React.ReactNode;
+  render?: (row: T, rowIndex: number) => React.ReactNode;
   sortValue?: (row: T) => string | number;
   hideOnMobile?: boolean;
 };
@@ -386,7 +386,7 @@ export default function DynamicTable<T>({
                         }}
                       >
                         <div style={{ textAlign: col.align ?? "left" }}>
-                          {col.render(row, idx)}
+                          {col.render ? col.render(row, idx) : (row as any)[col.key]}
                         </div>
                       </td>
                     ))}
@@ -506,7 +506,7 @@ export default function DynamicTable<T>({
                           fontWeight: 500,
                         }}
                       >
-                        {col.render(row, idx)}
+                        {col.render ? col.render(row, idx) : (row as any)[col.key]}
                       </span>
                     </div>
                   ))}

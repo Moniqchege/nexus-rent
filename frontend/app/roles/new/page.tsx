@@ -24,8 +24,6 @@ export default function NewRolePage() {
 
   return (
     <div className="dashboard-content">
-      <div className="page-tag">🎭 ROLES & PERMISSIONS</div>
-
       {/* Section label with back button */}
       <div
         style={{
@@ -37,7 +35,7 @@ export default function NewRolePage() {
         <div
           style={{
             fontWeight: 600,
-            fontSize: "16px",
+            fontSize: "12px",
             color: "var(--neon-blue)"
           }}
         >
@@ -64,9 +62,9 @@ export default function NewRolePage() {
       {/* Main heading */}
       <h2
         style={{
-          fontSize: "24px",
+          fontSize: "18px",
           fontWeight: 700,
-          color: "var(--neon-purple)",
+          color: "#000000",
           marginBottom: "20px"
         }}
       >

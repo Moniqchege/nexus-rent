@@ -101,24 +101,12 @@ export default function RolesPage() {
         label: "View",
         onClick: (row: Role) => router.push(`/roles/view/${row.id}`),
       },
-      {
-        key: "edit",
-        label: "Edit",
-        onClick: (row: Role) => router.push(`/roles/edit/${row.id}`),
-      },
-      {
-        key: "delete",
-        label: "Delete",
-        onClick: (row: Role) => handleDeleteClick(row.id),
-      },
     ],
     [router]
   );
 
   return (
     <div className="dashboard-content">
-      <div className="page-tag">🎭 ROLES & PERMISSIONS</div>
-
       <div
         style={{
           display: "flex",
@@ -147,8 +135,8 @@ export default function RolesPage() {
       </div>
 
       <div>
-        <h2 style={{ fontSize: "20px", fontWeight: 700, color: "var(--neon-blue)" }}>
-          Roles ({roles.length})
+        <h2 style={{ fontSize: "20px", fontWeight: 700, color: "#000000", marginBottom: "18px"}}>
+          Roles 
         </h2>
       </div>
 
