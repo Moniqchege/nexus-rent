@@ -475,324 +475,352 @@ export default function TenantPage() {
       })()
     : [];
 
-  return (
-    <div style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "flex-start" }}>
+ return (
+  <div
+    style={{
+      maxWidth: 1200,
+      margin: "0 auto",
+      padding: 14,
+      display: "grid",
+      gridTemplateColumns: "280px 1fr",
+      gap: 24,
+      alignItems: "start",
+    }}
+  >
+    {/* ───────────────── LEFT COLUMN ───────────────── */}
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      
+      {/* Search */}
+      <div
+        style={{
+          background: "rgba(255,255,255,0.8)",
+          border: "1px solid #e5e7eb",
+          borderRadius: 14,
+          padding: 12,
+          backdropFilter: "blur(8px)",
+        }}
+      >
+        <input
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setShowSearch(true);
+          }}
+          onFocus={() => setShowSearch(true)}
+          onBlur={() => setTimeout(() => setShowSearch(false), 150)}
+          placeholder="Search tenant..."
+          style={{
+            width: "100%",
+            padding: "10px 12px",
+            borderRadius: 10,
+            border: "1px solid #e5e7eb",
+            outline: "none",
+            fontSize: 13,
+          }}
+        />
 
-      {/* ── Left column ── */}
-      <div style={{ flex: "0 0 280px", display: "flex", flexDirection: "column", gap: 12 }}>
-
-        {/* Search / switch tenant */}
-        <GlassPanel style={{ padding: 16 }}>
-          <div style={{ position: "relative" }}>
-            <input
-              value={search}
-              onChange={(e) => { setSearch(e.target.value); setShowSearch(true); }}
-              onFocus={() => setShowSearch(true)}
-              onBlur={() => setTimeout(() => setShowSearch(false), 150)}
-              placeholder="🔍  Switch tenant…"
-              style={{
-                width: "100%",
-                background: "#e2e8f0",
-                border: "1px solid #cbd5e1",
-                borderRadius: 10,
-                padding: "8px 12px",
-                color: "#fff",
-                fontSize: 13,
-                outline: "none",
-                boxSizing: "border-box",
-              }}
-            />
-            {showSearch && searchResults.length > 0 && (
+        {showSearch && searchResults.length > 0 && (
+          <div
+            style={{
+              marginTop: 8,
+              border: "1px solid #e5e7eb",
+              borderRadius: 10,
+              overflow: "hidden",
+              background: "#fff",
+            }}
+          >
+            {searchResults.map((l) => (
               <div
-                style={{
-                  position: "absolute",
-                  top: "calc(100% + 4px)",
-                  left: 0,
-                  right: 0,
-                  background: "#1a1a2e",
-                  border: "1px solid #cbd5e1",
-                  borderRadius: 10,
-                  zIndex: 50,
-                  boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
+                key={l.id}
+                onMouseDown={() => {
+                  setSelectedLease(l);
+                  setSearch(l.tenant.name);
+                  setShowSearch(false);
                 }}
+                style={{
+                  padding: 10,
+                  cursor: "pointer",
+                  borderBottom: "1px solid #f1f5f9",
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.background = "#f5f3ff")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.background = "transparent")
+                }
               >
-                {searchResults.map((l) => (
-                  <div
-                    key={l.id}
-                    onMouseDown={() => {
-                      setSelectedLease(l);
-                      setSearch(l.tenant.name);
-                      setShowSearch(false);
-                    }}
-                    style={{
-                      padding: "10px 14px",
-                      cursor: "pointer",
-                      borderBottom: "1px solid #e2e8f0",
-                    }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.background = "rgba(99,102,241,0.15)")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.background = "transparent")
-                    }
-                  >
-                    <div style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>
-                      {l.tenant.name}
-                    </div>
-                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>
-                      {l.property.title}
-                    </div>
-                  </div>
-                ))}
+                <div style={{ fontSize: 13, fontWeight: 600 }}>
+                  {l.tenant.name}
+                </div>
+                <div style={{ fontSize: 11, color: "#6b7280" }}>
+                  {l.property.title}
+                </div>
               </div>
-            )}
+            ))}
           </div>
-        </GlassPanel>
-
-        {/* Tenant summary card */}
-        {loadingLeases ? (
-          <GlassPanel><Spinner /></GlassPanel>
-        ) : lease ? (
-          <GlassPanel>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-              <div
-                style={{
-                  width: 48, height: 48, borderRadius: "50%",
-                  background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontWeight: 700, fontSize: 16, color: "#fff",
-                  boxShadow: "0 0 20px rgba(99,102,241,0.4)", flexShrink: 0,
-                }}
-              >
-                {lease.tenant.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
-              </div>
-              <div>
-                <div style={{ fontWeight: 700, fontSize: 15, color: "#fff" }}>
-                  {lease.tenant.name}
-                </div>
-                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>
-                  {lease.property.title}
-                </div>
-                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>
-                  {lease.tenant.email}
-                </div>
-              </div>
-            </div>
-
-            {loadingFinancials ? (
-              <Spinner />
-            ) : t ? (
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 0,
-                  borderTop: "1px solid #e2e8f0",
-                  paddingTop: 12,
-                }}
-              >
-                <StatRow
-                  label="Outstanding"
-                  value={fmt(t.outstanding)}
-                  color={t.outstanding > 0 ? "#ef4444" : "#00ff87"}
-                />
-                <StatRow
-                  label="Credit Balance"
-                  value={fmt(t.creditBalance)}
-                  color="#60a5fa"
-                />
-                <StatRow
-                  label="Next Due"
-                  value={t.nextDue}
-                  color={t.nextDue === "OVERDUE" ? "#ef4444" : "#fff"}
-                />
-                <StatRow
-                  label="Late Fees (total)"
-                  value={fmt(t.lateFees)}
-                  color={t.lateFees > 0 ? "#f97316" : "rgba(255,255,255,0.4)"}
-                />
-                <StatRow
-                  label="YTD Paid"
-                  value={fmt(t.ytdPaid)}
-                  color="#00ff87"
-                />
-                <StatRow
-                  label="Preferred Method"
-                  value={METHOD_LABEL[t.preferredMethod] ?? t.preferredMethod}
-                  color={METHOD_COLOR[t.preferredMethod] ?? "#fff"}
-                />
-                <StatRow
-                  label="Phone"
-                  value={lease.tenant.phone ?? "—"}
-                  color="#64748b"
-                />
-              </div>
-            ) : null}
-          </GlassPanel>
-        ) : (
-          <GlassPanel>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", textAlign: "center", padding: 20 }}>
-              No leases found
-            </div>
-          </GlassPanel>
         )}
       </div>
 
-      {/* ── Right column: Statement ── */}
-      <GlassPanel style={{ flex: 1, minWidth: 300, padding: 0, overflow: "hidden" }}>
+      {/* Tenant Card */}
+      {lease && (
         <div
           style={{
-            padding: "16px 20px",
-            borderBottom: "1px solid #e2e8f0",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
+            background: "#fff",
+            border: "1px solid #e5e7eb",
+            borderRadius: 16,
+            padding: 16,
+            boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
           }}
         >
-          <SectionTag>📄 Statement of Account</SectionTag>
-          <NeonButton
-            variant="ghost"
-            style={{ fontSize: 11, padding: "5px 10px", cursor: lease && t ? "pointer" : "not-allowed", opacity: lease && t ? 1 : 0.4 }}
-            onClick={() => {
-              if (lease && t) generateStatementPDF(lease, t, ledgerWithBalance);
-            }}
-          >
-            📥 Download PDF
-          </NeonButton>
+          <div style={{ display: "flex", gap: 12, marginBottom: 14 }}>
+            <div
+              style={{
+                width: 50,
+                height: 50,
+                borderRadius: "50%",
+                background: "linear-gradient(135deg,#6366f1,#a855f7)",
+                color: "#fff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontWeight: 700,
+              }}
+            >
+              {lease.tenant.name
+                .split(" ")
+                .map((x) => x[0])
+                .join("")
+                .slice(0, 2)}
+            </div>
+
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 14}}>{lease.tenant.name}</div>
+              <div style={{ fontSize: 12, color: "#6b7280" }}>
+                {lease.property.title}
+              </div>
+              <div style={{ fontSize: 12, color: "#6366f1" }}>
+                {lease.tenant.email}
+              </div>
+            </div>
+          </div>
+
+          {t && (
+            <div
+              style={{
+                borderTop: "1px solid #f1f5f9",
+                paddingTop: 12,
+                display: "flex",
+                flexDirection: "column",
+                gap: 10,
+                fontSize: 12,
+              }}
+            >
+              {[
+                ["Outstanding", fmt(t.outstanding), "#ef4444"],
+                ["Credit", fmt(t.creditBalance), "#10b981"],
+                ["Next Due", t.nextDue, "#111827"],
+                ["Late Fees", fmt(t.lateFees), "#f97316"],
+                ["YTD Paid", fmt(t.ytdPaid), "#10b981"],
+                [
+                  "Method",
+                  METHOD_LABEL[t.preferredMethod] ?? t.preferredMethod,
+                  "#6366f1",
+                ],
+              ].map(([label, value, color]) => (
+                <div
+                  key={label}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <span style={{ color: "#6b7280" }}>{label}</span>
+                  <span style={{ fontWeight: 600, color: color as string }}>
+                    {value}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Payment Health */}
+      <div
+        style={{
+          background: "#f5f3ff",
+          border: "1px solid #e9d5ff",
+          borderRadius: 16,
+          padding: 16,
+        }}
+      >
+        <div style={{ fontSize: 11, color: "#7c3aed" }}>
+          Payment Health
         </div>
 
-        {error && (
-          <div
-            style={{
-              margin: 16,
-              padding: "10px 14px",
-              background: "rgba(239,68,68,0.1)",
-              border: "1px solid rgba(239,68,68,0.3)",
-              borderRadius: 8,
-              fontSize: 12,
-              color: "#ef4444",
-            }}
-          >
-            ⚠️ {error}
-          </div>
-        )}
+        <div
+          style={{
+            fontSize: 28,
+            fontWeight: 800,
+            color: "#6d28d9",
+            marginTop: 6,
+          }}
+        >
+          92%
+        </div>
 
-        {loadingFinancials ? (
-          <Spinner />
-        ) : ledgerWithBalance.length === 0 ? (
+        <div
+          style={{
+            height: 6,
+            background: "#e9d5ff",
+            borderRadius: 999,
+            marginTop: 10,
+            overflow: "hidden",
+          }}
+        >
           <div
             style={{
-              padding: 40,
-              textAlign: "center",
-              fontSize: 13,
-              color: "#94a3b8",
+              width: "92%",
+              height: "100%",
+              background: "#7c3aed",
             }}
-          >
-            No transactions yet
-          </div>
-        ) : (
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
-                  {["Date", "Description", "Charge", "Payment", "Balance"].map((h) => (
-                    <th
-                      key={h}
-                      style={{
-                        padding: "10px 16px",
-                        textAlign: "left",
-                        fontSize: 10,
-                        fontWeight: 700,
-                        color: "#64748b",
-                        textTransform: "uppercase",
-                        letterSpacing: ".06em",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {ledgerWithBalance.map((row: any, i: number) => {
-                  const isPayment = row.type === "payment";
-                  const charge = !isPayment ? row.amount : 0;
-                  const payment = isPayment ? Math.abs(row.amount) : 0;
-                  return (
-                    <tr
-                      key={i}
-                      style={{
-                        borderBottom: "1px solid #eef2f7",
-                        background: isPayment
-                          ? "rgba(0,255,135,0.02)"
-                          : "transparent",
-                      }}
-                    >
-                      <td
-                        style={{
-                          padding: "10px 16px",
-                          fontSize: 12,
-                          color: "rgba(255,255,255,0.4)",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {fmtDate(row.date)}
-                      </td>
-                      <td
-                        style={{
-                          padding: "10px 16px",
-                          fontSize: 13,
-                          color: isPayment ? "#00ff87" : "#fff",
-                        }}
-                      >
-                        {row.desc ?? (isPayment ? "Payment received" : "Rent charge")}
-                      </td>
-                      <td
-                        style={{
-                          padding: "10px 16px",
-                          fontSize: 13,
-                          color: charge ? "#fff" : "rgba(255,255,255,0.2)",
-                        }}
-                      >
-                        {charge ? fmt(charge) : "—"}
-                      </td>
-                      <td
-                        style={{
-                          padding: "10px 16px",
-                          fontSize: 13,
-                          color: payment ? "#00ff87" : "rgba(255,255,255,0.2)",
-                        }}
-                      >
-                        {payment ? fmt(payment) : "—"}
-                      </td>
-                      <td
-                        style={{
-                          padding: "10px 16px",
-                          fontSize: 13,
-                          fontWeight: 600,
-                          color:
-                            row.balance < 0
-                              ? "#60a5fa"
-                              : row.balance === 0
-                              ? "rgba(255,255,255,0.4)"
-                              : "#ef4444",
-                        }}
-                      >
-                        {row.balance < 0
-                          ? `CR ${fmt(-row.balance)}`
-                          : row.balance === 0
-                          ? "—"
-                          : fmt(row.balance)}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </GlassPanel>
+          />
+        </div>
+      </div>
     </div>
-  );
+
+    {/* ───────────────── RIGHT COLUMN ───────────────── */}
+    <div
+      style={{
+        background: "#fff",
+        border: "1px solid #e5e7eb",
+        borderRadius: 16,
+        overflow: "hidden",
+      }}
+    >
+      {/* Header */}
+      <div
+        style={{
+          padding: 16,
+          borderBottom: "1px solid #e5e7eb",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <div>
+          <div style={{ fontWeight: 800, fontSize: 14 }}>
+            Statement of Account
+          </div>
+          <div style={{ fontSize: 10, color: "#6b7280" }}>
+            Transaction history
+          </div>
+        </div>
+
+        <button
+          onClick={() =>
+            lease && t && generateStatementPDF(lease, t, ledgerWithBalance)
+          }
+          style={{
+            padding: "8px 12px",
+            borderRadius: 10,
+            border: "1px solid #e5e7eb",
+            background: "#fff",
+            cursor: "pointer",
+            fontSize: 12,
+          }}
+        >
+          Download PDF
+        </button>
+      </div>
+
+      {/* Table */}
+      <div style={{ overflowX: "auto" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead style={{ background: "#f9fafb" }}>
+            <tr>
+              {["Date", "Description", "Charge", "Payment", "Balance"].map(
+                (h) => (
+                  <th
+                    key={h}
+                    style={{
+                      textAlign: "left",
+                      fontSize: 10,
+                      padding: 12,
+                      color: "#6b7280",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    {h}
+                  </th>
+                )
+              )}
+            </tr>
+          </thead>
+
+          <tbody>
+            {ledgerWithBalance.map((row: any, i) => {
+              const isPayment = row.type === "payment";
+              const charge = !isPayment ? row.amount : 0;
+              const payment = isPayment ? Math.abs(row.amount) : 0;
+
+              return (
+                <tr
+                  key={i}
+                  style={{
+                    borderTop: "1px solid #f1f5f9",
+                    background: isPayment ? "#f0fdf4" : "#fff",
+                  }}
+                >
+                  <td style={{ padding: 12, fontSize: 10 }}>
+                    {fmtDate(row.date)}
+                  </td>
+
+                  <td style={{ padding: 12, fontSize: 11 }}>
+                    {row.desc ??
+                      (isPayment ? "Payment received" : "Rent charge")}
+                  </td>
+
+                  <td style={{ padding: 12, fontSize: 11 }}>
+                    {charge ? fmt(charge) : "—"}
+                  </td>
+
+                  <td
+                    style={{
+                      padding: 12,
+                      fontSize: 11,
+                      color: "#10b981",
+                    }}
+                  >
+                    {payment ? fmt(payment) : "—"}
+                  </td>
+
+                  <td
+                    style={{
+                      padding: 12,
+                      fontSize: 11,
+                      fontWeight: 600,
+                      color:
+                        row.balance < 0
+                          ? "#3b82f6"
+                          : row.balance > 0
+                          ? "#ef4444"
+                          : "#6b7280",
+                    }}
+                  >
+                    {row.balance < 0
+                      ? `CR ${fmt(-row.balance)}`
+                      : row.balance === 0
+                      ? "—"
+                      : fmt(row.balance)}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+);
 }

@@ -208,11 +208,11 @@ const handleSendReminders = async () => {
   };
 
   const flow = [
-    { step: "Payment received", detail: "M-Pesa callback / Stripe webhook / manual verify" },
-    { step: "Idempotency check", detail: "ensureNotProcessed(referenceId)" },
-    { step: "FIFO allocation", detail: "allocatePayment() — oldest schedule first" },
-    { step: "Partial / Overpayment", detail: "Remainder → tenant.creditBalance" },
-    { step: "Receipt emailed", detail: "sendReceipt(paymentId) via SMTP" },
+    { step: "Step 1: Received", detail: "M-Pesa / Stripe / manual Entry" },
+    { step: "Step 2: Check", detail: "Idempotency & Processing Guard" },
+    { step: "Step 3: FIFO", detail: "Allocate to Oldest Invoices First" },
+    { step: "Step 4: Remainder", detail: "Allocate Overpayment to Credit" },
+    { step: "Step 5: Receipt", detail: "Email Receipt to Tenant via SMTP" },
   ];
 
   const comms = deriveCommsStats(schedules, payments);
@@ -239,255 +239,419 @@ const handleSendReminders = async () => {
   return map;
 }, [cronLogs]);
 
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+return (
+  <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 18, background: "#f8f9ff" }}>
 
-      {/* ── Loading / error states ── */}
-      {(loadingLeases || loading) && (
-        <div style={{ width: "100%", color: "rgba(255,255,255,0.4)", padding: "24px 0", textAlign: "center", fontSize: 13 }}>
-          Loading automation data…
-        </div>
-      )}
-      {error && !loading && (
-        <div style={{ width: "100%", color: "#ef4444", padding: "12px 0", fontSize: 13, display: "flex", alignItems: "center", gap: 10 }}>
-          ⚠️ {error}
-          <NeonButton variant="ghost" onClick={fetchData} style={{ fontSize: 11, padding: "3px 8px" }}>
-            Retry
-          </NeonButton>
-        </div>
-      )}
+    {/* Loading / error */}
+    {(loadingLeases || loading) && (
+      <div style={{ textAlign: "center", fontSize: 13, color: "#7b7487" }}>
+        Loading automation system...
+      </div>
+    )}
 
-      {/* ── Left column ── */}
-      <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-        <div style={{ flex: 1, minWidth: 300 }}>
-          {/* Cron Jobs — Stripe webhook excluded; it runs in the background automatically */}
-        <GlassPanel>
-          <SectionTag>⚙️ Cron Jobs</SectionTag>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 10 }}>
-            {CRON_DEFS.map((c) => {
-              const meta = cronStats[c.key] || {
-                lastRun: "—",
-                success: 0,
-                failed: 0,
-              };
-              return (
-                <div
-                  key={c.key}
-                  style={{
-                    padding: "12px 14px",
-                    borderRadius: 12,
-                    background: "rgba(255,255,255,0.02)",
-                    border: "1px solid #e2e8f0",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "flex-start",
-                      marginBottom: 8,
-                    }}
-                  >
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>{c.name}</div>
-                      <div
-                        style={{
-                          fontSize: 11,
-                          color: "#64748b",
-                          fontFamily: "monospace",
-                          marginTop: 2,
-                        }}
-                      >
-                        {c.fn}
-                      </div>
-                      <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 2 }}>
-                        {c.schedule} · Last: {meta.lastRun}
-                      </div>
-                    </div>
-                    {/* Toggle — only disables manual triggers, server-side cron is unaffected */}
-                    <div
-                      onClick={() =>
-                        setCronStates((s) => ({ ...s, [c.key]: !s[c.key] }))
-                      }
-                      style={{
-                        width: 36,
-                        height: 20,
-                        borderRadius: 10,
-                        background: cronStates[c.key]
-                          ? "rgba(0,255,135,0.3)"
-                          : "rgba(255,255,255,0.1)",
-                        border: `1px solid ${
-                          cronStates[c.key]
-                            ? "rgba(0,255,135,0.5)"
-                            : "rgba(255,255,255,0.2)"
-                        }`,
-                        cursor: "pointer",
-                        position: "relative",
-                        transition: "all .2s",
-                        flexShrink: 0,
-                      }}
-                    >
-                      <div
-                        style={{
-                          position: "absolute",
-                          width: 14,
-                          height: 14,
-                          borderRadius: "50%",
-                          background: cronStates[c.key]
-                            ? "#00ff87"
-                            : "rgba(255,255,255,0.4)",
-                          top: 2,
-                          left: cronStates[c.key] ? 18 : 2,
-                          transition: "left .2s",
-                        }}
-                      />
-                    </div>
-                  </div>
+    {error && (
+      <div style={{ color: "#ba1a1a", fontSize: 13 }}>
+        ⚠ {error}
+      </div>
+    )}
 
-                  <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                    <NeonButton
-                      variant="ghost"
-                      onClick={() => triggerRun(c.key, c.endpoint)}
-                      disabled={runLoading[c.key]}
-                      style={{ fontSize: 10, padding: "4px 8px" }}
-                    >
-                      {runLoading[c.key] ? "⏳ Running…" : "▶ Run Now"}
-                    </NeonButton>
-                    {runLog[c.key] && (
-                      <span
-                        style={{
-                          fontSize: 10,
-                          color: runLog[c.key].startsWith("Failed") ? "#ef4444" : "#00ff87",
-                        }}
-                      >
-                        {runLog[c.key].startsWith("Failed") ? "✗" : "✓"} {runLog[c.key]}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+    {/* ───────── TOP GRID ───────── */}
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "2fr 1fr",
+        gap: 16,
+        alignItems: "stretch",
+      }}
+    >
+
+      {/* ───────── SCHEDULED AUTOMATION (STITCH STYLE LIST) ───────── */}
+<div
+  style={{
+    borderRadius: 16,
+    padding: 16,
+    background: "rgba(255,255,255,0.85)",
+    border: "1px solid #e2e8f0",
+    backdropFilter: "blur(12px)",
+  }}
+>
+  {/* HEADER */}
+  <div
+    style={{
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 12,
+    }}
+  >
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      {/* ICON (cron/automation) */}
+      <span
+        className="material-symbols-outlined"
+        style={{ fontSize: 18, color: "#4800a0" }}
+      >
+        schedule
+      </span>
+
+      <div style={{ fontSize: 14, fontWeight: 700, color: "#1d1a24" }}>
+        Scheduled Automation (Crons)
+      </div>
+    </div>
+
+    {/* REFRESH BUTTON */}
+    <button
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 6,
+        fontSize: 12,
+        color: "#4800a0",
+        padding: "6px 10px",
+        border: "1px solid #4800a0",
+        borderRadius: 8,
+        background: "transparent",
+        cursor: "pointer",
+        fontWeight: 600,
+      }}
+    >
+      <span
+        className="material-symbols-outlined"
+        style={{ fontSize: 16 }}
+      >
+        refresh
+      </span>
+      Refresh Status
+    </button>
+  </div>
+
+  {/* LIST (STACKED ROWS) */}
+  <div
+    style={{
+      display: "flex",
+      flexDirection: "column",
+      borderTop: "1px solid #e8dfee",
+    }}
+  >
+    {CRON_DEFS.map((c, idx) => {
+      const meta = cronStats[c.key] || {};
+
+      return (
+        <div
+          key={c.key}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "12px 4px",
+            borderBottom:
+              idx === CRON_DEFS.length - 1
+                ? "none"
+                : "1px solid #e8dfee",
+            gap: 12,
+          }}
+        >
+          {/* LEFT: NAME + DETAILS */}
+          <div style={{ flex: 2 }}>
+            <div
+              style={{
+                fontSize: 13,
+                fontWeight: 600,
+                color: "#1d1a24",
+              }}
+            >
+              {c.name}
+            </div>
+
+            <div
+              style={{
+                fontSize: 11,
+                color: "#7b7487",
+                fontFamily: "monospace",
+                marginTop: 2,
+              }}
+            >
+              {c.fn} • {c.schedule}
+            </div>
           </div>
 
-          {/* Subtle note explaining Stripe webhook is always-on */}
+          {/* LAST RUN */}
           <div
             style={{
-              marginTop: 12,
-              fontSize: 10,
-              color: "rgba(255,255,255,0.2)",
-              display: "flex",
-              alignItems: "center",
-              gap: 5,
+              flex: 1,
+              fontSize: 11,
+              color: "#4a4455",
+              textAlign: "center",
+              fontFamily: "monospace",
             }}
           >
-            <span
-              style={{
-                width: 6,
-                height: 6,
-                borderRadius: "50%",
-                background: "#00ff87",
-                boxShadow: "0 0 6px #00ff87",
-                display: "inline-block",
-                flexShrink: 0,
-              }}
-            />
-            Stripe webhook (payment_intent.succeeded) is always-on and managed by the server.
+            {meta.lastRun
+              ? `Last: ${new Date(meta.lastRun).toLocaleTimeString()}`
+              : "Never run"}
           </div>
-        </GlassPanel>
-        </div>
-        <div style={{ flex: 1, minWidth: 300 }}>
-          {/* Comms — derived from live API data */}
-        <GlassPanel>
-          <SectionTag>📬 Comms (Live)</SectionTag>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 10 }}>
-            {(
-              [
-                ["Email reminders", `${comms.emailReminders} queued`, "#a78bfa"],
-                ["Overdue notices", `${comms.overdueNotices} sent`, "#ef4444"],
-                ["Receipts issued", `${comms.receipts} sent`, "#00ff87"],
-                ["SMS (M-Pesa)", `${comms.smsAuto} auto`, "#60a5fa"],
-                ["Failed sends", `${comms.failedSends}`, "rgba(255,255,255,0.3)"],
-              ] as [string, string, string][]
-            ).map(([label, val, color]) => (
-              <div
-                key={label}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  fontSize: 13,
-                  padding: "6px 0",
-                  borderBottom: "1px solid #eef2f7",
-                }}
-              >
-                <span style={{ color: "rgba(255,255,255,0.5)" }}>{label}</span>
-                <span style={{ fontWeight: 600, color }}>{val}</span>
-              </div>
-            ))}
-          </div>
-          <NeonButton
-            variant="ghost"
-            style={{ marginTop: 12, fontSize: 12 }}
-            onClick={handleSendReminders}
-          >
-            Send Reminders Now →
-          </NeonButton>
-          {runLog.reminders && (
-            <div style={{ marginTop: 6, fontSize: 10, color: "#00ff87" }}>
-              ✓ {runLog.reminders}
-            </div>
-          )}
-        </GlassPanel>
-        </div>
-      </div>
 
-      {/* ── Right column ── */}
-      <div style={{ width: "100%" }}>
-        {/* Reconciliation Flow */}
-        <GlassPanel>
-          <SectionTag>🔄 Reconciliation Flow</SectionTag>
-          <div style={{ position: "relative", marginTop: 12 }}>
+          {/* TOGGLE */}
+          <div
+            onClick={() =>
+              setCronStates((s) => ({
+                ...s,
+                [c.key]: !s[c.key],
+              }))
+            }
+            style={{
+              width: 42,
+              height: 22,
+              borderRadius: 999,
+              background: cronStates[c.key]
+                ? "#8e49e3"
+                : "#e8dfee",
+              position: "relative",
+              cursor: "pointer",
+              border: "1px solid #ccc3d8",
+              flexShrink: 0,
+            }}
+          >
             <div
               style={{
                 position: "absolute",
-                left: 7,
-                top: 14,
-                bottom: 14,
-                width: 1,
-                background: "rgba(99,102,241,0.3)",
+                top: 2,
+                left: cronStates[c.key] ? 22 : 2,
+                width: 18,
+                height: 18,
+                borderRadius: 999,
+                background: cronStates[c.key]
+                  ? "#ffffff"
+                  : "#7b7487",
+                transition: "left .2s",
               }}
             />
-            {flow.map((f, i) => (
-              <div key={i} style={{ display: "flex", gap: 14, padding: "8px 0" }}>
-                <div
-                  style={{
-                    width: 15,
-                    height: 15,
-                    borderRadius: "50%",
-                    background: i === flow.length - 1 ? "#00ff87" : "#6366f1",
-                    boxShadow: `0 0 8px ${i === flow.length - 1 ? "#00ff87" : "#6366f1"}80`,
-                    flexShrink: 0,
-                    marginTop: 2,
-                    zIndex: 1,
-                  }}
-                />
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>{f.step}</div>
-                  <div
-                    style={{
-                      fontSize: 11,
-                      color: "rgba(255,255,255,0.4)",
-                      fontFamily: "monospace",
-                      marginTop: 2,
-                    }}
-                  >
-                    {f.detail}
-                  </div>
-                </div>
-              </div>
-            ))}
           </div>
-        </GlassPanel>
+
+          {/* RUN BUTTON */}
+          <button
+            onClick={() => triggerRun(c.key, c.endpoint)}
+            style={{
+              fontSize: 11,
+              padding: "6px 10px",
+              borderRadius: 9,
+              background: "#4800a0",
+              color: "#ffffff",
+              border: "none",
+              cursor: "pointer",
+              fontWeight: 600,
+              flexShrink: 0,
+            }}
+          >
+            Run Now
+          </button>
+
+          {/* STATUS */}
+          {runLog[c.key] && (
+            <div
+              style={{
+                fontSize: 10,
+                color: "#4ae176",
+                marginLeft: 8,
+                maxWidth: 140,
+              }}
+            >
+              {runLog[c.key]}
+            </div>
+          )}
+        </div>
+      );
+    })}
+  </div>
+</div>
+
+      {/* ───────── RIGHT: LIVE COMMS ───────── */}
+      <div
+        style={{
+          borderRadius: 16,
+          padding: 16,
+          background: "#ffffff",
+          border: "1px solid #e8dfee",
+          backdropFilter: "blur(12px)",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+  
+  {/* LEFT: ICON + TITLE */}
+  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+    <span
+      className="material-symbols-outlined"
+      style={{
+        fontSize: 18,
+        color: "#4800a0",
+      }}
+    >
+      hub
+    </span>
+
+    <div style={{ fontSize: 14, fontWeight: 700, color: "#1d1a24" }}>
+      Live Comms
+    </div>
+  </div>
+
+</div>
+
+        <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 10 }}>
+          {[
+            ["Email Reminders", comms.emailReminders],
+            ["Overdue Notices", comms.overdueNotices],
+            ["Receipts", comms.receipts],
+            ["SMS / M-Pesa", comms.smsAuto],
+            ["Failed", comms.failedSends],
+          ].map(([label, val]) => (
+            <div
+              key={label as string}
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                fontSize: 12,
+                paddingBottom: 8,
+                borderBottom: "1px solid #f3ebfa",
+              }}
+            >
+              <span style={{ color: "#7b7487" }}>{label}</span>
+              <span style={{ fontWeight: 700, color: "#1d1a24" }}>{val}</span>
+            </div>
+          ))}
+        </div>
+
+        <button
+          onClick={handleSendReminders}
+          style={{
+            marginTop: 14,
+            padding: "10px 12px",
+            borderRadius: 10,
+            background: "#4800a0",
+            color: "#ffffff",
+            fontWeight: 700,
+            border: "none",
+            cursor: "pointer",
+          }}
+        >
+          Send Reminders
+        </button>
       </div>
     </div>
-  );
+
+    {/* ───────── RECONCILIATION FLOW (STITCH-STYLE FIXED) ───────── */}
+    <div
+      style={{
+        marginTop: 18,
+        padding: 18,
+        borderRadius: 16,
+        background: "#ffffff",
+        border: "1px solid #e8dfee",
+        boxShadow: "0 4px 10px rgba(0,0,0,0.04)",
+      }}
+    >
+      <div style={{ textAlign: "center", marginBottom: 18 }}>
+        <div style={{ fontSize: 16, fontWeight: 700, color: "#1d1a24" }}>
+          Automated Reconciliation Flow
+        </div>
+      </div>
+
+      <div
+        style={{
+          position: "relative",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        {/* connector */}
+        {/* connectors */}
+<div
+  style={{
+    position: "absolute",
+    top: 22,
+    left: 0,
+    right: 0,
+    height: 2,
+    zIndex: 0,
+    display: "flex",
+    justifyContent: "space-between",
+    padding: "0 60px",
+  }}
+>
+  {flow.slice(0, flow.length - 1).map((_, i) => (
+    <div
+      key={i}
+      style={{
+        flex: 1,
+        margin: "0 8px", // gap so line doesn't touch circles
+        height: 2,
+        background: "#e8dfee",
+      }}
+    />
+  ))}
+</div>
+
+        {flow.map((f, i) => {
+          const isLast = i === flow.length - 1;
+
+          return (
+            <div
+              key={i}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                width: 140,
+                zIndex: 1,
+              }}
+            >
+              <div
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 999,
+                  background: isLast ? "#4ae176" : "#d2bbff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  border: "2px solid #fff",
+                  boxShadow: "0 3px 10px rgba(0,0,0,0.06)",
+                }}
+              >
+                <span
+                  className="material-symbols-outlined"
+                  style={{ fontSize: 20, color: "#1d1a24" }}
+                >
+                  {["payments", "fact_check", "account_tree", "account_balance_wallet", "mail"][i]}
+                </span>
+              </div>
+
+              <div style={{ marginTop: 10, fontSize: 11, fontWeight: 700, color: "#1d1a24" }}>
+                {f.step}
+              </div>
+
+              <div style={{ fontSize: 10, color: "#7b7487", textAlign: "center", marginTop: 4 }}>
+                {f.detail}
+              </div>
+
+              <div
+                style={{
+                  marginTop: 6,
+                  fontSize: 9,
+                  color: "#7b7487",
+                  background: "#f3ebfa",
+                  padding: "2px 6px",
+                  borderRadius: 6,
+                  border: "1px solid #e8dfee",
+                }}
+              >
+                {["webhook Listener", "ensureNotProcessed", "allocatePayment", "pushToCredit", "sendReceipt"][i]}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  </div>
+);
 }

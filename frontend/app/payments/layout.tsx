@@ -83,7 +83,7 @@ export default function PaymentsLayout({ children }: { children: ReactNode }) {
         <Sidebar />
 
         {/* Main canvas — sits to the right of the global Sidebar */}
-        <main style={{ flex: 1, minHeight: "100vh", padding: "14px" }}>
+        <main style={{ flex: 1, minHeight: "100vh", padding: "6px", marginBottom: "52px" }}>
           {/* Page heading */}
           <div style={{ marginBottom: "10px" }}>
             <h2
