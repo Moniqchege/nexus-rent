@@ -277,7 +277,7 @@ const handleSendReminders = async () => {
                     padding: "12px 14px",
                     borderRadius: 12,
                     background: "rgba(255,255,255,0.02)",
-                    border: "1px solid rgba(255,255,255,0.06)",
+                    border: "1px solid #e2e8f0",
                   }}
                 >
                   <div
@@ -293,14 +293,14 @@ const handleSendReminders = async () => {
                       <div
                         style={{
                           fontSize: 11,
-                          color: "rgba(255,255,255,0.35)",
+                          color: "#64748b",
                           fontFamily: "monospace",
                           marginTop: 2,
                         }}
                       >
                         {c.fn}
                       </div>
-                      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", marginTop: 2 }}>
+                      <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 2 }}>
                         {c.schedule} · Last: {meta.lastRun}
                       </div>
                     </div>
@@ -416,7 +416,7 @@ const handleSendReminders = async () => {
                   justifyContent: "space-between",
                   fontSize: 13,
                   padding: "6px 0",
-                  borderBottom: "1px solid rgba(255,255,255,0.04)",
+                  borderBottom: "1px solid #eef2f7",
                 }}
               >
                 <span style={{ color: "rgba(255,255,255,0.5)" }}>{label}</span>

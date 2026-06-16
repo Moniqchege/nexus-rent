@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { fmt, METHOD_LABEL, METHOD_COLOR } from "../_lib/data";
-import { GlassPanel, SectionTag, NeonButton } from "../_lib/components";
+import { fmt } from "../_lib/data";
+import { theme } from "../_lib/theme";
 import {
   initiateMpesaSTK,
   createStripeSession,
@@ -11,9 +11,9 @@ import {
 import api from "@/app/lib/api";
 import type { PayMethod } from "../_lib/types";
 
+// ─── Types ────────────────────────────────────────────────────────────────────
 type ActionState = "idle" | "loading" | "success" | "error";
 
-// Derived from the schedules API response shape
 interface ScheduleTenant {
   id: number;
   name: string;
@@ -41,36 +41,31 @@ interface RentSchedule {
   property: ScheduleProperty;
 }
 
-// Flattened shape used by the form — one entry per tenant (latest schedule)
 interface TenantOption {
-  id: number;           // tenantId
+  id: number;
   scheduleId: number;
   propertyId: number;
   name: string;
   email: string;
-  phone: string;         // raw e.g. "0712345678"
-  property: string;      // property title
+  phone: string;
+  property: string;
   location: string;
   rent: number;
-  outstanding: number;   // amount - allocatedAmount + lateFee
+  outstanding: number;
   status: RentSchedule["status"];
   period: string;
   preferredMethod: PayMethod;
 }
 
-// Collapse schedules → one TenantOption per tenantId (pick the most recent/overdue)
 function schedulesToOptions(schedules: RentSchedule[]): TenantOption[] {
   const map = new Map<number, TenantOption>();
-
-  // Sort so overdue come first, then by dueDate desc
   const sorted = [...schedules].sort((a, b) => {
     if (a.status === "overdue" && b.status !== "overdue") return -1;
     if (b.status === "overdue" && a.status !== "overdue") return 1;
     return new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime();
   });
-
   for (const s of sorted) {
-    if (map.has(s.tenantId)) continue; // keep first (best) match
+    if (map.has(s.tenantId)) continue;
     map.set(s.tenantId, {
       id: s.tenantId,
       scheduleId: s.id,
@@ -87,11 +82,9 @@ function schedulesToOptions(schedules: RentSchedule[]): TenantOption[] {
       preferredMethod: "mpesa",
     });
   }
-
   return Array.from(map.values());
 }
 
-// Normalise phone → 254xxxxxxxxx for M-Pesa
 function toMpesaPhone(phone: string): string {
   const digits = phone.replace(/\D/g, "");
   if (digits.startsWith("254")) return digits;
@@ -99,19 +92,152 @@ function toMpesaPhone(phone: string): string {
   return "254" + digits;
 }
 
-// Current period string e.g. "APT-A1-MAY26"
 function buildRef(tenant: TenantOption): string {
-  const month = new Date().toLocaleString("en-US", { month: "short" }).toUpperCase();
+  const month = new Date()
+    .toLocaleString("en-US", { month: "short" })
+    .toUpperCase();
   const year = String(new Date().getFullYear()).slice(2);
   const slug = tenant.property.replace(/\s+/g, "").slice(0, 4).toUpperCase();
   return `${slug}-${tenant.id}-${month}${year}`;
 }
 
+function getInitials(name: string): string {
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+const STATUS_CONFIG: Record<
+  string,
+  { label: string; bg: string; color: string }
+> = {
+  paid:        { label: "Healthy",      bg: "#dcfce7", color: "#16a34a" },
+  scheduled:   { label: "Healthy",      bg: "#dcfce7", color: "#16a34a" },
+  overdue:     { label: "Overdue",      bg: "#fee2e2", color: "#dc2626" },
+  partial:     { label: "Grace Period", bg: "#fef3c7", color: "#d97706" },
+};
+
+function StatusBadge({ status }: { status: string }) {
+  const cfg = STATUS_CONFIG[status] ?? { label: status, bg: "#f1f5f9", color: "#64748b" };
+  return (
+    <span
+      style={{
+        fontSize: 10,
+        fontWeight: 700,
+        padding: "3px 8px",
+        borderRadius: 6,
+        background: cfg.bg,
+        color: cfg.color,
+        letterSpacing: "0.03em",
+        whiteSpace: "nowrap",
+      }}
+    >
+      {cfg.label}
+    </span>
+  );
+}
+
+function Spinner({ dark = false }: { dark?: boolean }) {
+  return (
+    <span
+      style={{
+        display: "inline-block",
+        width: 13,
+        height: 13,
+        border: `2px solid ${dark ? "rgba(0,0,0,0.15)" : "rgba(255,255,255,0.3)"}`,
+        borderTopColor: dark ? "#4f46e5" : "#fff",
+        borderRadius: "50%",
+        animation: "spin 0.6s linear infinite",
+        marginLeft: 6,
+        verticalAlign: "middle",
+      }}
+    />
+  );
+}
+
+function SuccessBanner({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        marginTop: 14,
+        padding: "12px 16px",
+        borderRadius: 10,
+        background: "#f0fdf4",
+        border: "1px solid #bbf7d0",
+        fontSize: 13,
+        color: "#15803d",
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function ErrorBanner({ msg }: { msg: string }) {
+  return (
+    <div
+      style={{
+        marginTop: 10,
+        padding: "10px 14px",
+        borderRadius: 10,
+        background: "#fff1f2",
+        border: "1px solid #fecdd3",
+        fontSize: 12,
+        color: "#be123c",
+      }}
+    >
+      ❌ {msg}
+    </div>
+  );
+}
+
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  background: "#f8fafc",
+  border: "1px solid #e2e8f0",
+  borderRadius: 10,
+  padding: "11px 14px",
+  fontSize: 13,
+  color: "#0f172a",
+  outline: "none",
+  boxSizing: "border-box",
+  fontFamily: "Inter, sans-serif",
+};
+
+const fieldLabel: React.CSSProperties = {
+  fontSize: 11,
+  fontWeight: 600,
+  color: "#64748b",
+  marginBottom: 6,
+  display: "block",
+};
+
+const card: React.CSSProperties = {
+  background: "#ffffff",
+  border: "1px solid #e8eaf0",
+  borderRadius: 16,
+  boxShadow: "0 1px 4px rgba(15,23,42,0.06)",
+  overflow: "hidden",
+};
+
 export default function InitiatePage() {
-  // ── Tenant loading ────────────────────────────────────────────────────────
-  const [tenants, setTenants] = useState<TenantOption[]>([]);
+  const [tenants, setTenants]           = useState<TenantOption[]>([]);
   const [loadingTenants, setLoadingTenants] = useState(true);
   const [tenantsError, setTenantsError] = useState("");
+  const [tenantSearch, setTenantSearch] = useState("");
+  const [selectedTenant, setSelectedTenant] = useState<TenantOption | null>(null);
+
+  const [method, setMethod] = useState<PayMethod>("mpesa");
+  const [amount, setAmount] = useState("0.00");
+  const [phone, setPhone]   = useState("");
+  const [ref, setRef]       = useState("");
+
+  const [actionState, setActionState]   = useState<ActionState>("idle");
+  const [successMsg, setSuccessMsg]     = useState("");
+  const [errorMsg, setErrorMsg]         = useState("");
 
   useEffect(() => {
     setLoadingTenants(true);
@@ -127,374 +253,507 @@ export default function InitiatePage() {
       .finally(() => setLoadingTenants(false));
   }, []);
 
-  // ── Form state ────────────────────────────────────────────────────────────
-  const [method, setMethod]                   = useState<PayMethod>("mpesa");
-  const [tenantSearch, setTenantSearch]       = useState("");
-  const [selectedTenant, setSelectedTenant]   = useState<TenantOption | null>(null);
-  const [showDropdown, setShowDropdown]       = useState(false);
-  const [amount, setAmount]                   = useState("0");
-  const [phone, setPhone]                     = useState("");
-  const [ref, setRef]                         = useState("");
-
-  // Auto-select first tenant once loaded
+  // Auto-select first tenant
   useEffect(() => {
     if (tenants.length > 0 && !selectedTenant) {
-      const first = tenants[0];
-      setSelectedTenant(first);
-      setTenantSearch(first.name);
-      setAmount(String(first.rent));
-      setPhone(toMpesaPhone(first.phone));
-      setRef(buildRef(first));
+      pickTenant(tenants[0]);
     }
   }, [tenants]);
 
-  // ── Action states ─────────────────────────────────────────────────────────
-  const [mpesaState, setMpesaState]           = useState<ActionState>("idle");
-  const [mpesaCheckoutId, setMpesaCheckoutId] = useState("");
-  const [mpesaError, setMpesaError]           = useState("");
-
-  const [cardState, setCardState]             = useState<ActionState>("idle");
-  const [cardClientSecret, setCardClientSecret] = useState("");
-  const [cardError, setCardError]             = useState("");
-
-  const [bankState, setBankState]             = useState<ActionState>("idle");
-  const [bankRef, setBankRef]                 = useState("");
-  const [bankError, setBankError]             = useState("");
-
-  // ── Helpers ───────────────────────────────────────────────────────────────
-  const tenantResults = tenants.filter(
-    (t) =>
-      tenantSearch.length > 0 &&
-      (t.name.toLowerCase().includes(tenantSearch.toLowerCase()) ||
-        t.property.toLowerCase().includes(tenantSearch.toLowerCase()) ||
-        t.location.toLowerCase().includes(tenantSearch.toLowerCase()))
-  );
-
-  const selectTenant = (t: TenantOption) => {
+  function pickTenant(t: TenantOption) {
     setSelectedTenant(t);
-    setTenantSearch(t.name);
-    setShowDropdown(false);
-    setAmount(String(t.rent));
+    setAmount(String(t.outstanding > 0 ? t.outstanding : t.rent));
     setPhone(toMpesaPhone(t.phone));
     setRef(buildRef(t));
-    resetAllStates();
-  };
+    resetState();
+  }
 
-  const switchMethod = (m: PayMethod) => {
-    setMethod(m);
-    resetAllStates();
-  };
+  function resetState() {
+    setActionState("idle");
+    setSuccessMsg("");
+    setErrorMsg("");
+  }
 
-  const resetAllStates = () => {
-    setMpesaState("idle"); setMpesaCheckoutId(""); setMpesaError("");
-    setCardState("idle");  setCardClientSecret(""); setCardError("");
-    setBankState("idle");  setBankRef(""); setBankError("");
-  };
+  function clearForm() {
+    setSelectedTenant(null);
+    setAmount("0.00");
+    setPhone("");
+    setRef("");
+    setTenantSearch("");
+    resetState();
+  }
 
-  // ── M-Pesa ────────────────────────────────────────────────────────────────
-  const handleMpesaSubmit = async () => {
-    if (!selectedTenant) return;
-    setMpesaState("loading");
-    setMpesaError("");
+  async function handleSubmit() {
+    if (!selectedTenant || actionState === "loading") return;
+    setActionState("loading");
+    setErrorMsg("");
+    setSuccessMsg("");
     try {
-      const res = await initiateMpesaSTK({
-        phone,
-        amount: Number(amount),
-        accountRef: ref,
-        propertyId: selectedTenant.propertyId,
-        tenantId: selectedTenant.id,
-        description: `Rent payment - ${ref}`,
-      });
-      setMpesaCheckoutId(res.data?.checkoutRequestId ?? "");
-      setMpesaState("success");
+      if (method === "mpesa") {
+        const res = await initiateMpesaSTK({
+          phone,
+          amount: Number(amount),
+          accountRef: ref,
+          propertyId: selectedTenant.propertyId,
+          tenantId: selectedTenant.id,
+          description: `Rent payment - ${ref}`,
+        });
+        setSuccessMsg(
+          `STK Push sent to ${phone}. Checkout ID: ${res.data?.checkoutRequestId ?? "—"}`
+        );
+      } else if (method === "card") {
+        const { clientSecret } = await createStripeSession({
+          propertyId: selectedTenant.propertyId,
+          tenantId: selectedTenant.id,
+          amount: Number(amount),
+          accountRef: ref,
+        });
+        setSuccessMsg(`Payment intent created. Pass client secret to Stripe Elements.`);
+      } else {
+        const res = await initiateBankTransfer({
+          propertyId: selectedTenant.propertyId,
+          tenantId: selectedTenant.id,
+          amount: Number(amount),
+          accountRef: ref,
+        });
+        setSuccessMsg(
+          `Bank reference generated: ${res.data?.referenceId ?? ref}`
+        );
+      }
+      setActionState("success");
     } catch (err: any) {
-      setMpesaError(err?.response?.data?.error || err?.message || "STK push failed");
-      setMpesaState("error");
+      setErrorMsg(
+        err?.response?.data?.error || err?.message || "Payment failed"
+      );
+      setActionState("error");
     }
-  };
+  }
 
-  // ── Card ──────────────────────────────────────────────────────────────────
-  const handleCardSubmit = async () => {
-    if (!selectedTenant) return;
-    setCardState("loading");
-    setCardError("");
-    try {
-      const { clientSecret } = await createStripeSession({
-        propertyId: selectedTenant.propertyId,
-        tenantId: selectedTenant.id,
-        amount: Number(amount),
-        accountRef: ref,
-      });
-      setCardClientSecret(clientSecret);
-      setCardState("success");
-    } catch (err: any) {
-      setCardError(err?.response?.data?.error || err?.message || "Failed to create payment intent");
-      setCardState("error");
-    }
-  };
+  const filteredTenants = tenants.filter((t) => {
+    if (!tenantSearch) return true;
+    const q = tenantSearch.toLowerCase();
+    return (
+      t.name.toLowerCase().includes(q) ||
+      t.property.toLowerCase().includes(q) ||
+      t.location.toLowerCase().includes(q)
+    );
+  });
 
-  // ── Bank ──────────────────────────────────────────────────────────────────
-  const handleBankSubmit = async () => {
-    if (!selectedTenant) return;
-    setBankState("loading");
-    setBankError("");
-    try {
-      const res = await initiateBankTransfer({
-        propertyId: selectedTenant.propertyId,
-        tenantId: selectedTenant.id,
-        amount: Number(amount),
-        accountRef: ref,
-      });
-      setBankRef(res.data?.referenceId ?? ref);
-      setBankState("success");
-    } catch (err: any) {
-      setBankError(err?.response?.data?.error || err?.message || "Failed to generate bank reference");
-      setBankState("error");
-    }
-  };
-
-  // ── Sub-components ────────────────────────────────────────────────────────
-  const ErrorBanner = ({ msg }: { msg: string }) => (
-    <div style={{ marginTop: 12, padding: "12px 16px", borderRadius: 12, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", color: "#fca5a5", fontSize: 13 }}>
-      ❌ {msg}
-    </div>
-  );
-
-  const Spinner = () => (
-    <span style={{ display: "inline-block", width: 14, height: 14, border: "2px solid rgba(255,255,255,0.2)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.6s linear infinite", marginLeft: 6 }} />
-  );
-
-  const LoadingSpinner = () => (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 80 }}>
-      <div style={{ width: 24, height: 24, border: "2px solid rgba(99,102,241,0.2)", borderTopColor: "#6366f1", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
-    </div>
-  );
-
-  const methods: { key: PayMethod; icon: string; name: string; sub: string }[] = [
-    { key: "mpesa", icon: "📱", name: "M-Pesa",        sub: "STK Push / Paybill" },
-    { key: "card",  icon: "💳", name: "Card / Wallet", sub: "Visa · MC · Apple Pay" },
-    { key: "bank",  icon: "🏦", name: "Bank Transfer", sub: "Equity · KCB · Co-op" },
-  ];
-
-  const statusColor: Record<string, string> = {
-    overdue:   "#ef4444",
-    scheduled: "#00ff87",
-    partial:   "#f97316",
-    paid:      "rgba(255,255,255,0.4)",
-  };
+  const QUICK_AMOUNTS = [500, 1250, 2500];
 
   return (
     <>
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .tenant-row:hover { background: #f8fafc !important; }
+        .tenant-row.selected { background: #f1f5ff !important; }
+        .method-tab:hover { border-color: #c7d2fe !important; }
+      `}</style>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-        <div style={{ padding: "12px 16px", borderRadius: 12, fontSize: 13, background: "rgba(96,165,250,0.08)", border: "1px solid rgba(96,165,250,0.2)", color: "#93c5fd" }}>
-          ℹ️ Payments trigger auto-reconciliation. M-Pesa &amp; Card receipts are issued instantly. Bank transfers require manual verification.
+      <div
+        style={{
+          padding: "20px",
+          background: "#f6f7fb",
+          minHeight: "100%",
+          display: "grid",
+          gridTemplateColumns: "320px 1fr",
+          gap: 16,
+          alignItems: "flex-start",
+        }}
+      >
+
+        {/* CARD 1: Select Tenant Header + Search */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+<div style={card}>
+  <div style={{ padding: "18px 18px 14px" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+      <div
+        style={{
+          width: 32,
+          height: 32,
+          borderRadius: 9,
+          background: "#f1f5f9",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <span className="material-symbols-outlined" style={{ fontSize: 17, color: "#4f46e5" }}>
+          contacts
+        </span>
+      </div>
+
+      <div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>
+          Select Tenant
         </div>
+        <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 1 }}>
+          Choose a tenant to associate with this payment.
+        </div>
+      </div>
+    </div>
 
-        <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+    {/* Search */}
+    <div style={{ position: "relative", marginTop: 10 }}>
+      <span
+        className="material-symbols-outlined"
+        style={{
+          position: "absolute",
+          left: 10,
+          top: "55%",
+          transform: "translateY(-50%)",
+          fontSize: 13,
+          color: "#94a3b8",
+          pointerEvents: "none",
+        }}
+      >
+        search
+      </span>
 
-          {/* ── Tenant Selector ── */}
-          <GlassPanel style={{ flex: "0 0 280px" }}>
-            <SectionTag>👤 Select Tenant</SectionTag>
+      <input
+        value={tenantSearch}
+        onChange={(e) => setTenantSearch(e.target.value)}
+        placeholder="Search by name or unit..."
+        style={{
+          ...inputStyle,
+          paddingLeft: 28,
+          background: "#f8fafc",
+        }}
+      />
+    </div>
+  </div>
+</div>
 
-            {tenantsError && (
-              <div style={{ fontSize: 12, color: "#fca5a5", marginBottom: 8 }}>⚠️ {tenantsError}</div>
-            )}
+{/* CARD 2: Tenant List */}
+<div style={card}>
+  <div style={{ borderTop: "1px solid #f1f5f9" }}>
+    {loadingTenants ? (
+      <div style={{ padding: 24, textAlign: "center" }}>
+        <div
+          style={{
+            width: 22,
+            height: 22,
+            border: "2px solid #e2e8f0",
+            borderTopColor: "#4f46e5",
+            borderRadius: "50%",
+            animation: "spin 0.7s linear infinite",
+            margin: "0 auto",
+          }}
+        />
+      </div>
+    ) : tenantsError ? (
+      <div style={{ padding: 16, fontSize: 12, color: "#dc2626" }}>
+        ⚠️ {tenantsError}
+      </div>
+    ) : filteredTenants.length === 0 ? (
+      <div style={{ padding: 20, fontSize: 12, color: "#94a3b8", textAlign: "center" }}>
+        No tenants found
+      </div>
+    ) : (
+      filteredTenants.map((t) => {
+        const isSelected = selectedTenant?.id === t.id;
 
-            <div style={{ position: "relative", marginTop: 4 }}>
+        return (
+          <div
+            key={t.id}
+            onClick={() => pickTenant(t)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              padding: "12px 18px",
+              borderBottom: "1px solid #f1f5f9",
+              cursor: "pointer",
+              background: isSelected ? "#f1f5ff" : "transparent",
+              borderLeft: isSelected ? "3px solid #4f46e5" : "3px solid transparent",
+            }}
+          >
+            {/* Avatar */}
+            <div
+              style={{
+                width: 38,
+                height: 38,
+                borderRadius: "50%",
+                background: isSelected
+                  ? "linear-gradient(135deg,#6366f1,#8b5cf6)"
+                  : "#e2e8f0",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 13,
+                fontWeight: 700,
+                color: isSelected ? "#fff" : "#64748b",
+              }}
+            >
+              {getInitials(t.name)}
+            </div>
+
+            {/* Info */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div
+                style={{
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: "#0f172a",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {t.name}
+              </div>
+              <div
+                style={{
+                  fontSize: 11,
+                  color: "#94a3b8",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {t.property}
+              </div>
+            </div>
+
+            {/* Amount */}
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a" }}>
+                {fmt(t.outstanding > 0 ? t.outstanding : t.rent)}
+              </div>
+              <StatusBadge status={t.status} />
+            </div>
+          </div>
+        );
+      })
+    )}
+  </div>
+</div>
+</div>
+
+        {/* ── CENTER: Transaction Details ──────────────────────────────── */}
+        <div style={card}>
+          <div style={{ padding: "20px 22px" }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a", marginBottom: 18 }}>
+              Transaction Details
+            </div>
+
+            {/* Method tabs */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(3, 1fr)",
+                background: "#f1f5f9",
+                borderRadius: 12,
+                padding: 4,
+                marginBottom: 22,
+                gap: 2,
+              }}
+            >
+              {(
+                [
+                  { key: "mpesa", label: "M-Pesa" },
+                  { key: "card",  label: "Card"   },
+                  { key: "bank",  label: "Bank"   },
+                ] as { key: PayMethod; label: string }[]
+              ).map((m) => {
+                const active = method === m.key;
+                return (
+                  <button
+                    key={m.key}
+                    onClick={() => { setMethod(m.key); resetState(); }}
+                    style={{
+                      padding: "9px 0",
+                      fontSize: 13,
+                      fontWeight: active ? 700 : 500,
+                      borderRadius: 9,
+                      border: "none",
+                      cursor: "pointer",
+                      background: active ? "#ffffff" : "transparent",
+                      color: active ? "#0f172a" : "#64748b",
+                      boxShadow: active ? "0 1px 3px rgba(0,0,0,0.10)" : "none",
+                      transition: "all 0.15s",
+                    }}
+                  >
+                    {m.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Amount */}
+            <div style={{ marginBottom: 18 }}>
+              <label style={fieldLabel}>Amount to Pay</label>
+              <div style={{ position: "relative" }}>
+                <span
+                  style={{
+                    position: "absolute",
+                    left: 14,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    fontSize: 13,
+                    color: "#94a3b8",
+                    fontWeight: 600,
+                  }}
+                >
+                  $
+                </span>
+                <input
+                  type="number"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  style={{ ...inputStyle, paddingLeft: 30 }}
+                />
+              </div>
+
+              {/* Quick-pick amounts */}
+              <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                {QUICK_AMOUNTS.map((a) => (
+                  <button
+                    key={a}
+                    onClick={() => setAmount(String(a))}
+                    style={{
+                      flex: 1,
+                      padding: "7px 0",
+                      fontSize: 12,
+                      fontWeight: 600,
+                      borderRadius: 8,
+                      border: "1px solid #e2e8f0",
+                      background: Number(amount) === a ? "#0f172a" : "#ffffff",
+                      color: Number(amount) === a ? "#ffffff" : "#374151",
+                      cursor: "pointer",
+                      transition: "all 0.12s",
+                    }}
+                  >
+                    ${a.toLocaleString()}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Phone / Details */}
+            <div style={{ marginBottom: 18 }}>
+              <label style={fieldLabel}>
+                {method === "mpesa"
+                  ? "Phone Number / Details"
+                  : method === "card"
+                  ? "Cardholder Name"
+                  : "Account Holder"}
+              </label>
               <input
-                value={tenantSearch}
-                onChange={(e) => { setTenantSearch(e.target.value); setShowDropdown(true); }}
-                onFocus={() => setShowDropdown(true)}
-                placeholder={loadingTenants ? "Loading tenants…" : "Search name or property…"}
-                disabled={loadingTenants}
-                style={{ width: "100%", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10, padding: "9px 12px", color: "#fff", fontSize: 13, outline: "none", boxSizing: "border-box", opacity: loadingTenants ? 0.5 : 1 }}
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder={
+                  method === "mpesa"
+                    ? "e.g. 0712 345 678"
+                    : method === "card"
+                    ? "Full name on card"
+                    : "Account holder name"
+                }
+                style={inputStyle}
               />
-              {showDropdown && tenantResults.length > 0 && (
-                <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, background: "#1a1a2e", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10, zIndex: 50, overflow: "hidden", boxShadow: "0 8px 32px rgba(0,0,0,0.4)" }}>
-                  {tenantResults.map((t) => (
-                    <div key={t.id} onClick={() => selectTenant(t)}
-                      style={{ padding: "10px 14px", cursor: "pointer", borderBottom: "1px solid rgba(255,255,255,0.06)", transition: "background .1s" }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(99,102,241,0.15)")}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>{t.name}</div>
-                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>
-                        {t.property} ·{" "}
-                        <span style={{ color: statusColor[t.status] ?? "rgba(255,255,255,0.4)" }}>
-                          {t.status}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+              {method === "mpesa" && (
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: "#94a3b8",
+                    marginTop: 5,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 4,
+                  }}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: 13 }}>info</span>
+                  Formats automatically based on selected provider.
                 </div>
               )}
             </div>
 
-            {loadingTenants ? (
-              <LoadingSpinner />
-            ) : selectedTenant ? (
-              <div style={{ marginTop: 14, padding: "12px 14px", borderRadius: 12, background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.2)" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                  <div style={{ width: 38, height: 38, borderRadius: "50%", background: "linear-gradient(135deg,#6366f1,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#fff", flexShrink: 0 }}>
-                    {selectedTenant.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{selectedTenant.name}</div>
-                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>
-                      {selectedTenant.property} · {selectedTenant.location}
-                    </div>
-                  </div>
-                </div>
-                {([
-                  ["Monthly Rent",   fmt(selectedTenant.rent),        "#fff"],
-                  ["Outstanding",    fmt(selectedTenant.outstanding),  selectedTenant.outstanding > 0 ? "#ef4444" : "#00ff87"],
-                  ["Status",         selectedTenant.status,            statusColor[selectedTenant.status] ?? "#fff"],
-                  ["Period",         selectedTenant.period,            "rgba(255,255,255,0.5)"],
-                  ["Phone",          selectedTenant.phone,             "rgba(255,255,255,0.5)"],
-                  ["Email",          selectedTenant.email,             "rgba(255,255,255,0.45)"],
-                ] as [string, string, string][]).map(([k, v, c]) => (
-                  <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", fontSize: 12 }}>
-                    <span style={{ color: "rgba(255,255,255,0.4)" }}>{k}</span>
-                    <span style={{ fontWeight: 600, color: c, maxWidth: 160, textAlign: "right", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{v}</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div style={{ marginTop: 14, fontSize: 12, color: "rgba(255,255,255,0.3)", textAlign: "center", padding: "20px 0" }}>
-                No tenants found
-              </div>
-            )}
-          </GlassPanel>
-
-          {/* ── Payment Form ── */}
-          <GlassPanel style={{ flex: 1, minWidth: 300 }}>
-            <SectionTag>💳 Payment Method</SectionTag>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8, marginBottom: 20 }}>
-              {methods.map((m) => (
-                <div key={m.key} onClick={() => switchMethod(m.key)}
-                  style={{ border: method === m.key ? "1px solid #6366f1" : "1px solid rgba(255,255,255,0.08)", background: method === m.key ? "rgba(99,102,241,0.12)" : "rgba(255,255,255,0.02)", borderRadius: 12, padding: "12px 8px", cursor: "pointer", textAlign: "center", transition: "all .15s", boxShadow: method === m.key ? "0 0 20px rgba(99,102,241,0.2)" : "none" }}>
-                  <div style={{ fontSize: 22 }}>{m.icon}</div>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: method === m.key ? "#a78bfa" : "#fff", marginTop: 5 }}>{m.name}</div>
-                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>{m.sub}</div>
-                </div>
-              ))}
+            {/* Reference */}
+            <div style={{ marginBottom: 24 }}>
+              <label style={fieldLabel}>Payment Reference</label>
+              <input
+                value={ref || ""}
+                onChange={(e) => setRef(e.target.value)}
+                placeholder={selectedTenant ? undefined : "Select a tenant first"}
+                readOnly={!selectedTenant}
+                style={{
+                  ...inputStyle,
+                  opacity: selectedTenant ? 1 : 0.55,
+                  cursor: selectedTenant ? "text" : "default",
+                }}
+              />
             </div>
 
-            {/* Shared fields */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
-              {[
-                { label: "Amount (KES)", value: amount,          onChange: (v: string) => setAmount(v),  type: "number" },
-                { label: "Reference",    value: ref,             onChange: (v: string) => setRef(v),     type: "text"   },
-                { label: "Description",  value: `${selectedTenant?.period ?? ""} Rent`,                  type: "text"   },
-                { label: "Period",       value: selectedTenant?.period ?? "",                             type: "text"   },
-              ].map((f, i) => (
-                <div key={i}>
-                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", marginBottom: 5, textTransform: "uppercase", letterSpacing: ".06em" }}>{f.label}</div>
-                  <input
-                    type={f.type}
-                    value={f.value}
-                    readOnly={!f.onChange}
-                    onChange={(e) => f.onChange?.(e.target.value)}
-                    style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10, padding: "9px 12px", color: "#fff", fontSize: 13, outline: "none", boxSizing: "border-box", opacity: f.onChange ? 1 : 0.6 }}
-                  />
-                </div>
-              ))}
-            </div>
-
-            {/* ── M-Pesa panel ── */}
-            {method === "mpesa" && (
-              <div>
-                <div style={{ marginBottom: 12 }}>
-                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", marginBottom: 5, textTransform: "uppercase", letterSpacing: ".06em" }}>Phone (2547xxxxxxxx)</div>
-                  <input value={phone} onChange={(e) => setPhone(e.target.value)}
-                    style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10, padding: "9px 12px", color: "#fff", fontSize: 13, outline: "none", width: 220 }} />
-                </div>
-
-                <NeonButton
-                  variant="primary"
-                  onClick={handleMpesaSubmit}
-                  disabled={mpesaState === "loading" || mpesaState === "success" || !selectedTenant}
-                >
-                  {mpesaState === "loading" ? <>Sending…<Spinner /></> : "📱 Send STK Push →"}
-                </NeonButton>
-
-                {mpesaState === "success" && (
-                  <div style={{ marginTop: 14, padding: "14px 16px", borderRadius: 12, background: "rgba(0,255,135,0.06)", border: "1px solid rgba(0,255,135,0.2)" }}>
-                    <div style={{ fontWeight: 700, color: "#00ff87", marginBottom: 4 }}>✓ STK Push Sent</div>
-                    <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)" }}>
-                      Prompt sent to <strong style={{ color: "#fff" }}>{phone}</strong>. Will auto-reconcile on callback.
-                    </div>
-                    {mpesaCheckoutId && (
-                      <div style={{ marginTop: 6, fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: "monospace" }}>
-                        Checkout ID: {mpesaCheckoutId}
-                      </div>
-                    )}
-                  </div>
-                )}
-                {mpesaState === "error" && <ErrorBanner msg={mpesaError} />}
-              </div>
+            {/* Success/Error feedback */}
+            {actionState === "success" && successMsg && (
+              <SuccessBanner>✓ {successMsg}</SuccessBanner>
+            )}
+            {actionState === "error" && errorMsg && (
+              <ErrorBanner msg={errorMsg} />
             )}
 
-            {/* ── Card panel ── */}
-            {method === "card" && (
-              <div>
-                <div style={{ padding: "12px 16px", borderRadius: 12, marginBottom: 12, background: "rgba(96,165,250,0.08)", border: "1px solid rgba(96,165,250,0.2)", color: "#93c5fd", fontSize: 13 }}>
-                  A Stripe PaymentIntent will be created with <code>automatic_payment_methods: enabled</code> — supports Visa, Mastercard, Apple Pay, Google Pay.
-                </div>
+            {/* CTA */}
+            <button
+              onClick={handleSubmit}
+              disabled={!selectedTenant || actionState === "loading" || actionState === "success"}
+              style={{
+                width: "100%",
+                padding: "13px 0",
+                fontSize: 14,
+                fontWeight: 700,
+                borderRadius: 12,
+                border: "none",
+                cursor: selectedTenant && actionState === "idle" ? "pointer" : "default",
+                background:
+                  !selectedTenant || actionState === "success"
+                    ? "#e2e8f0"
+                    : "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
+                color:
+                  !selectedTenant || actionState === "success"
+                    ? "#94a3b8"
+                    : "#ffffff",
+                boxShadow:
+                  selectedTenant && actionState === "idle"
+                    ? "0 4px 14px rgba(79,70,229,0.30)"
+                    : "none",
+                transition: "all 0.15s",
+                letterSpacing: "0.01em",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
+                marginBottom: 10,
+              }}
+            >
+              {actionState === "loading" ? (
+                <>
+                  Processing
+                  <Spinner />
+                </>
+              ) : actionState === "success" ? (
+                "✓ Payment Initiated"
+              ) : (
+                "Initiate Payment"
+              )}
+            </button>
 
-                <NeonButton
-                  variant="primary"
-                  onClick={handleCardSubmit}
-                  disabled={cardState === "loading" || cardState === "success" || !selectedTenant}
-                >
-                  {cardState === "loading" ? <>Creating…<Spinner /></> : "💳 Create Payment Intent →"}
-                </NeonButton>
-
-                {cardState === "success" && (
-                  <div style={{ marginTop: 14, padding: "14px 16px", borderRadius: 12, background: "rgba(0,255,135,0.06)", border: "1px solid rgba(0,255,135,0.2)" }}>
-                    <div style={{ fontWeight: 700, color: "#00ff87", marginBottom: 6 }}>✓ Payment Intent Created</div>
-                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", fontFamily: "monospace", wordBreak: "break-all" }}>
-                      {cardClientSecret.slice(0, 40)}…
-                    </div>
-                    <div style={{ marginTop: 8, fontSize: 12, color: "rgba(255,255,255,0.5)" }}>
-                      Pass <code style={{ color: "#a78bfa" }}>clientSecret</code> to your Stripe Elements / Payment Element component.
-                    </div>
-                  </div>
-                )}
-                {cardState === "error" && <ErrorBanner msg={cardError} />}
-              </div>
-            )}
-
-            {/* ── Bank panel ── */}
-            {method === "bank" && (
-              <div>
-                <NeonButton
-                  variant="primary"
-                  onClick={handleBankSubmit}
-                  disabled={bankState === "loading" || bankState === "success" || !selectedTenant}
-                >
-                  {bankState === "loading" ? <>Generating…<Spinner /></> : "🏦 Generate Bank Reference →"}
-                </NeonButton>
-
-                {bankState === "success" && bankRef && (
-                  <div style={{ marginTop: 14, padding: "14px 16px", borderRadius: 12, background: "rgba(96,165,250,0.06)", border: "1px solid rgba(96,165,250,0.2)" }}>
-                    <div style={{ fontWeight: 700, color: "#60a5fa", marginBottom: 10 }}>Bank Transfer Instructions</div>
-                    {[["Bank", "Equity Bank"], ["Account", "0123456789"], ["Reference", bankRef], ["Amount", fmt(parseInt(amount) || 0)]].map(([k, v]) => (
-                      <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,0.06)", fontSize: 13 }}>
-                        <span style={{ color: "rgba(255,255,255,0.45)" }}>{k}</span>
-                        <span style={{ fontFamily: "monospace", color: "#fff" }}>{v}</span>
-                      </div>
-                    ))}
-                    <div style={{ marginTop: 8, fontSize: 11, color: "rgba(255,255,255,0.3)" }}>
-                      Verify via <code style={{ color: "#a78bfa", fontFamily: "monospace" }}>PUT /api/payments/:id/verify</code>
-                    </div>
-                  </div>
-                )}
-                {bankState === "error" && <ErrorBanner msg={bankError} />}
-              </div>
-            )}
-          </GlassPanel>
+            <button
+              onClick={clearForm}
+              style={{
+                width: "100%",
+                padding: "10px 0",
+                fontSize: 13,
+                fontWeight: 500,
+                borderRadius: 10,
+                border: "none",
+                background: "transparent",
+                color: "#64748b",
+                cursor: "pointer",
+              }}
+            >
+              Clear Form
+            </button>
+          </div>
         </div>
       </div>
     </>

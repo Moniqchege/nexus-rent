@@ -404,7 +404,7 @@ function StatRow({
         justifyContent: "space-between",
         fontSize: 12,
         padding: "5px 0",
-        borderBottom: "1px solid rgba(255,255,255,0.04)",
+        borderBottom: "1px solid #eef2f7",
       }}
     >
       <span style={{ color: "rgba(255,255,255,0.4)" }}>{label}</span>
@@ -492,8 +492,8 @@ export default function TenantPage() {
               placeholder="🔍  Switch tenant…"
               style={{
                 width: "100%",
-                background: "rgba(255,255,255,0.05)",
-                border: "1px solid rgba(255,255,255,0.12)",
+                background: "#e2e8f0",
+                border: "1px solid #cbd5e1",
                 borderRadius: 10,
                 padding: "8px 12px",
                 color: "#fff",
@@ -510,7 +510,7 @@ export default function TenantPage() {
                   left: 0,
                   right: 0,
                   background: "#1a1a2e",
-                  border: "1px solid rgba(255,255,255,0.12)",
+                  border: "1px solid #cbd5e1",
                   borderRadius: 10,
                   zIndex: 50,
                   boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
@@ -527,7 +527,7 @@ export default function TenantPage() {
                     style={{
                       padding: "10px 14px",
                       cursor: "pointer",
-                      borderBottom: "1px solid rgba(255,255,255,0.06)",
+                      borderBottom: "1px solid #e2e8f0",
                     }}
                     onMouseEnter={(e) =>
                       (e.currentTarget.style.background = "rgba(99,102,241,0.15)")
@@ -587,7 +587,7 @@ export default function TenantPage() {
                   display: "flex",
                   flexDirection: "column",
                   gap: 0,
-                  borderTop: "1px solid rgba(255,255,255,0.06)",
+                  borderTop: "1px solid #e2e8f0",
                   paddingTop: 12,
                 }}
               >
@@ -624,7 +624,7 @@ export default function TenantPage() {
                 <StatRow
                   label="Phone"
                   value={lease.tenant.phone ?? "—"}
-                  color="rgba(255,255,255,0.55)"
+                  color="#64748b"
                 />
               </div>
             ) : null}
@@ -643,7 +643,7 @@ export default function TenantPage() {
         <div
           style={{
             padding: "16px 20px",
-            borderBottom: "1px solid rgba(255,255,255,0.06)",
+            borderBottom: "1px solid #e2e8f0",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
@@ -685,7 +685,7 @@ export default function TenantPage() {
               padding: 40,
               textAlign: "center",
               fontSize: 13,
-              color: "rgba(255,255,255,0.25)",
+              color: "#94a3b8",
             }}
           >
             No transactions yet
@@ -694,7 +694,7 @@ export default function TenantPage() {
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
-                <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
                   {["Date", "Description", "Charge", "Payment", "Balance"].map((h) => (
                     <th
                       key={h}
@@ -703,7 +703,7 @@ export default function TenantPage() {
                         textAlign: "left",
                         fontSize: 10,
                         fontWeight: 700,
-                        color: "rgba(255,255,255,0.35)",
+                        color: "#64748b",
                         textTransform: "uppercase",
                         letterSpacing: ".06em",
                         whiteSpace: "nowrap",
@@ -723,7 +723,7 @@ export default function TenantPage() {
                     <tr
                       key={i}
                       style={{
-                        borderBottom: "1px solid rgba(255,255,255,0.04)",
+                        borderBottom: "1px solid #eef2f7",
                         background: isPayment
                           ? "rgba(0,255,135,0.02)"
                           : "transparent",

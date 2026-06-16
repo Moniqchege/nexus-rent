@@ -441,7 +441,7 @@ const arrearsBySchedule = useMemo(() => {
         style={{
           marginTop: 8,
           fontSize: 12,
-          color: "rgba(255,255,255,0.38)",
+          color: "#64748b",
           lineHeight: 1.5,
         }}
       >
@@ -497,7 +497,7 @@ const arrearsBySchedule = useMemo(() => {
                 key={idx}
                 style={{
                   fontSize: 10,
-                  color: "rgba(255,255,255,0.38)",
+                  color: "#64748b",
                   textAlign: "right",
                   paddingRight: 8,
                   transform: "translateY(6px)",
@@ -517,8 +517,8 @@ const arrearsBySchedule = useMemo(() => {
             flex: 1,
             position: "relative",
             height: 240,
-            borderLeft: "1px solid rgba(255,255,255,0.08)",
-            borderBottom: "1px solid rgba(255,255,255,0.08)",
+            borderLeft: "1px solid #e2e8f0",
+            borderBottom: "1px solid #e2e8f0",
             padding: "0 10px 28px 14px",
           }}
         >
@@ -533,8 +533,8 @@ const arrearsBySchedule = useMemo(() => {
                 bottom: `${t * 100}%`,
                 borderTop:
                   idx === 4
-                    ? "1px solid rgba(255,255,255,0.12)"
-                    : "1px dashed rgba(255,255,255,0.06)",
+                    ? "1px solid #cbd5e1"
+                    : "1px dashed #e2e8f0",
               }}
             />
           ))}
@@ -757,7 +757,7 @@ const arrearsBySchedule = useMemo(() => {
   style={{
     padding: 0,
     overflow: "hidden",
-    border: "1px solid rgba(255,255,255,0.06)",
+    border: "1px solid #e2e8f0",
     backdropFilter: "blur(14px)",
   }}
 >
@@ -778,7 +778,7 @@ const arrearsBySchedule = useMemo(() => {
           fontSize: 11,
           textTransform: "uppercase",
           letterSpacing: ".12em",
-          color: "rgba(255,255,255,0.35)",
+          color: "#64748b",
           marginBottom: 5,
         }}
       >
@@ -794,7 +794,7 @@ const arrearsBySchedule = useMemo(() => {
       <span
         style={{
           fontSize: 11,
-          color: "rgba(255,255,255,0.35)",
+          color: "#64748b",
         }}
       >
         Loading…
@@ -814,9 +814,9 @@ const arrearsBySchedule = useMemo(() => {
         fontWeight: 700,
         letterSpacing: ".08em",
         textTransform: "uppercase",
-        color: "rgba(255,255,255,0.38)",
+        color: "#64748b",
         background: "rgba(255,255,255,0.02)",
-        borderBottom: "1px solid rgba(255,255,255,0.05)",
+        borderBottom: "1px solid #e2e8f0",
       }}
     >
       <div>Category</div>
@@ -847,7 +847,7 @@ const arrearsBySchedule = useMemo(() => {
         <div
           key={category}
           style={{
-            borderBottom: "1px solid rgba(255,255,255,0.04)",
+            borderBottom: "1px solid #eef2f7",
           }}
         >
           {/* Category Row */}
@@ -868,15 +868,15 @@ const arrearsBySchedule = useMemo(() => {
               cursor: "pointer",
               transition: "all .18s ease",
               background: isOpen
-                ? "rgba(255,255,255,0.04)"
+                ? "#eef2f7"
                 : "rgba(255,255,255,0.015)",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = "rgba(255,255,255,0.05)";
+              e.currentTarget.style.background = "#e2e8f0";
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.background = isOpen
-                ? "rgba(255,255,255,0.04)"
+                ? "#eef2f7"
                 : "rgba(255,255,255,0.015)";
             }}
           >
@@ -945,7 +945,7 @@ const arrearsBySchedule = useMemo(() => {
                 borderRadius: 10,
                 border: isOpen
                   ? "1px solid rgba(0,255,135,0.35)"
-                  : "1px solid rgba(255,255,255,0.08)",
+                  : "1px solid #e2e8f0",
                 background: isOpen
                   ? "rgba(0,255,135,0.12)"
                   : "rgba(255,255,255,0.03)",
@@ -998,7 +998,7 @@ const arrearsBySchedule = useMemo(() => {
                       flexWrap: "wrap",
                       marginTop: 5,
                       fontSize: 10,
-                      color: "rgba(255,255,255,0.38)",
+                      color: "#64748b",
                     }}
                   >
                     <span>{e.property?.title ?? "—"}</span>
@@ -1011,7 +1011,7 @@ const arrearsBySchedule = useMemo(() => {
                       <span
                         style={{
                           fontFamily: "monospace",
-                          color: "rgba(255,255,255,0.55)",
+                          color: "#64748b",
                         }}
                       >
                         {e.vendorAccount.identifier}
@@ -1076,7 +1076,7 @@ const arrearsBySchedule = useMemo(() => {
     <div
       style={{
         fontSize: 11,
-        color: "rgba(255,255,255,0.35)",
+        color: "#64748b",
         textTransform: "uppercase",
         letterSpacing: ".08em",
       }}
@@ -1088,7 +1088,7 @@ const arrearsBySchedule = useMemo(() => {
       <div
         style={{
           fontSize: 10,
-          color: "rgba(255,255,255,0.35)",
+          color: "#64748b",
           textTransform: "uppercase",
           letterSpacing: ".08em",
         }}

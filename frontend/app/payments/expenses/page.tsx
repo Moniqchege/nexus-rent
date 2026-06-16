@@ -292,7 +292,7 @@ const handlePayExpense = async (exp: Expense) => {
   <div
     style={{
       padding: "16px 20px",
-      borderBottom: "1px solid rgba(255,255,255,0.06)",
+      borderBottom: "1px solid #e2e8f0",
       display: "flex",
       justifyContent: "space-between",
       alignItems: "center",
@@ -330,7 +330,7 @@ const handlePayExpense = async (exp: Expense) => {
     fontSize: 11,
     fontWeight: 600,
     color: "rgba(255,255,255,0.4)",
-    borderBottom: "1px solid rgba(255,255,255,0.08)",
+    borderBottom: "1px solid #e2e8f0",
     textTransform: "uppercase",
     letterSpacing: 0.5,
     gap: 16,
@@ -362,14 +362,14 @@ const handlePayExpense = async (exp: Expense) => {
             gridTemplateColumns: "2fr 1.1fr 1.3fr 1fr 1fr 0.9fr 140px",
             alignItems: "center",
             padding: "14px 20px",
-            borderBottom: "1px solid rgba(255,255,255,0.05)",
+            borderBottom: "1px solid #e2e8f0",
             background: "rgba(255,255,255,0.02)",
             transition: "all 0.2s",
             gap: 16,
             minHeight: 72,
           }}
           onMouseEnter={(e) =>
-            (e.currentTarget.style.background = "rgba(255,255,255,0.05)")
+            (e.currentTarget.style.background = "#e2e8f0")
           }
           onMouseLeave={(e) =>
             (e.currentTarget.style.background = "rgba(255,255,255,0.02)")
@@ -431,7 +431,7 @@ style={{
           ? "rgba(0,255,135,0.1)"
           : exp.paymentStatus === "pending"
           ? "rgba(255,180,0,0.1)"
-          : "rgba(255,255,255,0.08)",
+          : "#e2e8f0",
       color:
         exp.paymentStatus === "paid"
           ? "#00ff87"
@@ -491,7 +491,7 @@ style={{
         style={{
           padding: "16px 20px",
           background: "rgba(255,255,255,0.02)",
-          borderTop: "1px solid rgba(255,255,255,0.08)",
+          borderTop: "1px solid #e2e8f0",
         }}
       >
         <div
@@ -580,8 +580,8 @@ style={{
                     style={{
                       width: "100%",
                       padding: "12px 16px",
-                      background: "rgba(255,255,255,0.05)",
-                      border: "1px solid rgba(255,255,255,0.12)",
+                      background: "#e2e8f0",
+                      border: "1px solid #cbd5e1",
                       borderRadius: 12,
                       color: "#fff",
                       fontSize: 14,
@@ -601,8 +601,8 @@ style={{
                     style={{
                       width: "100%",
                       padding: "12px 16px",
-                      background: "rgba(255,255,255,0.05)",
-                      border: "1px solid rgba(255,255,255,0.12)",
+                      background: "#e2e8f0",
+                      border: "1px solid #cbd5e1",
                       borderRadius: 12,
                       color: "#fff",
                       fontSize: 14,
@@ -622,8 +622,8 @@ style={{
                     style={{
                       width: "100%",
                       padding: "12px 16px",
-                      background: "rgba(255,255,255,0.05)",
-                      border: "1px solid rgba(255,255,255,0.12)",
+                      background: "#e2e8f0",
+                      border: "1px solid #cbd5e1",
                       borderRadius: 12,
                       color: "#fff",
                       fontSize: 14,
