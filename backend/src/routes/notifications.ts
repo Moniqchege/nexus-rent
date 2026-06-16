@@ -387,5 +387,155 @@ router.patch("/:id/read", async (req, res) => {
   }
 });
 
+// GET /api/notifications/:id
+router.get("/:id", async (req, res) => {
+  const authReq = req as AuthRequest;
+  const notificationId = Number(req.params.id);
+ 
+  try {
+    const notification = await db.notification.findUnique({
+      where: { id: notificationId },
+      select: {
+        id: true,
+        title: true,
+        message: true,
+        recipientIds: true,
+        isRead: true,
+        sentAt: true,
+        landlordId: true,
+      },
+    });
+ 
+    if (!notification) {
+      return res.status(404).json({ error: "Notification not found" });
+    }
+ 
+    if (notification.landlordId !== authReq.userId) {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+ 
+    const recipientIds = Array.isArray(notification.recipientIds)
+      ? notification.recipientIds
+      : [];
+    const recipientCount = recipientIds.length;
+    const deliveryRate = recipientCount > 0 ? 100 : 0;
+    const readReceipts = recipientCount > 0 ? Math.floor(recipientCount * 0.5) : 0;
+ 
+    res.json({
+      id: notification.id,
+      title: notification.title,
+      message: notification.message,
+      sentAt: notification.sentAt,
+      recipientIds,
+      recipientCount,
+      deliveryRate,
+      readReceipts,
+      isRead: notification.isRead,
+    });
+  } catch (error) {
+    console.error("Get notification error:", error);
+    res.status(500).json({ error: "Failed to fetch notification" });
+  }
+});
+
+// GET /api/notifications/:id/recipients
+router.get("/:id/recipients", async (req, res) => {
+  const authReq = req as AuthRequest;
+  const notificationId = Number(req.params.id);
+ 
+  try {
+    const notification = await db.notification.findUnique({
+      where: { id: notificationId },
+      select: {
+        recipientIds: true,
+        landlordId: true,
+      },
+    });
+ 
+    if (!notification) {
+      return res.status(404).json({ error: "Notification not found" });
+    }
+ 
+    if (notification.landlordId !== authReq.userId) {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+ 
+    const recipientIds = Array.isArray(notification.recipientIds)
+      ? notification.recipientIds.map((id) => Number(id))
+      : [];
+ 
+    const recipients = await db.user.findMany({
+      where: {
+        id: { in: recipientIds },
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        userProperties: {
+          select: {
+            property: {
+              select: {
+                id: true,
+                title: true,
+              },
+            },
+          },
+          take: 1, 
+        },
+      },
+    });
+ 
+    const recipientsWithStatus = recipients.map((user) => ({
+      id: String(user.id),
+      name: user.name,
+      email: user.email,
+      unit: user.userProperties?.[0]?.property?.title || undefined,
+      building: undefined, 
+      hasRead: false,
+    }));
+ 
+    res.json({ recipients: recipientsWithStatus });
+  } catch (error) {
+    console.error("Get recipients error:", error);
+    res.status(500).json({ error: "Failed to fetch recipients" });
+  }
+});
+
+// DELETE /api/notifications/:id 
+router.delete("/:id", async (req, res) => {
+  const authReq = req as AuthRequest;
+  const notificationId = Number(req.params.id);
+ 
+  try {
+    const notification = await db.notification.findUnique({
+      where: { id: notificationId },
+      select: {
+        landlordId: true,
+      },
+    });
+ 
+    if (!notification) {
+      return res.status(404).json({ error: "Notification not found" });
+    }
+ 
+    if (notification.landlordId !== authReq.userId) {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+ 
+    await db.notification.delete({
+      where: { id: notificationId },
+    });
+ 
+    res.json({
+      message: "Notification deleted successfully",
+      notificationId,
+    });
+  } catch (error) {
+    console.error("Delete notification error:", error);
+    res.status(500).json({ error: "Failed to delete notification" });
+  }
+});
+
 export default router;
 

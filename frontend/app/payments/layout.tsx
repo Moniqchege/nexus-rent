@@ -21,12 +21,10 @@ export default function PaymentsLayout({ children }: { children: ReactNode }) {
               `}</style>
 
               {/* Page header */}
-              <div className="page-tag">💳 PAYMENT MANAGEMENT</div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
                 <div>
                   <div className="section-label">PAYMENTS</div>
-                  <h2 style={{ fontSize: 20, fontWeight: 700, color: "var(--neon-purple)", marginTop: 4 }}>
-                    <span style={{ display:"inline-block", width:7, height:7, borderRadius:"50%", background:"#00ff87", marginRight:6, boxShadow:"0 0 6px #00ff87", animation:"pulse 1.5s infinite" }} />
+                  <h2 style={{ fontSize: 18, fontWeight: 700, color: "#000000", marginTop: 4 }}>
                     Payment Hub
                   </h2>
                 </div>

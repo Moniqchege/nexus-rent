@@ -36,7 +36,7 @@ export default function Sidebar() {
     {
       label: "Notifications",
       icon: "/notifications_icon.png",
-      to: "/notifications",
+      to: "/messages",
       badge: unreadCount,
     },
     {

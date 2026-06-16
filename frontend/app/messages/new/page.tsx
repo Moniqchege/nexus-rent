@@ -11,7 +11,6 @@ export default function NewNotificationPage() {
     });
 
     if (res.status !== 201) {
-      // Bubble up so SendNotificationForm can surface the error toast
       throw new Error(res.data?.error || "Failed to send notification");
     }
   };

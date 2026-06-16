@@ -1,22 +1,27 @@
 "use client";
-
-// notifications/page.tsx
-// List of sent notifications with links to create new or edit existing ones.
-// Updated to match EstateManager Stitch design.
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/app/lib/api";
 import { Plus, Pencil, BarChart2, Users, Calendar, ChevronLeft, ChevronRight, History, ArrowRight } from "lucide-react";
+import { PaginationCustomDropdown } from "../components/ui/PaginationCustomDropdown";
 
 interface Notification {
   id: number;
   title: string;
   message: string;
-  createdAt: string;
+  sentAt: string;
   recipientCount: number;
   isUrgent?: boolean;
 }
+type Pagination = {
+  enabled: boolean;
+  pageSizeOptions: number[];
+  defaultPageSize: number;
+  pageIndex?: number;
+  pageSize?: number;
+  onPageChange?: (pageIndex: number) => void;
+  onPageSizeChange?: (pageSize: number) => void;
+};
 
 type FilterTab = "all" | "drafts" | "scheduled";
 
@@ -27,9 +32,27 @@ export default function NotificationsPage() {
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const totalNotifications = 24;
   const perPage = 5;
-  const totalPages = Math.ceil(totalNotifications / perPage);
+  const [pageSize, setPageSize] = useState(5);
+  const totalNotifications = notifications.length;
+  const totalPages = Math.max(1, Math.ceil(totalNotifications / pageSize));
+  const safePageIndex = currentPage - 1;
+  const pageStart = totalNotifications === 0 ? 0 : safePageIndex * perPage + 1;
+  const pageEnd = Math.min((safePageIndex + 1) * perPage, totalNotifications);
+  
+  const setPageSizeSafe = (size: number) => {
+    setPageSize(size);
+  };
+  
+  const setPageIndexSafe = (index: number) => {
+    setCurrentPage(index + 1);
+  };
+
+  const paginatedNotifications = notifications.slice(
+    safePageIndex * pageSize,
+    safePageIndex * pageSize + pageSize
+  );
+  const pageSizeOptions: number[] = [5, 10, 20, 50, 100];
 
   useEffect(() => {
     api
@@ -39,12 +62,6 @@ export default function NotificationsPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const tabs: { key: FilterTab; label: string }[] = [
-    { key: "all", label: "All Sent" },
-    { key: "drafts", label: "Drafts" },
-    { key: "scheduled", label: "Scheduled" },
-  ];
-
   const formatDate = (dateString: string) => {
     const d = new Date(dateString);
     return d.toLocaleDateString("en-US", {
@@ -53,6 +70,11 @@ export default function NotificationsPage() {
       year: "numeric",
     }) + " • " + d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
   };
+
+  // Navigation handler for viewing notification details/report
+  const handleViewReport = useCallback((notificationId: number) => {
+    router.push(`/messages/view/${notificationId}`);
+  }, [router]);
 
   const getPageNumbers = () => {
     const pages: (number | "...")[] = [];
@@ -65,6 +87,7 @@ export default function NotificationsPage() {
   };
 
   return (
+    <div className="dashboard-content">
     <div style={{ fontFamily: "'Inter', sans-serif", color: "#191c20" }}>
       {/* Page Header */}
       <div
@@ -78,55 +101,33 @@ export default function NotificationsPage() {
         }}
       >
         <div style={{ display: "flex", alignItems: "flex-start", gap: "16px" }}>
-          <div
-            style={{
-              background: "#eaddff",
-              padding: "12px",
-              borderRadius: "12px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#630ed4",
-            }}
-          >
-            {/* Bell icon inline SVG */}
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="#630ed4" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
-            </svg>
-          </div>
           <div>
-            <h2 style={{ fontSize: "32px", fontWeight: 700, letterSpacing: "-0.02em", lineHeight: "40px", margin: 0 }}>
+            <h2 style={{ fontSize: "18px", color: "var(--neon-blue)", fontWeight: 700, letterSpacing: "-0.02em", lineHeight: "40px", margin: 0 }}>
               Notifications
             </h2>
-            <p style={{ fontSize: "14px", color: "#4a4455", margin: "4px 0 0" }}>
+            <p style={{ fontSize: "12px", color: "#4a4455" }}>
               View and manage all sent notifications.
             </p>
           </div>
         </div>
 
         <button
-          onClick={() => router.push("/notifications/new")}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            padding: "12px 24px",
-            background: "#630ed4",
-            color: "#ffffff",
+          onClick={() => router.push("/messages/new")}
+           style={{
+            background:
+              "linear-gradient(to right, var(--neon-blue), var(--neon-purple))",
+            color: "white",
             border: "none",
-            borderRadius: "8px",
+            borderRadius: "12px",
+            padding: "12px 24px",
             fontWeight: 600,
-            fontSize: "16px",
             cursor: "pointer",
-            fontFamily: "'Inter', sans-serif",
-            boxShadow: "0 2px 8px rgba(99,14,212,0.2)",
-            transition: "opacity 0.15s",
+            fontSize: "14px",
           }}
           onMouseOver={(e) => (e.currentTarget.style.opacity = "0.9")}
           onMouseOut={(e) => (e.currentTarget.style.opacity = "1")}
         >
-          <Plus size={18} />
-          New Notification
+          + New Notification
         </button>
       </div>
 
@@ -154,48 +155,9 @@ export default function NotificationsPage() {
           background: "#ffffff",
           border: "1px solid #ccc3d8",
           borderRadius: "12px",
-          overflow: "hidden",
+          overflow: "visible",
         }}
       >
-        {/* Filter Tabs Bar */}
-        <div
-          style={{
-            padding: "12px 24px",
-            borderBottom: "1px solid #ccc3d8",
-            background: "rgba(242,243,249,0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <div style={{ display: "flex", gap: "8px" }}>
-            {tabs.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                style={{
-                  padding: "4px 12px",
-                  borderRadius: "9999px",
-                  border: "none",
-                  cursor: "pointer",
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  letterSpacing: "0.05em",
-                  transition: "background 0.15s, color 0.15s",
-                  background: activeTab === tab.key ? "#eaddff" : "transparent",
-                  color: activeTab === tab.key ? "#25005a" : "#4a4455",
-                }}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-          <span style={{ fontSize: "12px", color: "#4a4455" }}>
-            Showing {Math.min(perPage, totalNotifications)} of {totalNotifications} notifications
-          </span>
-        </div>
-
         {/* List Body */}
         {loading ? (
           <div style={{ padding: "48px", textAlign: "center", color: "#7b7487", fontSize: "14px" }}>
@@ -242,108 +204,144 @@ export default function NotificationsPage() {
           </div>
         ) : (
           <div>
-            {notifications.map((n, i) => (
+            {paginatedNotifications.map((n, i) => (
               <NotificationRow
                 key={n.id}
                 notification={n}
-                isLast={i === notifications.length - 1}
+                isLast={i === paginatedNotifications.length - 1}
                 onEdit={() => router.push(`/notifications/edit/${n.id}`)}
+                onViewReport={() => handleViewReport(n.id)}
                 formatDate={formatDate}
-              />
+             />
             ))}
           </div>
         )}
 
         {/* Pagination */}
-        {!loading && notifications.length > 0 && (
-          <div
-            style={{
-              padding: "12px 24px",
-              background: "#f2f3f9",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              gap: "8px",
-              borderTop: "1px solid #ccc3d8",
-            }}
-          >
-            <button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              style={{
-                padding: "8px",
-                borderRadius: "50%",
-                border: "none",
-                background: "transparent",
-                cursor: currentPage === 1 ? "default" : "pointer",
-                color: "#4a4455",
-                opacity: currentPage === 1 ? 0.3 : 1,
-                display: "flex",
-              }}
-            >
-              <ChevronLeft size={20} />
-            </button>
+      {totalNotifications > 0 && (
+  <div
+    style={{
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      width: "100%",
+      padding: "12px 16px",
+      borderTop: "1px solid #ccc3d8",
+      background: "#f2f3f9",
+      flexWrap: "wrap",
+      gap: 10,
+    }}
+  >
+    {/* LEFT: showing range */}
+    <div style={{ flex: 1, minWidth: 120 }}>
+      <span style={{ color: "#4a4455", fontSize: 12 }}>
+        Showing{" "}
+        <span style={{ color: "#630ed4", fontWeight: 600 }}>
+          {pageStart}
+        </span>
+        –
+        <span style={{ color: "#630ed4", fontWeight: 600 }}>
+          {pageEnd}
+        </span>{" "}
+        of{" "}
+        <span style={{ color: "#630ed4", fontWeight: 600 }}>
+          {totalNotifications}
+        </span>
+      </span>
+    </div>
 
-            <div style={{ display: "flex", gap: "4px" }}>
-              {getPageNumbers().map((page, idx) =>
-                page === "..." ? (
-                  <span
-                    key={`ellipsis-${idx}`}
-                    style={{
-                      width: 32,
-                      height: 32,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: "#4a4455",
-                      fontSize: "12px",
-                    }}
-                  >
-                    ...
-                  </span>
-                ) : (
-                  <button
-                    key={page}
-                    onClick={() => setCurrentPage(page as number)}
-                    style={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: "50%",
-                      border: "none",
-                      cursor: "pointer",
-                      fontFamily: "'Inter', sans-serif",
-                      fontSize: "12px",
-                      fontWeight: 700,
-                      background: currentPage === page ? "#630ed4" : "transparent",
-                      color: currentPage === page ? "#ffffff" : "#4a4455",
-                      transition: "background 0.15s",
-                    }}
-                  >
-                    {page}
-                  </button>
-                )
-              )}
-            </div>
+    {/* MIDDLE: page size dropdown */}
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+      }}
+    >
+      <span
+        style={{
+          color: "#4a4455",
+          fontSize: 12,
+          whiteSpace: "nowrap",
+        }}
+      >
+        Items Per Page:
+      </span>
 
-            <button
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              style={{
-                padding: "8px",
-                borderRadius: "50%",
-                border: "none",
-                background: "transparent",
-                cursor: currentPage === totalPages ? "default" : "pointer",
-                color: "#4a4455",
-                opacity: currentPage === totalPages ? 0.3 : 1,
-                display: "flex",
-              }}
-            >
-              <ChevronRight size={20} />
-            </button>
-          </div>
-        )}
+      <PaginationCustomDropdown
+        options={pageSizeOptions.map((size: number) => ({
+          label: String(size),
+          value: size,
+        }))}
+        value={pageSize}
+        onChange={(value) => {
+          setPageSizeSafe(Number(value));
+          setPageIndexSafe(0); 
+        }}
+        labelKey="label"
+        valueKey="value"
+        minWidth="90px"
+      />
+    </div>
+
+    {/* RIGHT: navigation */}
+    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+      <button
+        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+        disabled={currentPage === 1}
+        style={{
+          padding: "6px 12px",
+          borderRadius: 8,
+          border: "1px solid #ccc3d8",
+          backgroundColor: "#ffffff",
+          color: "#0F52BA",
+          cursor: currentPage === 1 ? "not-allowed" : "pointer",
+          opacity: currentPage === 1 ? 0.4 : 1,
+          fontWeight: 600,
+        }}
+      >
+        ‹
+      </button>
+
+      <div
+        style={{
+          padding: "5px 12px",
+          borderRadius: 8,
+          border: "1px solid #0F52BA",
+          background: "rgba(99, 14, 212, 0.08)",
+          color: "#0F52BA",
+          fontWeight: 600,
+          minWidth: 32,
+          textAlign: "center",
+        }}
+      >
+        {currentPage}
       </div>
+
+      <button
+        onClick={() =>
+          setCurrentPage((p) => Math.min(totalPages, p + 1))
+        }
+        disabled={currentPage >= totalPages}
+        style={{
+          padding: "6px 12px",
+          borderRadius: 8,
+          border: "1px solid #ccc3d8",
+          backgroundColor: "#ffffff",
+          color: "#0F52BA",
+          cursor:
+            currentPage >= totalPages ? "not-allowed" : "pointer",
+          opacity: currentPage >= totalPages ? 0.4 : 1,
+          fontWeight: 600,
+        }}
+      >
+        ›
+      </button>
+    </div>
+  </div>
+)}
+      </div>
+    </div>
     </div>
   );
 }
@@ -354,11 +352,13 @@ function NotificationRow({
   notification: n,
   isLast,
   onEdit,
+  onViewReport,
   formatDate,
 }: {
   notification: Notification;
   isLast: boolean;
   onEdit: () => void;
+  onViewReport: () => void;
   formatDate: (d: string) => string;
 }) {
   const [hovered, setHovered] = useState(false);
@@ -441,7 +441,7 @@ function NotificationRow({
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#4a4455" }}>
             <Calendar size={14} />
-            <span style={{ fontSize: "12px" }}>{formatDate(n.createdAt)}</span>
+            <span style={{ fontSize: "12px" }}>{formatDate(n.sentAt)}</span>
           </div>
         </div>
       </div>
@@ -458,6 +458,7 @@ function NotificationRow({
       >
         <button
           title="View Report"
+          onClick={onViewReport}
           style={{
             padding: "8px",
             border: "none",
@@ -474,25 +475,6 @@ function NotificationRow({
           onMouseOut={(e) => (e.currentTarget.style.background = "transparent")}
         >
           <BarChart2 size={20} />
-        </button>
-        <button
-          onClick={onEdit}
-          style={{
-            padding: "7px 10px",
-            border: "1px solid #ccc3d8",
-            borderRadius: "8px",
-            background: "#ffffff",
-            color: "#4800a0",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            transition: "background 0.15s",
-          }}
-          onMouseOver={(e) => (e.currentTarget.style.background = "#eaddff")}
-          onMouseOut={(e) => (e.currentTarget.style.background = "#ffffff")}
-        >
-          <Pencil size={18} />
         </button>
       </div>
     </div>
