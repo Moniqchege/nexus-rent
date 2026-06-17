@@ -136,7 +136,7 @@ export default function PropertyPopup({ properties, onClose }: PropertyPopupProp
                       fontSize: 15,
                     }}
                   >
-                    KES {prop.price.toLocaleString()}
+                    ksh {prop.price.toLocaleString()}
                   </div>
                   <button className="btn-primary" style={{ padding: '7px 14px', fontSize: 12 }}>
                     <Home size={12} style={{ marginRight: 4 }} />

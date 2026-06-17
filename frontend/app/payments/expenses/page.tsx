@@ -200,7 +200,6 @@ export default function ExpensesPage() {
     }
   };
 
-  // ─── styles ────────────────────────────────────────────────────────────────
   const s = {
     page: {
       display: "flex",
@@ -210,44 +209,6 @@ export default function ExpensesPage() {
       minHeight: "100vh",
       fontFamily: "'Inter', system-ui, sans-serif",
     },
-    topBar: {
-      display: "flex",
-      alignItems: "center",
-      gap: 12,
-      padding: "16px 24px",
-      background: "#fff",
-      borderBottom: "1px solid #e2e8f0",
-    },
-    searchWrap: {
-      flex: 1,
-      display: "flex",
-      alignItems: "center",
-      gap: 8,
-      background: "#f1f5f9",
-      borderRadius: 10,
-      padding: "9px 14px",
-      border: "1px solid #e2e8f0",
-    },
-    searchInput: {
-      border: "none",
-      background: "transparent",
-      outline: "none",
-      fontSize: 14,
-      color: "#334155",
-      width: "100%",
-    },
-    bellBtn: {
-      width: 38,
-      height: 38,
-      borderRadius: 10,
-      border: "1px solid #e2e8f0",
-      background: "#fff",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      cursor: "pointer",
-      fontSize: 16,
-    },
     addBtn: {
       display: "flex",
       alignItems: "center",
@@ -256,7 +217,7 @@ export default function ExpensesPage() {
       color: "#fff",
       border: "none",
       borderRadius: 10,
-      padding: "9px 18px",
+      padding: "10px 18px",
       fontSize: 14,
       fontWeight: 600,
       cursor: "pointer",
@@ -269,7 +230,7 @@ export default function ExpensesPage() {
     },
     main: {
       flex: 1,
-      padding: "24px",
+      padding: "14px",
       display: "flex",
       flexDirection: "column" as const,
       gap: 20,
@@ -286,13 +247,13 @@ export default function ExpensesPage() {
       gap: 24,
     },
     heading: {
-      fontSize: 26,
+      fontSize: 18,
       fontWeight: 700,
       color: "#0f172a",
       margin: 0,
     },
     subheading: {
-      fontSize: 13,
+      fontSize: 11,
       color: "#94a3b8",
       margin: "4px 0 0",
     },
@@ -301,15 +262,17 @@ export default function ExpensesPage() {
       gridTemplateColumns: "repeat(4, 1fr)",
       gap: 16,
     },
-    metricCard: (accent: string) => ({
-      background: "#fff",
-      borderRadius: 14,
-      padding: "18px 20px",
-      border: "1px solid #e2e8f0",
-      display: "flex",
-      flexDirection: "column" as const,
-      gap: 10,
-    }),
+  metricCard: (accent: string) => ({
+  position: "relative" as const,
+  background: "#fff",
+  borderRadius: 14,
+  padding: "12px 20px 12px 24px",
+  border: "1px solid #e2e8f0",
+  overflow: "hidden" as const,
+  display: "flex",
+  flexDirection: "column" as const,
+  gap: 10,
+}),
     metricIcon: (bg: string) => ({
       width: 36,
       height: 36,
@@ -321,12 +284,12 @@ export default function ExpensesPage() {
       fontSize: 17,
     }),
     metricLabel: {
-      fontSize: 12,
+      fontSize: 11,
       color: "#94a3b8",
       fontWeight: 500,
     },
     metricValue: {
-      fontSize: 22,
+      fontSize: 18,
       fontWeight: 700,
       color: "#0f172a",
       margin: "2px 0 0",
@@ -346,7 +309,20 @@ export default function ExpensesPage() {
       gap: 12,
       flexWrap: "wrap" as const,
     },
-    propDropWrap: { minWidth: 180 },
+
+    filtersSection: {
+  display: "flex",
+  flexDirection: "column" as const,
+  gap: 12,
+},
+
+topControls: {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  gap: 16,
+},
+    propDropWrap: { width: 420 },
     tabsWrap: {
       display: "flex",
       gap: 2,
@@ -373,12 +349,11 @@ export default function ExpensesPage() {
       border: "1px solid #e2e8f0",
       background: "#fff",
       borderRadius: 10,
-      padding: "7px 14px",
+      padding: "10px 14px",
       fontSize: 13,
       fontWeight: 500,
       color: "#334155",
       cursor: "pointer",
-      marginLeft: "auto",
     },
     tableWrap: {
       background: "#fff",
@@ -389,11 +364,11 @@ export default function ExpensesPage() {
     tableHead: {
       display: "grid",
       gridTemplateColumns: "100px 2fr 1.2fr 1fr 1fr 120px",
-      padding: "12px 20px",
+      padding: "10px 20px",
       borderBottom: "1px solid #e2e8f0",
-      fontSize: 11,
+      fontSize: 10,
       fontWeight: 600,
-      color: "#94a3b8",
+      color: "#4b515a",
       textTransform: "uppercase" as const,
       letterSpacing: "0.06em",
       gap: 12,
@@ -401,7 +376,7 @@ export default function ExpensesPage() {
     tableRow: {
       display: "grid",
       gridTemplateColumns: "100px 2fr 1.2fr 1fr 1fr 120px",
-      padding: "14px 20px",
+      padding: "12px 20px",
       borderBottom: "1px solid #f1f5f9",
       alignItems: "center",
       gap: 12,
@@ -436,6 +411,11 @@ export default function ExpensesPage() {
       color: categoryColor(cat),
       display: "inline-block",
     }),
+    actionsGroup: {
+  display: "flex",
+  alignItems: "center",
+  gap: 12,
+},
     actionBtn: (primary: boolean) => ({
       padding: "5px 12px",
       borderRadius: 8,
@@ -547,80 +527,129 @@ export default function ExpensesPage() {
   };
 
   const metrics = [
-    { label: "Total Expenses", value: fmt(summary.total), icon: "📉", iconBg: "#fff1f2", badge: "+4.2%", positive: true },
-    { label: "Maintenance", value: fmt(summary.maintenance), icon: "🏗️", iconBg: "#fffbeb", badge: "-12%", positive: false },
-    { label: "Utilities", value: fmt(summary.utilities), icon: "📡", iconBg: "#eff6ff", badge: "+2.1%", positive: true },
-    { label: "Insurance", value: fmt(summary.insurance), icon: "🛡️", iconBg: "#f5f3ff", badge: "Stable", positive: null },
-  ];
+  {
+    label: "Total Expenses",
+    value: fmt(summary.total),
+    accent: "#ef4444",
+  },
+  {
+    label: "Maintenance",
+    value: fmt(summary.maintenance),
+    accent: "#f59e0b",
+  },
+  {
+    label: "Utilities",
+    value: fmt(summary.utilities),
+    accent: "#3b82f6",
+  },
+  {
+    label: "Insurance",
+    value: fmt(summary.insurance),
+    accent: "#8b5cf6",
+  },
+];
+
+const getExpenseActions = (exp: Expense) => {
+  const status = (exp.paymentStatus ?? "pending").toLowerCase();
+
+  const openDetails = () => {
+    console.log("open details", exp.id);
+    // later: setSelectedExpense(exp) or navigate(`/expenses/${exp.id}`)
+  };
+
+  const payNow = () => handlePayExpense(exp);
+
+  if (status === "paid") {
+    return (
+      <button style={s.actionBtn(false)} onClick={openDetails}>
+        Details
+      </button>
+    );
+  }
+
+  return (
+    <>
+      <button style={s.actionBtn(false)} onClick={openDetails}>
+        👁
+      </button>
+
+      <button
+        style={{ ...s.actionBtn(true), opacity: payingId === exp.id ? 0.7 : 1 }}
+        disabled={payingId === exp.id}
+        onClick={payNow}
+      >
+        {payingId === exp.id ? "…" : "Pay Now"}
+      </button>
+    </>
+  );
+};
 
   return (
     <div style={s.page}>
-      {/* TOP BAR */}
-      <div style={s.topBar}>
-        <div style={s.searchWrap}>
-          <span style={{ color: "#94a3b8", fontSize: 15 }}>🔍</span>
-          <input
-            style={s.searchInput}
-            placeholder="Search by description or vendor..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        <button style={s.bellBtn}>🔔</button>
-        <button style={s.addBtn} onClick={() => setShowAddModal(true)}>
-          <span>+</span> Add Expense
-        </button>
-      </div>
-
       <div style={s.body}>
-        {/* MAIN */}
         <div style={s.main}>
-          {/* HEADING */}
-          <div>
-            <h1 style={s.heading}>Payment Hub</h1>
-            <p style={s.subheading}>Manage transactions, transfers and payment history.</p>
-          </div>
 
           {/* METRIC CARDS */}
           <div style={s.metricsRow}>
             {metrics.map((m) => (
-              <div key={m.label} style={s.metricCard(m.iconBg)}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                  <div style={s.metricIcon(m.iconBg)}>{m.icon}</div>
-                  <span style={s.metricBadge(m.positive)}>{m.badge}</span>
-                </div>
-                <div>
-                  <div style={s.metricLabel}>{m.label}</div>
-                  <div style={s.metricValue}>{m.value}</div>
-                </div>
-              </div>
-            ))}
-          </div>
+            <div key={m.label} style={s.metricCard(m.accent)}>
+            <div
+             style={{
+               position: "absolute",
+               left: 0,
+               top: 0,
+               bottom: 0,
+               width: 6,
+              background: m.accent,
+            }}
+           />
+  <div>
+    <div style={s.metricLabel}>{m.label}</div>
+    <div style={s.metricValue}>{m.value}</div>
+  </div>
+</div>
+  ))}
+</div>
 
           {/* FILTER ROW */}
-          <div style={s.filterRow}>
-            <div style={s.propDropWrap}>
-              <CustomDropdown
-                options={propertyOptions}
-                value={selectedProperty}
-                onChange={setSelectedProperty}
-                labelKey="label"
-                valueKey="value"
-              />
-            </div>
+          <div style={s.filtersSection}>
+  <div style={s.topControls}>
+    <div style={s.propDropWrap}>
+      <CustomDropdown
+        options={propertyOptions}
+        value={selectedProperty}
+        onChange={setSelectedProperty}
+        labelKey="label"
+        valueKey="value"
+      />
+    </div>
 
-            <div style={s.tabsWrap}>
-              {STATUS_TABS.map((tab) => (
-                <button key={tab} style={s.tab(statusTab === tab)} onClick={() => setStatusTab(tab)}>
-                  {tab}
-                </button>
-              ))}
-            </div>
+    <div style={s.actionsGroup}>
+      <button style={s.exportBtn}>
+        📄 Export CSV
+      </button>
 
-            <button style={s.exportBtn}>
-              📄 Export CSV
-            </button>
-          </div>
+      <button
+        style={s.addBtn}
+        onClick={() => setShowAddModal(true)}
+      >
+        <span>+</span> Add Expense
+      </button>
+    </div>
+  </div>
+
+  <div style={s.tabsWrap}>
+    {STATUS_TABS.map((tab) => (
+      <button
+        key={tab}
+        style={s.tab(statusTab === tab)}
+        onClick={() => setStatusTab(tab)}
+      >
+        {tab}
+      </button>
+    ))}
+  </div>
+</div>
 
           {/* TABLE */}
           <div style={s.tableWrap}>
@@ -655,13 +684,13 @@ export default function ExpensesPage() {
                     onMouseLeave={(e) => (e.currentTarget.style.background = "")}
                   >
                     {/* DATE */}
-                    <div style={{ fontSize: 13, color: "#64748b" }}>
+                    <div style={{ fontSize: 12, color: "#64748b" }}>
                       {new Date(exp.date).toLocaleDateString("en-KE", { year: "numeric", month: "2-digit", day: "2-digit" })}
                     </div>
 
                     {/* DESCRIPTION + PROPERTY */}
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "#0f172a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: "#0f172a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                         {exp.description || exp.category}
                       </div>
                       <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>
@@ -677,7 +706,7 @@ export default function ExpensesPage() {
                     </div>
 
                     {/* AMOUNT */}
-                    <div style={{ fontSize: 14, fontWeight: 700, color: "#0f172a" }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "#0f172a" }}>
                       {fmt(exp.amount)}
                     </div>
 
@@ -695,31 +724,11 @@ export default function ExpensesPage() {
                     </div>
 
                     {/* ACTIONS */}
-                    <div style={{ display: "flex", gap: 6 }}>
-                      <button style={s.actionBtn(false)} onClick={() => console.log("view", exp.id)}>
-                        ☰
-                      </button>
-                      <button style={s.actionBtn(false)} onClick={() => console.log("edit", exp.id)}>
-                        ✏️
-                      </button>
-                      {exp.paymentStatus !== "paid" && (
-                        <button
-                          style={{ ...s.actionBtn(true), opacity: payingId === exp.id ? 0.7 : 1 }}
-                          disabled={payingId === exp.id}
-                          onClick={() => handlePayExpense(exp)}
-                        >
-                          {payingId === exp.id ? "…" : "Pay"}
-                        </button>
-                      )}
-                    </div>
+<div style={{ display: "flex", gap: 6 }}>
+  {getExpenseActions(exp)}
+</div>
                   </div>
                 ))}
-
-                {/* FOOTER */}
-                <div style={{ padding: "14px 20px", background: "#f8fafc", borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: 12, color: "#94a3b8" }}>Total Selected</span>
-                  <span style={{ fontSize: 16, fontWeight: 700, color: "#0f172a" }}>{fmt(summary.total)}</span>
-                </div>
               </>
             )}
           </div>
@@ -763,7 +772,7 @@ export default function ExpensesPage() {
                 </div>
                 {/* Amount */}
                 <div>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 6 }}>Amount (KES)</label>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 6 }}>Amount (ksh)</label>
                   <input
                     type="number"
                     value={Number.isFinite(formAmount) ? formAmount : 0}

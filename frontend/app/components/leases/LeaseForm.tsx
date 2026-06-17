@@ -234,7 +234,7 @@ export default function LeaseForm({
       <Section title="Financial Terms" icon="payments">
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "24px" }}>
           <div>
-            <label style={labelStyle}>Rent Amount (KES)</label>
+            <label style={labelStyle}>Rent Amount (ksh)</label>
             <input
               style={inputStyle}
               type="number"

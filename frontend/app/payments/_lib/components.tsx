@@ -216,11 +216,10 @@ export function Sparkline({
         strokeLinecap="round"
       />
       <circle
-        cx={parseFloat(last[0])}
-        cy={parseFloat(last[1])}
-        r={2.5}
-        fill={color}
-      />
+  cx={Number.isFinite(parseFloat(last?.[0])) ? parseFloat(last[0]) : 0}
+  cy={Number.isFinite(parseFloat(last?.[1])) ? parseFloat(last[1]) : 0}
+  r={2.5}
+/>
     </svg>
   );
 }

@@ -136,7 +136,7 @@ export default function ViewProviderPage() {
             {
               key: "hourlyRate",
               label: "Hourly Rate",
-              value: provider?.hourlyRate ? `KES ${provider.hourlyRate}` : "-",
+              value: provider?.hourlyRate ? `ksh ${provider.hourlyRate}` : "-",
             },
             {
               key: "rating",

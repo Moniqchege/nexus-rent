@@ -94,7 +94,7 @@ export default function LeasesPage() {
       },
       {
         key: "rentAmount",
-        header: "Rent (KES)",
+        header: "Rent (ksh)",
         render: (row: any) =>
           row.rentAmount != null
             ? Number(row.rentAmount).toLocaleString()

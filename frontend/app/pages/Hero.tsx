@@ -173,7 +173,7 @@ export default function Hero() {
               <div>
                 <div style={{ fontSize: 10, color: 'var(--text-secondary)' }}>Avg Rent</div>
                 <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
-                  KES 65K
+                  ksh 65K
                 </div>
               </div>
             </div>

@@ -169,24 +169,24 @@ export default function MonthPickerPopup({
               style={{
                 ...styles.monthCell,
                 background: selectedMonth
-                  ? "linear-gradient(135deg, #3b82f6, #8b5cf6)"
-                  : currentMonth
-                  ? "rgba(139,92,246,0.15)"
-                  : "rgba(17,24,39,0.45)",
+                   ? "#dbeafe" 
+                   : currentMonth
+                   ? "#eef2ff" 
+                   : "#f8fafc",
                 border: selectedMonth
-                  ? "1px solid rgba(139,92,246,0.6)"
-                  : "1px solid rgba(59,130,246,0.12)",
+                  ? "1px solid #93c5fd"
+                  : "1px solid #e2e8f0",
                 color: selectedMonth
-                  ? "#fff"
+                  ? "#1d4ed8"
                   : currentMonth
-                  ? "#8b5cf6"
-                  : "#e2e8f0",
+                  ? "#4f46e5"
+                  : "#334155",
                 fontWeight:
                   selectedMonth || currentMonth
                     ? 700
                     : 500,
                 boxShadow: selectedMonth
-                  ? "0 4px 18px rgba(139,92,246,0.35)"
+                  ? "0 6px 18px rgba(59, 130, 246, 0.15)"
                   : "none",
               }}
             >
@@ -331,49 +331,51 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     fontSize: "12px",
     marginBottom: "8px",
-    color: "var(--neon-secondary)",
+    color: "#475569", // slate-600
   },
 
   trigger: {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  width: "100%",
-  backgroundColor: "rgba(17,24,39,0.5)",
-  border: "1px solid",
-  borderRadius: "12px",
-  padding: "13px 18px",
-  cursor: "pointer",
-  transition: "border-color 0.2s, box-shadow 0.2s",
-  color: "var(--text-primary, #f1f5f9)",
-  fontSize: "14px",
-  userSelect: "none",
-},
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    width: "100%",
+
+    backgroundColor: "#ffffff",
+    border: "1px solid #e2e8f0",
+    borderRadius: "12px",
+    padding: "13px 18px",
+
+    cursor: "pointer",
+    transition: "border-color 0.2s, box-shadow 0.2s",
+
+    color: "#0f172a", // slate-900
+    fontSize: "14px",
+    userSelect: "none",
+  },
 
   placeholder: {
-    color: "var(--text-secondary, #94a3b8)",
+    color: "#94a3b8",
     fontSize: "14px",
   },
 
   valueText: {
     fontSize: "13px",
-    background:
-      "linear-gradient(to right, #cbd5e1, #94a3b8)",
-    WebkitBackgroundClip: "text",
-    WebkitTextFillColor: "transparent",
+    color: "#0f172a",
     fontWeight: 600,
   },
 
   popup: {
     zIndex: 99999,
-    background: "rgba(11,17,32,0.98)",
-    border: "1px solid rgba(59,130,246,0.3)",
+    background: "#ffffff",
+    border: "1px solid #e2e8f0",
     borderRadius: "20px",
     padding: "15px",
     width: "272px",
-    backdropFilter: "blur(20px)",
+
+    backdropFilter: "blur(12px)",
     boxShadow:
-      "0 24px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(59,130,246,0.06) inset",
+      "0 20px 40px rgba(15, 23, 42, 0.08)",
+
     display: "flex",
     flexDirection: "column",
     gap: "16px",
@@ -389,25 +391,23 @@ const styles: Record<string, React.CSSProperties> = {
     width: "30px",
     height: "30px",
     borderRadius: "10px",
-    border: "1px solid rgba(59,130,246,0.3)",
-    background: "rgba(17,24,39,0.5)",
-    color: "#94a3b8",
+
+    border: "1px solid #e2e8f0",
+    background: "#f8fafc",
+
+    color: "#475569",
     cursor: "pointer",
+
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     fontSize: "16px",
-    transition:
-      "border-color 0.15s, color 0.15s",
   },
 
   yearLabel: {
     fontSize: "14px",
     fontWeight: 700,
-    background:
-      "linear-gradient(to right, #3b82f6, #8b5cf6)",
-    WebkitBackgroundClip: "text",
-    WebkitTextFillColor: "transparent",
+    color: "#1d4ed8", // subtle primary blue
   },
 
   monthGrid: {
@@ -420,15 +420,19 @@ const styles: Record<string, React.CSSProperties> = {
     position: "relative",
     height: "40px",
     borderRadius: "14px",
+
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
+
     fontSize: "13px",
     cursor: "pointer",
-    transition:
-      "all 0.18s ease",
     userSelect: "none",
-    backdropFilter: "blur(10px)",
+
+    transition: "all 0.18s ease",
+    background: "#f8fafc",
+    border: "1px solid #e2e8f0",
+    color: "#334155",
   },
 
   todayDot: {
@@ -436,9 +440,10 @@ const styles: Record<string, React.CSSProperties> = {
     bottom: "7px",
     left: "50%",
     transform: "translateX(-50%)",
+
     width: "4px",
     height: "4px",
     borderRadius: "50%",
-    background: "#8b5cf6",
+    background: "#6366f1", // indigo accent
   },
 };

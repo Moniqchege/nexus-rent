@@ -32,7 +32,7 @@ export default function LeaseTable({ leases, onDeleteClick }: LeaseTableProps) {
             <th style={{ textAlign: "left", padding: "12px", fontSize: "12px", color: "var(--neon-blue)" }}>Property</th>
             <th style={{ textAlign: "left", padding: "12px", fontSize: "12px", color: "var(--neon-blue)" }}>Start Date</th>
             <th style={{ textAlign: "left", padding: "12px", fontSize: "12px", color: "var(--neon-blue)" }}>End Date</th>
-            <th style={{ textAlign: "left", padding: "12px", fontSize: "12px", color: "var(--neon-blue)" }}>Rent (KES)</th>
+            <th style={{ textAlign: "left", padding: "12px", fontSize: "12px", color: "var(--neon-blue)" }}>Rent (ksh)</th>
             <th style={{ textAlign: "left", padding: "12px", fontSize: "12px", color: "var(--neon-blue)" }}>Cycle</th>
             <th style={{ textAlign: "left", padding: "12px", fontSize: "12px", color: "var(--neon-blue)" }}>Status</th>
             <th style={{ textAlign: "right", padding: "12px", fontSize: "12px", color: "var(--neon-blue)" }}>Actions</th>

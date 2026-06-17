@@ -67,7 +67,7 @@ interface TenantFinancials {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const fmt = (n: number) =>
-  "KES " + n.toLocaleString("en-KE", { minimumFractionDigits: 0 });
+  "ksh " + n.toLocaleString("en-KE", { minimumFractionDigits: 0 });
 
 const fmtDate = (d: string) =>
   new Date(d).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" });
@@ -163,7 +163,7 @@ function generateStatementPDF(
   doc.setFontSize(8);
   doc.setTextColor(80, 80, 120);
   doc.text(lease.property.location, rx + 4, y + 22);
-  doc.text(`Rent: KES ${lease.rentAmount.toLocaleString()} / ${lease.billingCycle}`, rx + 4, y + 29);
+  doc.text(`Rent: ksh ${lease.rentAmount.toLocaleString()} / ${lease.billingCycle}`, rx + 4, y + 29);
   const endLabel = `Ends: ${new Date(lease.endDate).toLocaleDateString("en-KE")}`;
   const statusLabel = `Status: ${lease.status.toUpperCase()}`;
   doc.text(`${endLabel}  ·  ${statusLabel}`, rx + 4, y + 36);
@@ -172,10 +172,10 @@ function generateStatementPDF(
 
   // ── Summary KPIs ──
   const kpis = [
-    { label: "Outstanding", value: `KES ${financials.outstanding.toLocaleString()}`, warn: financials.outstanding > 0 },
-    { label: "YTD Paid",    value: `KES ${financials.ytdPaid.toLocaleString()}`,     warn: false },
-    { label: "Late Fees",   value: `KES ${financials.lateFees.toLocaleString()}`,    warn: financials.lateFees > 0 },
-    { label: "Credit Bal.", value: `KES ${financials.creditBalance.toLocaleString()}`, warn: false },
+    { label: "Outstanding", value: `ksh ${financials.outstanding.toLocaleString()}`, warn: financials.outstanding > 0 },
+    { label: "YTD Paid",    value: `ksh ${financials.ytdPaid.toLocaleString()}`,     warn: false },
+    { label: "Late Fees",   value: `ksh ${financials.lateFees.toLocaleString()}`,    warn: financials.lateFees > 0 },
+    { label: "Credit Bal.", value: `ksh ${financials.creditBalance.toLocaleString()}`, warn: false },
   ];
 
   const kpiW = (pageW - margin * 2) / kpis.length;
@@ -204,12 +204,12 @@ function generateStatementPDF(
 
   const rows = ledger.map((row: any) => {
     const isPayment = row.type === "payment";
-    const charge  = !isPayment ? `KES ${row.amount.toLocaleString()}` : "—";
-    const payment = isPayment  ? `KES ${Math.abs(row.amount).toLocaleString()}` : "—";
+    const charge  = !isPayment ? `ksh ${row.amount.toLocaleString()}` : "—";
+    const payment = isPayment  ? `ksh ${Math.abs(row.amount).toLocaleString()}` : "—";
     const bal     = row.balance < 0
-      ? `CR KES ${Math.abs(row.balance).toLocaleString()}`
+      ? `CR ksh ${Math.abs(row.balance).toLocaleString()}`
       : row.balance === 0 ? "—"
-      : `KES ${row.balance.toLocaleString()}`;
+      : `ksh ${row.balance.toLocaleString()}`;
     const date = new Date(row.date).toLocaleDateString("en-KE", {
       day: "numeric", month: "short", year: "numeric"
     });
@@ -254,14 +254,14 @@ function generateStatementPDF(
     },
     didParseCell: (data) => {
       if (data.section === "body") {
-        if (data.column.index === 3 && String(data.cell.raw).startsWith("KES")) {
+        if (data.column.index === 3 && String(data.cell.raw).startsWith("ksh")) {
           data.cell.styles.textColor = [0, 140, 80];
         }
         if (data.column.index === 4) {
           const val = String(data.cell.raw);
           if (val.startsWith("CR")) {
             data.cell.styles.textColor = [0, 100, 200];
-          } else if (val.startsWith("KES")) {
+          } else if (val.startsWith("ksh")) {
             data.cell.styles.textColor = [200, 40, 40];
           }
         }
