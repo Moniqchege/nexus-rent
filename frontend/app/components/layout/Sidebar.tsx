@@ -15,16 +15,16 @@ export default function Sidebar() {
   const [unreadCount, setUnreadCount] = useState(0);
   const pathname = usePathname();
 
-  useEffect(() => {
-    if (!user) return;
+  // useEffect(() => {
+  //   if (!user) return;
 
-    api
-      .get("/notifications/reviews")
-      .then(({ data }) => {
-        setUnreadCount(data.length);
-      })
-      .catch(() => setUnreadCount(0));
-  }, [user]);
+  //   api
+  //     .get("/notifications/reviews")
+  //     .then(({ data }) => {
+  //       setUnreadCount(data.length);
+  //     })
+  //     .catch(() => setUnreadCount(0));
+  // }, [user]);
 
   const NAV = [
     { label: "Overview", icon: "/overview.png", to: "/dashboard" },

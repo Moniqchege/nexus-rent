@@ -6,6 +6,7 @@ import { CustomDropdown } from "@/app/components/ui/CustomDropdown";
 import { GlassPanel, MetricCard, NeonButton, SectionTag } from "../_lib/components";
 import { fmt } from "../_lib/data";
 import type { Expense } from "../_lib/types";
+import { useRouter } from "next/navigation";
 
 interface ExpenseSummary {
   total: number;
@@ -77,6 +78,10 @@ export default function ExpensesPage() {
   const [formAmount, setFormAmount] = useState<number>(0);
   const [formDescription, setFormDescription] = useState<string>("");
   const [formMpesaPaidTo, setFormMpesaPaidTo] = useState<string>("");
+  const [formVendor, setFormVendor] = useState("");
+  const [formReceipt, setFormReceipt] = useState<File | null>(null);
+
+  const router = useRouter();
 
   const summary = expenses.reduce(
     (acc: ExpenseSummary, exp) => {
@@ -161,30 +166,56 @@ export default function ExpensesPage() {
     setFormAmount(0);
     setFormDescription("");
     setFormMpesaPaidTo("");
+    setFormVendor("");
+    setFormReceipt(null);
   };
 
-  const handleCreateExpense = async () => {
-    if (formProperty === "all" || !formAmount || formAmount <= 0 || !formMpesaPaidTo.trim()) return;
-    setCreating(true);
-    try {
-      const payload = {
-        propertyId: Number(formProperty),
-        amount: formAmount,
-        category: formCategory,
-        description: formDescription || null,
-        mpesaPaidTo: formMpesaPaidTo.trim(),
-        date: new Date().toISOString(),
-      };
-      const res = await api.post("/api/expenses", payload);
-      setExpenses((prev) => [res.data?.expense, ...prev]);
-      setShowAddModal(false);
-      resetForm();
-    } catch (e: any) {
-      alert(e?.response?.data?.error ?? "Failed to create expense");
-    } finally {
-      setCreating(false);
+const handleCreateExpense = async () => {
+  if (
+    formProperty === "all" ||
+    !formAmount ||
+    formAmount <= 0 ||
+    !formMpesaPaidTo.trim()
+  ) {
+    return;
+  }
+
+  setCreating(true);
+
+  try {
+    const formData = new FormData();
+
+    formData.append("propertyId", formProperty);
+    formData.append("amount", String(formAmount));
+    formData.append("category", formCategory);
+    formData.append("description", formDescription || "");
+    formData.append("mpesaPaidTo", formMpesaPaidTo.trim());
+    formData.append("vendor", formVendor);
+    formData.append("date", new Date().toISOString());
+
+    if (formReceipt) {
+      formData.append("receipt", formReceipt);
     }
-  };
+
+    const res = await api.post(
+      "/api/expenses",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+
+    setExpenses((prev) => [res.data?.expense, ...prev]);
+    setShowAddModal(false);
+    resetForm();
+  } catch (e: any) {
+    alert(e?.response?.data?.error ?? "Failed to create expense");
+  } finally {
+    setCreating(false);
+  }
+};
 
   const handlePayExpense = async (exp: Expense) => {
     const chosen = exp.mpesaPaidTo || exp.vendorAccount?.identifier || "";
@@ -553,9 +584,8 @@ const getExpenseActions = (exp: Expense) => {
   const status = (exp.paymentStatus ?? "pending").toLowerCase();
 
   const openDetails = () => {
-    console.log("open details", exp.id);
-    // later: setSelectedExpense(exp) or navigate(`/expenses/${exp.id}`)
-  };
+      router.push(`/payments/expenses/view/${exp.id}`);
+    };
 
   const payNow = () => handlePayExpense(exp);
 
@@ -781,7 +811,48 @@ const getExpenseActions = (exp: Expense) => {
                     style={{ width: "100%", padding: "10px 14px", border: "1px solid #e2e8f0", borderRadius: 10, fontSize: 14, color: "#0f172a", outline: "none", boxSizing: "border-box" }}
                   />
                 </div>
-                {/* Description */}
+                {/* Mpesa */}
+                <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 6 }}>M-Pesa Account / Phone (paid to)</label>
+                <input
+                  type="text"
+                  value={formMpesaPaidTo}
+                  onChange={(e) => setFormMpesaPaidTo(e.target.value)}
+                  placeholder="e.g. 0712 345 678"
+                  style={{ width: "100%", padding: "10px 14px", border: "1px solid #e2e8f0", borderRadius: 10, fontSize: 14, color: "#0f172a", outline: "none", boxSizing: "border-box" }}
+                />
+              </div>
+              {/* Vendor */}
+              <div>
+               <label
+                style={{
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: "#374151",
+                  display: "block",
+                  marginBottom: 6,
+                }}
+               >
+                Vendor
+              </label>
+              <input
+                type="text"
+                value={formVendor}
+                onChange={(e) => setFormVendor(e.target.value)}
+                placeholder="e.g. ABC Plumbing Services"
+                style={{
+                 width: "100%",
+                 padding: "10px 14px",
+                 border: "1px solid #e2e8f0",
+                 borderRadius: 10,
+                 fontSize: 14,
+                 color: "#0f172a",
+                 outline: "none",
+                 boxSizing: "border-box",
+               }}
+              />
+            </div>
+            {/* Description */}
                 <div>
                   <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 6 }}>Description</label>
                   <input
@@ -793,18 +864,125 @@ const getExpenseActions = (exp: Expense) => {
                   />
                 </div>
               </div>
-              {/* Mpesa */}
+               {/* Receipt / Invoice */}
               <div>
-                <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 6 }}>M-Pesa Account / Phone (paid to)</label>
-                <input
-                  type="text"
-                  value={formMpesaPaidTo}
-                  onChange={(e) => setFormMpesaPaidTo(e.target.value)}
-                  placeholder="e.g. 0712 345 678"
-                  style={{ width: "100%", padding: "10px 14px", border: "1px solid #e2e8f0", borderRadius: 10, fontSize: 14, color: "#0f172a", outline: "none", boxSizing: "border-box" }}
-                />
-              </div>
+              <label
+                style={{
+                 fontSize: 12,
+                 fontWeight: 600,
+                 color: "#374151",
+                 display: "block",
+                 marginBottom: 8,
+                }}
+              >
+                Receipt / Invoice
+              </label>
+              <label
+                htmlFor="receipt-upload"
+                style={{
+                 border: "2px dashed #cbd5e1",
+                 borderRadius: 12,
+                 padding: "24px",
+                 display: "flex",
+                 flexDirection: "column",
+                 alignItems: "center",
+                 justifyContent: "center",
+                 background: "#ffffff",
+                 cursor: "pointer",
+                 transition: "all 0.2s ease",
+                 textAlign: "center",
+               }}
+               onMouseEnter={(e) => {
+               e.currentTarget.style.background = "#f8fafc";
+               e.currentTarget.style.borderColor = "#4f46e5";
+              }}
+              onMouseLeave={(e) => {
+              e.currentTarget.style.background = "#ffffff";
+              e.currentTarget.style.borderColor = "#cbd5e1";
+              }}
+               >
+   {formReceipt ? (
+  <span
+    className="material-symbols-outlined"
+    style={{
+      fontSize: 36,
+      color: "#10b981",
+      marginBottom: 8,
+    }}
+  >
+    task_alt
+  </span>
+) : (
+  <span
+    className="material-symbols-outlined"
+    style={{
+      fontSize: 36,
+      color: "#4f46e5",
+      marginBottom: 8,
+    }}
+  >
+    cloud_upload
+  </span>
+)}
 
+    <div
+      style={{
+        fontSize: 14,
+        fontWeight: 700,
+        color: "#0f172a",
+      }}
+    >
+      Upload Invoice or Receipt
+    </div>
+
+    <div
+      style={{
+        fontSize: 12,
+        color: "#64748b",
+        marginTop: 4,
+      }}
+    >
+      PDF, PNG, or JPG (Max 5MB)
+    </div>
+
+    {formReceipt && (
+      <div
+        style={{
+          marginTop: 12,
+          padding: "6px 12px",
+          background: "#eef2ff",
+          color: "#4f46e5",
+          borderRadius: 999,
+          fontSize: 12,
+          fontWeight: 600,
+          maxWidth: "100%",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+        }}
+      >
+        ✓ {formReceipt.name}
+      </div>
+    )}
+  </label>
+
+  <input
+    id="receipt-upload"
+    type="file"
+    accept=".pdf,.jpg,.jpeg,.png"
+    hidden
+    onChange={(e) => {
+      const file = e.target.files?.[0] ?? null;
+
+      if (file && file.size > 5 * 1024 * 1024) {
+        alert("File size must be less than 5MB");
+        return;
+      }
+
+      setFormReceipt(file);
+    }}
+  />
+</div>
               <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
                 <button
                   style={{ padding: "9px 22px", border: "1px solid #e2e8f0", borderRadius: 10, background: "#fff", fontSize: 14, fontWeight: 500, cursor: "pointer", color: "#334155" }}

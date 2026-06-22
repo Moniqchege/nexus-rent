@@ -3,7 +3,7 @@ export default function Footer() {
     <footer>
       <p
         style={{
-          marginTop: "4px",
+          marginTop: "2px",
           fontSize: "12px",
         }}
       >

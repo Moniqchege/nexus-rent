@@ -300,8 +300,10 @@ model Expense {
   category    String
   date        DateTime @default(now())
   description String?
+  receiptUrl String?
   createdAt   DateTime @default(now())
 
+  vendorName String?
   vendorAccountId  Int?
   vendorAccount    VendorAccount? @relation(fields: [vendorAccountId], references: [id])
 
