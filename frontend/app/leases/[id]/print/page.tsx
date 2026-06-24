@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Lease } from "@/types/lease";
 import LeaseAgreementTemplate from "@/app/components/leases/LeaseAgreementTemplate";
 import api from "@/app/lib/api";
@@ -13,6 +13,7 @@ export default function PrintLeasePage() {
   const { user } = useAuthStore();
   const [lease, setLease] = useState<Lease | null>(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchLease = async () => {
@@ -44,18 +45,14 @@ export default function PrintLeasePage() {
     );
   }
 
-  return (
-    <div className="dashboard-content">
-      <div style={{ marginBottom: "24px" }}>
-        <h2 style={{ fontSize: "20px", fontWeight: 700, color: "var(--neon-blue)" }}>
-          Lease Agreement — {lease.property?.title}
-        </h2>
-        <p style={{ fontSize: "13px", color: "var(--text-secondary)", marginTop: "6px" }}>
-          Print this agreement, have both parties sign it physically, then upload the signed copy from the edit page.
-        </p>
-      </div>
-      <LeaseAgreementTemplate lease={lease} landlordName={user?.name || "[Landlord Name]"} />
-    </div>
-  );
+ return (
+  <div className="dashboard-content">
+
+    <LeaseAgreementTemplate
+      lease={lease}
+      landlordName={user?.name || "[Landlord Name]"}
+    />
+  </div>
+);
 }
 

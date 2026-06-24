@@ -134,27 +134,42 @@ export default function UserViewPage() {
         },
       },
       {
-        key: "assigned",
-        label: "Assigned Properties",
-        table: {
-          rows: user?.userProperties ?? [],
-          columns: [
-            {
-              key: "property",
-              header: "Property",
-              render: (r: any) => r.property?.title ?? "-",
-            },
-            {
-              key: "location",
-              header: "Location",
-              render: (r: any) => r.property?.location ?? "-",
-            },
-          ],
-          search: {
-           enabled: false,
-          }
-        },
+  key: "assigned",
+  label: "Assigned Properties",
+  table: {
+    rows: user?.userProperties ?? [],
+    columns: [
+      {
+        key: "property",
+        header: "Property",
+        render: (r: any) => r.property?.title ?? "-",
       },
+      {
+        key: "location",
+        header: "Location",
+        render: (r: any) => r.property?.location ?? "-",
+      },
+      {
+        key: "role",
+        header: "Role",
+        render: (r: any) => r.role?.name ?? "-",
+      },
+      {
+        key: "floor",
+        header: "Floor",
+        render: (r: any) => r.floor ?? "-",
+      },
+      {
+        key: "unit",
+        header: "Unit",
+        render: (r: any) => r.unit ?? "-",
+      },
+    ],
+    search: {
+      enabled: false,
+    },
+  },
+},
     ],
     [user]
   );
@@ -179,12 +194,19 @@ export default function UserViewPage() {
     );
   }
 
-  const metaRows = [
-    { label: "Email", value: user.email ?? "-" },
-    { label: "Phone", value: user.phone ?? "-" },
-    { label: "Username", value: user.username ?? "-" },
-    { label: "Role", value: user.role ?? "-" },
-  ];
+const metaRows = [
+  { label: "Email", value: user.email ?? "-" },
+  { label: "Phone", value: user.phone ?? "-" },
+  { label: "Username", value: user.username ?? "-" },
+  { label: "Plan", value: user.plan ?? "-" },
+  {
+    label: "Role(s)",
+    value:
+      user.userProperties?.length
+        ? [...new Set(user.userProperties.map((up: any) => up.role?.name).filter(Boolean))].join(", ")
+        : "-",
+  },
+];
 
   return (
     <>
@@ -201,7 +223,10 @@ export default function UserViewPage() {
         }}
         metrics={[
           { label: "Phone", value: user.phone ?? "-" },
-          { label: "Role", value: user.role ?? "-" },
+          {
+           label: "Role",
+           value: user.userProperties?.[0]?.role?.name ?? "-",
+          },
         ]}
         actions={[
           {

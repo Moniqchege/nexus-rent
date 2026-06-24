@@ -196,13 +196,14 @@ router.post(
         try {
             const authReq = req as AuthRequest;
             const expenseId = Number(req.params.id);
-            const { mpesaPaidTo, reference } = req.body;
+            const { paymentType, paymentDetails, description } = req.body;
 
             const result = await createExpensePay({
                 landlordId: authReq.userId!,
                 expenseId,
-                mpesaPaidTo: mpesaPaidTo ? String(mpesaPaidTo) : undefined,
-                reference: reference ? String(reference) : undefined,
+                paymentType,
+                paymentDetails,
+                description,
             });
 
             res.json(result);

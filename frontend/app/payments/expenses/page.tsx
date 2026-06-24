@@ -8,6 +8,17 @@ import { fmt } from "../_lib/data";
 import type { Expense } from "../_lib/types";
 import { useRouter } from "next/navigation";
 
+type PaymentType = 'MPESA_NUMBER' | 'PAYBILL' | 'TILL' | 'BANK';
+
+interface PaymentDetails {
+  phoneNumber?: string;
+  paybillNumber?: string;
+  accountNumber?: string;
+  tillNumber?: string;
+  bankName?: string;
+  bankCode?: string;
+}
+
 interface ExpenseSummary {
   total: number;
   maintenance: number;
@@ -72,6 +83,11 @@ export default function ExpensesPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [creating, setCreating] = useState(false);
   const [payingId, setPayingId] = useState<number | null>(null);
+
+  const [activePaymentExpense, setActivePaymentExpense] = useState<Expense | null>(null);
+  const [selectedPaymentType, setSelectedPaymentType] = useState<PaymentType>('MPESA_NUMBER');
+  const [paymentDetails, setPaymentDetails] = useState<PaymentDetails>({});
+  const [paymentDescription, setPaymentDescription] = useState<string>("");
 
   const [formProperty, setFormProperty] = useState("all");
   const [formCategory, setFormCategory] = useState("Maintenance");
@@ -217,15 +233,28 @@ const handleCreateExpense = async () => {
   }
 };
 
-  const handlePayExpense = async (exp: Expense) => {
-    const chosen = exp.mpesaPaidTo || exp.vendorAccount?.identifier || "";
-    if (!chosen) { alert("No Mpesa account linked to this expense."); return; }
-    setPayingId(exp.id);
+  const handleInitiatePaymentClick = (exp: Expense) => {
+    setActivePaymentExpense(exp);
+    setSelectedPaymentType('MPESA_NUMBER');
+    setPaymentDetails({
+      phoneNumber: exp.mpesaPaidTo || "",
+    });
+    setPaymentDescription("");
+  };
+
+  const handleExecuteFinalPayment = async () => {
+    if (!activePaymentExpense) return;
+    setPayingId(activePaymentExpense.id);
     try {
-      await api.post(`/api/expenses/${exp.id}/pay`, { mpesaPaidTo: chosen });
+      await api.post(`/api/expenses/${activePaymentExpense.id}/pay`, {
+        paymentType: selectedPaymentType,
+        paymentDetails,
+        description: paymentDescription,
+      });
       setRefreshTick((t) => t + 1);
+      setActivePaymentExpense(null);
     } catch (e: any) {
-      alert(e?.response?.data?.error ?? "Failed to pay expense");
+      alert(e?.response?.data?.error ?? "Failed to execute payment");
     } finally {
       setPayingId(null);
     }
@@ -587,7 +616,7 @@ const getExpenseActions = (exp: Expense) => {
       router.push(`/payments/expenses/view/${exp.id}`);
     };
 
-  const payNow = () => handlePayExpense(exp);
+  const payNow = () => handleInitiatePaymentClick(exp);
 
   if (status === "paid") {
     return (
@@ -604,11 +633,11 @@ const getExpenseActions = (exp: Expense) => {
       </button>
 
       <button
-        style={{ ...s.actionBtn(true), opacity: payingId === exp.id ? 0.7 : 1 }}
-        disabled={payingId === exp.id}
+        style={{ ...s.actionBtn(true), opacity: (payingId === exp.id || activePaymentExpense?.id === exp.id) ? 0.7 : 1 }}
+        disabled={payingId === exp.id || activePaymentExpense?.id === exp.id}
         onClick={payNow}
       >
-        {payingId === exp.id ? "…" : "Pay Now"}
+        {payingId === exp.id || activePaymentExpense?.id === exp.id ? "…" : "Pay Now"}
       </button>
     </>
   );
@@ -1004,6 +1033,197 @@ const getExpenseActions = (exp: Expense) => {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* CHECKOUT MODAL */}
+      {activePaymentExpense && (
+        <div
+          style={{
+            position: "fixed", inset: 0,
+            background: "rgba(15,23,42,0.5)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            zIndex: 1000, backdropFilter: "blur(6px)",
+          }}
+          onClick={() => setActivePaymentExpense(null)}
+        >
+          <GlassPanel
+            style={{
+              background: "#fff",
+              width: "90%",
+              maxWidth: 520,
+              boxShadow: "0 24px 48px rgba(0,0,0,0.18)",
+              padding: 24,
+              display: "flex",
+              flexDirection: "column",
+              gap: 18,
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #e2e8f0", paddingBottom: 12 }}>
+              <div>
+                <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "#0f172a" }}>Checkout</h2>
+                <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>
+                  Paying {fmt(activePaymentExpense.amount)} for {activePaymentExpense.description || activePaymentExpense.category}
+                </div>
+              </div>
+              <button
+                onClick={() => setActivePaymentExpense(null)}
+                style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "#94a3b8" }}
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Content */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              {/* Payment Type Dropdown */}
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 6 }}>Payment Channel</label>
+                <CustomDropdown
+                  options={[
+                    { label: "M-Pesa Phone Number", value: "MPESA_NUMBER" },
+                    { label: "Paybill", value: "PAYBILL" },
+                    { label: "Till Number", value: "TILL" },
+                    { label: "Bank Transfer", value: "BANK" },
+                  ]}
+                  value={selectedPaymentType}
+                  onChange={(val) => {
+                    setSelectedPaymentType(val as PaymentType);
+                    setPaymentDetails({});
+                  }}
+                  labelKey="label"
+                  valueKey="value"
+                />
+              </div>
+
+              {/* Dynamic Inputs based on selectedPaymentType */}
+              {selectedPaymentType === "MPESA_NUMBER" && (
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 6 }}>Phone Number</label>
+                  <input
+                    type="text"
+                    value={paymentDetails.phoneNumber || ""}
+                    onChange={(e) => setPaymentDetails({ ...paymentDetails, phoneNumber: e.target.value })}
+                    placeholder="e.g. 0712345678"
+                    style={{ width: "100%", padding: "10px 14px", border: "1px solid #e2e8f0", borderRadius: 10, fontSize: 14, color: "#0f172a", outline: "none", boxSizing: "border-box" }}
+                  />
+                </div>
+              )}
+
+              {selectedPaymentType === "PAYBILL" && (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 6 }}>Paybill Business Number</label>
+                    <input
+                      type="text"
+                      value={paymentDetails.paybillNumber || ""}
+                      onChange={(e) => setPaymentDetails({ ...paymentDetails, paybillNumber: e.target.value })}
+                      placeholder="e.g. 247247"
+                      style={{ width: "100%", padding: "10px 14px", border: "1px solid #e2e8f0", borderRadius: 10, fontSize: 14, color: "#0f172a", outline: "none", boxSizing: "border-box" }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 6 }}>Account Number</label>
+                    <input
+                      type="text"
+                      value={paymentDetails.accountNumber || ""}
+                      onChange={(e) => setPaymentDetails({ ...paymentDetails, accountNumber: e.target.value })}
+                      placeholder="e.g. 123456789"
+                      style={{ width: "100%", padding: "10px 14px", border: "1px solid #e2e8f0", borderRadius: 10, fontSize: 14, color: "#0f172a", outline: "none", boxSizing: "border-box" }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {selectedPaymentType === "TILL" && (
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 6 }}>Buy Goods Till Number</label>
+                  <input
+                    type="text"
+                    value={paymentDetails.tillNumber || ""}
+                    onChange={(e) => setPaymentDetails({ ...paymentDetails, tillNumber: e.target.value })}
+                    placeholder="e.g. 5123456"
+                    style={{ width: "100%", padding: "10px 14px", border: "1px solid #e2e8f0", borderRadius: 10, fontSize: 14, color: "#0f172a", outline: "none", boxSizing: "border-box" }}
+                  />
+                </div>
+              )}
+
+              {selectedPaymentType === "BANK" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 6 }}>Bank Name</label>
+                    <CustomDropdown
+                      options={[
+                        { label: "Equity Bank", value: "Equity Bank" },
+                        { label: "KCB Bank", value: "KCB Bank" },
+                        { label: "Co-operative Bank", value: "Co-operative Bank" },
+                        { label: "NCBA Bank", value: "NCBA Bank" },
+                        { label: "ABSA Bank", value: "ABSA Bank" },
+                        { label: "Stanbic Bank", value: "Stanbic Bank" },
+                        { label: "Standard Chartered", value: "Standard Chartered" }
+                      ]}
+                      value={paymentDetails.bankName || ""}
+                      onChange={(val) => setPaymentDetails({ ...paymentDetails, bankName: val })}
+                      labelKey="label"
+                      valueKey="value"
+                    />
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 6 }}>Bank Code</label>
+                      <input
+                        type="text"
+                        value={paymentDetails.bankCode || ""}
+                        onChange={(e) => setPaymentDetails({ ...paymentDetails, bankCode: e.target.value })}
+                        placeholder="e.g. 011"
+                        style={{ width: "100%", padding: "10px 14px", border: "1px solid #e2e8f0", borderRadius: 10, fontSize: 14, color: "#0f172a", outline: "none", boxSizing: "border-box" }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 6 }}>Bank Account Number</label>
+                      <input
+                        type="text"
+                        value={paymentDetails.accountNumber || ""}
+                        onChange={(e) => setPaymentDetails({ ...paymentDetails, accountNumber: e.target.value })}
+                        placeholder="e.g. 01234567890"
+                        style={{ width: "100%", padding: "10px 14px", border: "1px solid #e2e8f0", borderRadius: 10, fontSize: 14, color: "#0f172a", outline: "none", boxSizing: "border-box" }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Universal Reference Description Field */}
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: "#374151", display: "block", marginBottom: 6 }}>Payment Reference Description</label>
+                <textarea
+                  value={paymentDescription}
+                  onChange={(e) => setPaymentDescription(e.target.value)}
+                  placeholder="e.g. Reference, invoice link, or notes..."
+                  style={{ width: "100%", height: 80, padding: "10px 14px", border: "1px solid #e2e8f0", borderRadius: 10, fontSize: 14, color: "#0f172a", outline: "none", boxSizing: "border-box", resize: "vertical" }}
+                />
+              </div>
+            </div>
+
+            {/* Footer Buttons */}
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", borderTop: "1px solid #e2e8f0", paddingTop: 16 }}>
+              <button
+                style={{ padding: "9px 22px", border: "1px solid #e2e8f0", borderRadius: 10, background: "#fff", fontSize: 14, fontWeight: 500, cursor: "pointer", color: "#334155" }}
+                onClick={() => setActivePaymentExpense(null)}
+              >
+                Cancel
+              </button>
+              <NeonButton
+                variant="primary"
+                onClick={handleExecuteFinalPayment}
+                disabled={payingId === activePaymentExpense.id}
+              >
+                {payingId === activePaymentExpense.id ? "Processing..." : "Confirm Payment"}
+              </NeonButton>
+            </div>
+          </GlassPanel>
         </div>
       )}
     </div>

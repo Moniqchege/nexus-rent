@@ -127,7 +127,9 @@ export default function PropertyForm({
     style={{
       maxWidth: "1200px",
       margin: "0 auto",
-      padding: "20px",
+      padding: "2px",
+      overflowY: "auto",
+      paddingBottom: "40px",
     }}
   >
     {/* Header */}
@@ -143,7 +145,7 @@ export default function PropertyForm({
   <div>
     <h1
       style={{
-        fontSize: "26px",
+        fontSize: "18px",
         fontWeight: 700,
         color: "var(--text-primary)",
         marginBottom: "8px",
@@ -201,7 +203,7 @@ export default function PropertyForm({
         style={{
           display: "grid",
           gridTemplateColumns: isMobile ? "1fr" : "350px 1fr",
-          gap: "24px",
+          gap: "6px",
         }}
       >
         {/* LEFT COLUMN */}
@@ -221,6 +223,7 @@ export default function PropertyForm({
                 display: "block",
                 fontWeight: 600,
                 marginBottom: "12px",
+                fontSize: "14px",
               }}
             >
               Property Hero Image
@@ -271,7 +274,7 @@ export default function PropertyForm({
 
                   <div
                     style={{
-                      fontSize: "12px",
+                      fontSize: "10px",
                       marginTop: "6px",
                     }}
                   >
@@ -306,48 +309,6 @@ export default function PropertyForm({
               />
             </div>
           </div>
-
-          {/* Visibility */}
-          <div
-            style={{
-              marginTop: "20px",
-              background: "rgba(255,255,255,0.6)",
-              backdropFilter: "blur(12px)",
-              border: "1px solid var(--border-glow)",
-              borderRadius: "20px",
-              padding: "20px",
-            }}
-          >
-            <h3
-              style={{
-                fontWeight: 700,
-                marginBottom: "16px",
-              }}
-            >
-              Visibility Settings
-            </h3>
-
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                marginBottom: "14px",
-              }}
-            >
-              <span>Public Listing</span>
-              <input type="checkbox" defaultChecked />
-            </div>
-
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-              }}
-            >
-              <span>Featured Asset</span>
-              <input type="checkbox" />
-            </div>
-          </div>
         </div>
 
         {/* RIGHT COLUMN */}
@@ -355,7 +316,7 @@ export default function PropertyForm({
           style={{
             display: "flex",
             flexDirection: "column",
-            gap: "24px",
+            gap: "6px",
           }}
         >
           {/* General Details */}
@@ -366,14 +327,13 @@ export default function PropertyForm({
               border: "1px solid var(--border-glow)",
               borderRadius: "20px",
               padding: "24px",
-              zIndex: 20,
             }}
           >
             <h3
               style={{
                 fontWeight: 700,
                 marginBottom: "20px",
-                fontSize: "18px",
+                fontSize: "14px",
               }}
             >
               General Details
@@ -418,7 +378,7 @@ export default function PropertyForm({
                   display: "grid",
                   gridTemplateColumns:
                     isMobile ? "1fr" : "1fr 1fr",
-                  gap: "16px",
+                  gap: "10px",
                 }}
               >
                 <input
@@ -467,7 +427,7 @@ export default function PropertyForm({
               style={{
                 fontWeight: 700,
                 marginBottom: "20px",
-                fontSize: "18px",
+                fontSize: "14px",
               }}
             >
               Physical Specs
@@ -548,13 +508,14 @@ export default function PropertyForm({
               border: "1px solid var(--border-glow)",
               borderRadius: "20px",
               padding: "24px",
+              zIndex: "100px",
             }}
           >
             <h3
               style={{
                 fontWeight: 700,
                 marginBottom: "20px",
-                fontSize: "18px",
+                fontSize: "14px",
               }}
             >
               Amenities

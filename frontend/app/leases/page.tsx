@@ -129,7 +129,7 @@ export default function LeasesPage() {
         justifyContent: "space-between",
         alignItems: "center"
       }}>
-        <div className="section-label">◈ LEASES</div>
+        <div className="section-label">LEASES</div>
         <button
           onClick={() => router.push("/leases/new")}
           style={{ 
@@ -148,7 +148,7 @@ export default function LeasesPage() {
         </button>
       </div>
 
-      <h2 style={{ fontSize: "24px", fontWeight: 700, color: "#000000", marginBottom: "16px" }}>Lease Agreements</h2>
+      <h2 style={{ fontSize: "18px", fontWeight: 700, color: "#000000", marginBottom: "16px" }}>Lease Agreements</h2>
 
       <DynamicTable<any>
         rows={sortedLeases}

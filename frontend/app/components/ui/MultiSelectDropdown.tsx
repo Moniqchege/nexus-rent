@@ -23,6 +23,8 @@ export function MultiSelectDropdown<T>({
 }: MultiSelectDropdownProps<T>) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const [openUpwards, setOpenUpwards] = useState(false);
+  
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -33,6 +35,20 @@ export function MultiSelectDropdown<T>({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+  const handleResize = () => {
+    if (open) {
+      setOpenUpwards(determineDropdownDirection());
+    }
+  };
+
+  window.addEventListener("resize", handleResize);
+
+  return () => {
+    window.removeEventListener("resize", handleResize);
+  };
+}, [open]);
 
   const selectedLabels = options
     .filter((opt) => values.includes(opt[valueKey]))
@@ -46,12 +62,36 @@ export function MultiSelectDropdown<T>({
     }
   };
 
+  const determineDropdownDirection = () => {
+  if (!ref.current) return false;
+
+  const rect = ref.current.getBoundingClientRect();
+
+  const spaceBelow = window.innerHeight - rect.bottom;
+  const spaceAbove = rect.top;
+
+  const dropdownHeight = 250;
+
+  return (
+    spaceBelow < dropdownHeight &&
+    spaceAbove > spaceBelow
+  );
+};
+
   return (
     <div ref={ref} style={{ position: "relative", minWidth }}>
 
       {/* Trigger */}
       <div
-        onClick={() => setOpen(!open)}
+        onClick={() => 
+        {
+          const nextOpen = !open;
+          if (nextOpen) {
+            setOpenUpwards(determineDropdownDirection());
+          }
+          setOpen(nextOpen);
+        }
+        }
         style={{
           padding: "12px 16px",
           borderRadius: "12px",
@@ -92,21 +132,28 @@ export function MultiSelectDropdown<T>({
 
       {/* Dropdown */}
       {open && (
-        <div
-          style={{
-            position: "absolute",
+  <div
+    style={{
+      position: "absolute",
+      left: 0,
+      width: "100%",
+      maxHeight: "250px",
+      overflowY: "auto",
+      borderRadius: "12px",
+      background: "#ffffff",
+      border: "1px solid #e5e7eb",
+      zIndex: 9999,
+      boxShadow: "0 10px 25px rgba(0,0,0,0.08)",
+
+      ...(openUpwards
+        ? {
+            bottom: "calc(100% + 4px)",
+          }
+        : {
             top: "calc(100% + 4px)",
-            left: 0,
-            width: "100%",
-            maxHeight: "250px",
-            overflowY: "auto",
-            borderRadius: "12px",
-            background: "#ffffff",
-            border: "1px solid #e5e7eb",
-            zIndex: 9999,
-            boxShadow: "0 10px 25px rgba(0,0,0,0.08)",
-          }}
-        >
+          }),
+    }}
+  >
           {options.length === 0 ? (
             <div style={{ padding: "12px 16px", color: "#6b7280", fontSize: "13px" }}>
               No options available

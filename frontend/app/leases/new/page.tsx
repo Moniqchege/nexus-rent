@@ -25,7 +25,7 @@ export default function NewLeasePage() {
         <div
           style={{
             fontWeight: 600,
-            fontSize: "16px",
+            fontSize: "13px",
             color: "var(--neon-blue)"
           }}
         >
@@ -57,7 +57,7 @@ export default function NewLeasePage() {
 >
   <h2
     style={{
-      fontSize: "20px",
+      fontSize: "18px",
       fontWeight: 700,
       color: "#000000",
     }}

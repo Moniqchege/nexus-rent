@@ -432,7 +432,7 @@ export default function TenantPage() {
     api.get("/api/leases")
   .then((res) => {
     const raw = Array.isArray(res.data?.leases) ? res.data.leases : [];
-
+console.log(raw);
     const list: Lease[] = raw.map((l: any) => ({
       ...l,
       tenant: l.tenants?.[0]?.tenant ?? null, 
@@ -456,11 +456,17 @@ export default function TenantPage() {
       .finally(() => setLoadingFinancials(false));
   }, [selectedLease]);
 
-  const searchResults = leases.filter(
-    (l) =>
-      search.length > 0 &&
-      l.tenant.name.toLowerCase().includes(search.toLowerCase())
+  const searchResults = leases.filter((l) => {
+  if (!search.trim()) return false;
+
+  const q = search.toLowerCase();
+
+  return (
+    l.tenant?.name?.toLowerCase().includes(q) ||
+    l.tenant?.email?.toLowerCase().includes(q) ||
+    l.property?.title?.toLowerCase().includes(q)
   );
+});
 
   const t = financials;
   const lease = selectedLease;
@@ -644,49 +650,6 @@ export default function TenantPage() {
           )}
         </div>
       )}
-
-      {/* Payment Health */}
-      <div
-        style={{
-          background: "#f5f3ff",
-          border: "1px solid #e9d5ff",
-          borderRadius: 16,
-          padding: 16,
-        }}
-      >
-        <div style={{ fontSize: 11, color: "#7c3aed" }}>
-          Payment Health
-        </div>
-
-        <div
-          style={{
-            fontSize: 28,
-            fontWeight: 800,
-            color: "#6d28d9",
-            marginTop: 6,
-          }}
-        >
-          92%
-        </div>
-
-        <div
-          style={{
-            height: 6,
-            background: "#e9d5ff",
-            borderRadius: 999,
-            marginTop: 10,
-            overflow: "hidden",
-          }}
-        >
-          <div
-            style={{
-              width: "92%",
-              height: "100%",
-              background: "#7c3aed",
-            }}
-          />
-        </div>
-      </div>
     </div>
 
     {/* ───────────────── RIGHT COLUMN ───────────────── */}

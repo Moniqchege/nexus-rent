@@ -151,6 +151,8 @@ model UserProperty {
   userId     Int
   propertyId Int
   roleId     Int
+  floor      String?
+  unit       String?
 
   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   property Property? @relation(fields: [propertyId], references: [id], onDelete: Cascade)

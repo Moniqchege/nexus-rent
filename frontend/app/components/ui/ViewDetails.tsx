@@ -265,7 +265,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
 
   container: {
-    padding: "24px 32px",
+    padding: "20px 1px",
   },
 
    back: {

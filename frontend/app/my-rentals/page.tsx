@@ -45,7 +45,7 @@ export default function MyRentalsPage() {
         justifyContent: "space-between",
         alignItems: "center"
        }}>
-        <div className="section-label">◈ MY PROPERTIES</div>
+        <div className="section-label">MY PROPERTIES</div>
         <button
           onClick={() => router.push("/my-rentals/new")}
           style={{
@@ -63,7 +63,7 @@ export default function MyRentalsPage() {
         </button>
         </div>
           <div style={{ marginBottom: "20px" }}>
-        <h2 style={{ fontSize: "24px", fontWeight: 700, color: "#000000" }}>
+        <h2 style={{ fontSize: "18px", fontWeight: 700, color: "#000000" }}>
           Rental Portfolio
         </h2>
       </div>

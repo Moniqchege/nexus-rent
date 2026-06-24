@@ -73,6 +73,8 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
         userProperties: {
           select: {
             propertyId: true,
+            floor: true,
+            unit: true,
             role: {
               select: {
                 id: true,
@@ -178,6 +180,8 @@ router.post(
             userId: user.id,
             propertyId: item.propertyId,
             roleId: item.roleId,
+            ...(item.floor && { floor: item.floor }),
+            ...(item.unit  && { unit:  item.unit  }),
           })),
           skipDuplicates: true,
         });
@@ -383,6 +387,8 @@ router.get('/:id', requireAuth, async (req: Request, res: Response) => {
         userProperties: {
           select: {
             propertyId: true,
+            floor: true,
+            unit: true,
             role: {
               select: {
                 id: true,

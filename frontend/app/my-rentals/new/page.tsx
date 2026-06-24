@@ -30,7 +30,7 @@ export default function NewRentalPage() {
             color: "var(--neon-blue)"
           }}
         >
-          ◈ MY PROPERTIES
+          MY PROPERTIES
         </div>
 
         <button
@@ -51,7 +51,7 @@ export default function NewRentalPage() {
       </div>
        <h2
         style={{
-          fontSize: "20px",
+          fontSize: "18px",
           fontWeight: 700,
           color: "#000",
           marginBottom: "32px"

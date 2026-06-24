@@ -198,25 +198,9 @@ export default function UsersPage() {
         </button>
       </div>
 
-      <h2 style={{ fontSize: "24px", fontWeight: 700, color: "#000000", marginBottom: "16px" }}>User Management</h2>
+      <h2 style={{ fontSize: "18px", fontWeight: 700, color: "#000000", marginBottom: "12px" }}>User Management</h2>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
-        <div>
-          <h2
-            style={{
-              fontSize: "20px",
-              fontWeight: 700,
-              color: "var(--neon-blue)",
-              marginBottom: 12,
-            }}
-          >
-            {/* User Accounts ({users.length}) */}
-          </h2>
-        </div>
-        <div style={{ gridColumn: "span 2" }} />
-      </div>
-
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginTop: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 12 }}>
         {(() => {
          const cards = [
            { label: "Total Users", value: userStats.totalUsers },

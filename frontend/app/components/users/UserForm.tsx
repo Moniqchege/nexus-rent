@@ -17,6 +17,8 @@ interface PropertyAssignment {
   roleId: number;
   propertyName?: string;
   roleName?: string;
+  floor?: string;
+  unit?: string;
 }
 
 export default function UserForm({ onSubmit, onCancel, editingUser, isEdit = false }: UserFormProps) {
@@ -117,15 +119,19 @@ export default function UserForm({ onSubmit, onCancel, editingUser, isEdit = fal
     setPropertyAssignments([...propertyAssignments, { propertyId: 0, roleId: 0 }]);
   };
 
-  const updatePropertyAssignment = (index: number, field: keyof PropertyAssignment, value: number) => {
-    const newAssignments = [...propertyAssignments];
-    newAssignments[index] = { ...newAssignments[index], [field]: value };
-    setPropertyAssignments(newAssignments);
-  };
+  const updatePropertyAssignment = (index: number, field: keyof PropertyAssignment, value: number | string) => {
+  const newAssignments = [...propertyAssignments];
+  newAssignments[index] = { ...newAssignments[index], [field]: value };
+  setPropertyAssignments(newAssignments);
+};
 
   const removePropertyAssignment = (index: number) => {
     setPropertyAssignments(propertyAssignments.filter((_, i) => i !== index));
   };
+
+  const isTenantRole = (roleId: number) => {
+  return roles.find((r: any) => r.id === roleId)?.name?.toLowerCase() === "tenant";
+};
 
   return (
     <div style={{
@@ -376,7 +382,7 @@ export default function UserForm({ onSubmit, onCancel, editingUser, isEdit = fal
 </section>
 
         {/* New Property Assignments Section */}
-        <div style={{ marginTop: "24px" }}>
+        <div style={{ marginTop: "10px" }}>
   {/* HEADER ROW */}
   <div
     style={{
@@ -441,7 +447,9 @@ export default function UserForm({ onSubmit, onCancel, editingUser, isEdit = fal
           key={index}
           style={{
             display: "grid",
-            gridTemplateColumns: "1fr 1fr auto",
+            gridTemplateColumns: isTenantRole(assignment.roleId)
+              ? "1fr 1fr auto 1fr 1fr"  // Property | Role | Delete | Floor | Unit
+              : "1fr 1fr auto",
             gap: "12px",
             alignItems: "end",
             backgroundColor: "#ffffff",
@@ -519,6 +527,52 @@ export default function UserForm({ onSubmit, onCancel, editingUser, isEdit = fal
           >
             <span className="material-symbols-outlined">delete</span>
           </button>
+          {/* FLOOR + UNIT — only for Tenant role */}
+          {isTenantRole(assignment.roleId) && (
+            <>
+              <div>
+                <label style={{ display: "block", fontWeight: 600, fontSize: "12px", marginBottom: "6px", color: "#0F52BA" }}>
+                  Floor
+                </label>
+                <input
+                  type="text"
+                  value={assignment.floor || ""}
+                  onChange={(e) => updatePropertyAssignment(index, "floor", e.target.value)}
+                  placeholder="e.g. 2nd Floor"
+                  style={{
+                    width: "100%",
+                    backgroundColor: "#ffffff",
+                    border: "1px solid var(--border-glow)",
+                    borderRadius: "12px",
+                    padding: "10px 14px",
+                    fontSize: "14px",
+                    color: "var(--text-primary)",
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: "block", fontWeight: 600, fontSize: "12px", marginBottom: "6px", color: "#0F52BA" }}>
+                  Unit
+                </label>
+                <input
+                  type="text"
+                  value={assignment.unit || ""}
+                  onChange={(e) => updatePropertyAssignment(index, "unit", e.target.value)}
+                  placeholder="e.g. A3"
+                  style={{
+                    width: "100%",
+                    backgroundColor: "#ffffff",
+                    border: "1px solid var(--border-glow)",
+                    borderRadius: "12px",
+                    padding: "10px 14px",
+                    fontSize: "14px",
+                    color: "var(--text-primary)",
+                  }}
+                />
+              </div>
+            </>
+          )}
         </div>
       ))}
     </div>
