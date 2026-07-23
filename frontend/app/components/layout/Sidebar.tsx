@@ -33,6 +33,7 @@ export default function Sidebar() {
     { label: "Finances", icon: "/payments_icon.png", to: "/payments" },
     { label: "Roles", icon: "/roles_icon.png", to: "/roles" },
     { label: "Users", icon: "/users_icon.png", to: "/users" },
+     { label: "AI Insights", icon: "/users_icon.png", to: "/ai-insights" },
     {
       label: "Notifications",
       icon: "/notifications_icon.png",

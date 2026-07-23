@@ -9,20 +9,46 @@ import DynamicTable, {
   type DynamicTableRowAction,
 } from "@/app/components/ui/DynamicTable";
 import { Plus } from "lucide-react";
+import api from "@/app/lib/api";
 
 type LeaseRow = any;
+
+interface RenewalRecord {
+  leaseId: number;
+  propertyId: number;
+  propertyTitle: string;
+  tenantId: number;
+  tenantName: string;
+  endDate: string;
+  tenureMonths: number;
+  riskScore: number;
+  riskCategory: "Low" | "Medium" | "High";
+  isFlightRisk: boolean;
+  incentive: string;
+}
 
 export default function LeasesPage() {
   const { fetchLeases, leases, deleteLease } = useAdminStore();
   const router = useRouter();
 
-  const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedLeaseId, setSelectedLeaseId] = useState<number | null>(null);
+
+  const [renewals, setRenewals] = useState<RenewalRecord[]>([]);
+  const [renewalLoading, setRenewalLoading] = useState(true);
+  const [renewalError, setRenewalError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchLeases();
   }, [fetchLeases]);
+
+  useEffect(() => {
+    setRenewalLoading(true);
+    api.get('/api/ai/leases/renewals')
+      .then((res) => setRenewals(res.data ?? []))
+      .catch(() => setRenewalError('Failed to load AI renewal data.'))
+      .finally(() => setRenewalLoading(false));
+  }, []);
 
   const handleDeleteClick = (leaseId: number) => {
     setSelectedLeaseId(leaseId);
@@ -122,6 +148,12 @@ export default function LeasesPage() {
     [router]
   );
 
+  function renewalBadge(isFlightRisk: boolean, riskCategory: string) {
+    if (isFlightRisk) return { bg: "#fffbeb", color: "#f59e0b", border: "#fde68a", label: "⚠ Flight Risk" };
+    if (riskCategory === "High") return { bg: "#fff1f2", color: "#ef4444", border: "#fecaca", label: "High Risk" };
+    return { bg: "#f0fdf4", color: "#10b981", border: "#bbf7d0", label: "Standard" };
+  }
+
   return (
     <div className="dashboard-content">
       <div style={{
@@ -146,6 +178,72 @@ export default function LeasesPage() {
           <Plus size={16} style={{ marginRight: 6, verticalAlign: "middle" }} />
           New Lease
         </button>
+      </div>
+
+      {/* AI RENEWAL ASSISTANT PANEL */}
+      <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", overflow: "hidden", marginBottom: 24 }}>
+        <div style={{ padding: "16px 20px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontSize: 18 }}>🤖</span>
+          <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "#0f172a" }}>AI Renewal Assistant</h3>
+          <span style={{ marginLeft: "auto", fontSize: 11, color: "#94a3b8" }}>60–90 day lease expiry window</span>
+        </div>
+
+        {renewalLoading ? (
+          <div style={{ padding: "24px 20px", textAlign: "center", color: "#94a3b8", fontSize: 13 }}>
+            ⏳ Loading renewal intelligence...
+          </div>
+        ) : renewalError ? (
+          <div style={{ padding: "16px 20px", color: "#ef4444", fontSize: 13 }}>⚠ {renewalError}</div>
+        ) : renewals.length === 0 ? (
+          <div style={{ padding: "24px 20px", textAlign: "center" }}>
+            <div style={{ fontSize: 14, fontWeight: 600, color: "#10b981" }}>✅ No renewals due in the next 60–90 days</div>
+          </div>
+        ) : (
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+              <thead>
+                <tr style={{ background: "#f8fafc", textAlign: "left" }}>
+                  <th style={{ padding: "10px 16px", fontWeight: 600, color: "#64748b", fontSize: 11, textTransform: "uppercase" as const }}>Tenant</th>
+                  <th style={{ padding: "10px 16px", fontWeight: 600, color: "#64748b", fontSize: 11, textTransform: "uppercase" as const }}>Property</th>
+                  <th style={{ padding: "10px 16px", fontWeight: 600, color: "#64748b", fontSize: 11, textTransform: "uppercase" as const }}>Tenure</th>
+                  <th style={{ padding: "10px 16px", fontWeight: 600, color: "#64748b", fontSize: 11, textTransform: "uppercase" as const }}>Risk</th>
+                  <th style={{ padding: "10px 16px", fontWeight: 600, color: "#64748b", fontSize: 11, textTransform: "uppercase" as const }}>Incentive</th>
+                  <th style={{ padding: "10px 16px", fontWeight: 600, color: "#64748b", fontSize: 11, textTransform: "uppercase" as const }}>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {renewals.map((r) => {
+                  const badge = renewalBadge(r.isFlightRisk, r.riskCategory);
+                  return (
+                    <tr key={r.leaseId} style={{ borderTop: "1px solid #f1f5f9" }}>
+                      <td style={{ padding: "12px 16px", fontWeight: 600, color: "#0f172a" }}>{r.tenantName}</td>
+                      <td style={{ padding: "12px 16px", color: "#64748b" }}>{r.propertyTitle}</td>
+                      <td style={{ padding: "12px 16px", color: "#64748b" }}>{r.tenureMonths} months</td>
+                      <td style={{ padding: "12px 16px" }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20, background: badge.bg, color: badge.color, border: `1px solid ${badge.border}` }}>
+                          {badge.label}
+                        </span>
+                      </td>
+                      <td style={{ padding: "12px 16px", color: "#64748b", maxWidth: 240 }}>{r.incentive}</td>
+                      <td style={{ padding: "12px 16px" }}>
+                        <button
+                          onClick={() => router.push(`/notifications/send?tenant=${encodeURIComponent(r.tenantName)}&template=Lease+Renewal`)}
+                          style={{
+                            padding: "5px 12px", borderRadius: 8, border: "none",
+                            background: "linear-gradient(to right, var(--neon-blue), var(--neon-purple))",
+                            color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer",
+                          }}
+                        >
+                          ✉ Notify
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       <h2 style={{ fontSize: "18px", fontWeight: 700, color: "#000000", marginBottom: "16px" }}>Lease Agreements</h2>

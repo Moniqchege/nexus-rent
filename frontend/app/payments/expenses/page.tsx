@@ -70,6 +70,9 @@ const CATEGORY_BREAKDOWN = [
 export default function ExpensesPage() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
+  const [anomalies, setAnomalies] = useState<any[]>([]);
+  const [anomalyLoading, setAnomalyLoading] = useState(true);
+  const [anomalyError, setAnomalyError] = useState<string | null>(null);
 
   const [loadingProperties, setLoadingProperties] = useState(true);
   const [loadingExpenses, setLoadingExpenses] = useState(false);
@@ -175,6 +178,19 @@ export default function ExpensesPage() {
 
   useEffect(() => { fetchProperties(); }, [fetchProperties]);
   useEffect(() => { if (!loadingProperties) fetchExpenses(); }, [loadingProperties, fetchExpenses]);
+
+  useEffect(() => {
+    setAnomalyLoading(true);
+    api.get('/api/ai/expenses/anomalies')
+      .then((res) => {
+        const sorted = [...(res.data ?? [])].sort((a: any, b: any) =>
+          a.severity === 'CRITICAL' ? -1 : b.severity === 'CRITICAL' ? 1 : 0
+        );
+        setAnomalies(sorted.slice(0, 50));
+      })
+      .catch(() => setAnomalyError('Failed to load AI anomaly alerts.'))
+      .finally(() => setAnomalyLoading(false));
+  }, []);
 
   const resetForm = () => {
     setFormProperty("all");
@@ -789,6 +805,52 @@ const getExpenseActions = (exp: Expense) => {
                   </div>
                 ))}
               </>
+            )}
+          </div>
+
+          {/* AI FINANCIAL AUDIT ALERTS */}
+          <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e2e8f0", overflow: "hidden" }}>
+            <div style={{ padding: "16px 20px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ fontSize: 18 }}>🤖</span>
+              <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "#0f172a" }}>AI Financial Audit Alerts</h3>
+              <span style={{ marginLeft: "auto", fontSize: 11, color: "#94a3b8" }}>Powered by Nexus AI</span>
+            </div>
+
+            {anomalyLoading ? (
+              <div style={{ padding: "32px 20px", textAlign: "center", color: "#94a3b8", fontSize: 13 }}>
+                <div style={{ marginBottom: 8 }}>⏳ Scanning for financial anomalies...</div>
+              </div>
+            ) : anomalyError ? (
+              <div style={{ padding: "20px", color: "#ef4444", fontSize: 13 }}>
+                ⚠ {anomalyError}
+              </div>
+            ) : anomalies.length === 0 ? (
+              <div style={{ padding: "32px 20px", textAlign: "center" }}>
+                <div style={{ fontSize: 32, marginBottom: 8 }}>✅</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: "#10b981" }}>No anomalies detected</div>
+                <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 4 }}>All financial activity looks normal.</div>
+              </div>
+            ) : (
+              <div>
+                {anomalies.map((alert: any) => (
+                  <div key={alert.id} style={{ padding: "14px 20px", borderBottom: "1px solid #f1f5f9", display: "flex", alignItems: "flex-start", gap: 14 }}>
+                    <span style={{
+                      fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20, flexShrink: 0,
+                      background: alert.severity === 'CRITICAL' ? "#fff1f2" : "#fffbeb",
+                      color: alert.severity === 'CRITICAL' ? "#ef4444" : "#f59e0b",
+                      border: `1px solid ${alert.severity === 'CRITICAL' ? '#fecaca' : '#fde68a'}`,
+                    }}>
+                      {alert.severity}
+                    </span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, color: "#0f172a", lineHeight: 1.5 }}>{alert.message}</div>
+                      <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 4 }}>
+                        {alert.propertyTitle} &nbsp;·&nbsp; Confidence: {alert.confidenceScore?.toFixed(2)}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         </div>

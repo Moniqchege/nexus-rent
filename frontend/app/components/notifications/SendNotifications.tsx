@@ -180,6 +180,12 @@ export default function SendNotificationForm({
   const [message, setMessage] = useState(initialValues?.message ?? "");
   const [selectedUsers, setSelectedUsers] = useState<number[]>(initialValues?.userIds ?? []);
 
+  const [aiPanelOpen, setAiPanelOpen] = useState(false);
+  const [aiTemplateType, setAiTemplateType] = useState("");
+  const [aiContext, setAiContext] = useState("");
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+
   const [users, setUsers] = useState<User[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
   const [filterPropertyId, setFilterPropertyId] = useState<number | "">("");
@@ -238,6 +244,25 @@ export default function SendNotificationForm({
   };
 
   const canSend = !loading && !!message.trim() && !!title.trim() && selectedUsers.length > 0;
+
+  const handleAiGenerate = async () => {
+    if (!aiContext.trim()) return;
+    setAiGenerating(true);
+    setAiError(null);
+    try {
+      const res = await api.post('/api/ai/notifications/draft', {
+        templateType: aiTemplateType.trim() || "General",
+        landlordInput: aiContext.trim(),
+      });
+      if (res.data?.title) setTitle(res.data.title);
+      if (res.data?.message) setMessage(res.data.message);
+    } catch {
+      setAiError('AI draft failed. Please try again or compose manually.');
+    } finally {
+      setAiGenerating(false);
+    }
+  };
+  const canGenerate = !aiGenerating && !!aiContext.trim();
 
   const allSelected = users.length > 0 && selectedUsers.length === users.length;
   const someSelected = selectedUsers.length > 0 && selectedUsers.length < users.length;
@@ -584,7 +609,7 @@ export default function SendNotificationForm({
             border: "1px solid #ccc3d8",
             borderRadius: "12px",
             overflow: "hidden",
-            height: 600,
+            minHeight: 600,
             display: "flex",
             flexDirection: "column",
           }}
@@ -612,6 +637,81 @@ export default function SendNotificationForm({
               gap: "24px",
             }}
           >
+            {/* AI Writing Assistant Panel */}
+            <div style={{ border: "1px solid #ccc3d8", borderRadius: 10, overflow: "hidden" }}>
+              {/* Header (always visible) */}
+              <button
+                type="button"
+                onClick={() => setAiPanelOpen((o) => !o)}
+                style={{
+                  width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+                  padding: "10px 14px", background: aiPanelOpen ? "#eaddff" : "#f2f3f9",
+                  border: "none", cursor: "pointer", fontFamily: "'Inter', sans-serif",
+                }}
+              >
+                <span style={{ fontSize: 13, fontWeight: 700, color: "#25005a", display: "flex", alignItems: "center", gap: 6 }}>
+                  🤖 AI Writing Assistant
+                </span>
+                <ChevronDown size={15} style={{ color: "#7b7487", transform: aiPanelOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }} />
+              </button>
+
+              {/* Collapsible body */}
+              {aiPanelOpen && (
+                <div style={{ padding: 14, display: "flex", flexDirection: "column", gap: 10, background: "#faf9ff" }}>
+                  {/* Template type / prompt */}
+                  <div>
+                    <label style={{ ...fieldLabelStyle, fontSize: 12 }}>What kind of notification?</label>
+                    <input
+                      type="text"
+                      value={aiTemplateType}
+                      onChange={(e) => setAiTemplateType(e.target.value)}
+                      placeholder="e.g. Rent increase, Maintenance outage, Survey, Late payment reminder…"
+                      style={{ ...inputBaseStyle, fontSize: 13 }}
+                      onFocus={(e) => (e.target.style.borderColor = "#4800a0")}
+                      onBlur={(e) => (e.target.style.borderColor = "#ccc3d8")}
+                    />
+                  </div>
+
+                  {/* Context input */}
+                  <div>
+                    <label style={{ ...fieldLabelStyle, fontSize: 12 }}>Instructions <span style={{ color: "#94a3b8", fontWeight: 400 }}>({aiContext.length}/500)</span></label>
+                    <textarea
+                      value={aiContext}
+                      onChange={(e) => setAiContext(e.target.value.slice(0, 500))}
+                      placeholder="Describe exactly what you want the AI to write. e.g. 'Inform tenants that rent increases by 8% from August 1st due to rising utility costs.'"
+                      rows={3}
+                      style={{ ...inputBaseStyle, resize: "none" as const, fontSize: 13 }}
+                      onFocus={(e) => (e.target.style.borderColor = "#4800a0")}
+                      onBlur={(e) => (e.target.style.borderColor = "#ccc3d8")}
+                    />
+                  </div>
+
+                  {/* Error */}
+                  {aiError && (
+                    <div style={{ fontSize: 12, color: "#93000a", background: "#ffdad6", padding: "8px 12px", borderRadius: 8 }}>
+                      {aiError}
+                    </div>
+                  )}
+
+                  {/* Generate button */}
+                  <button
+                    type="button"
+                    onClick={handleAiGenerate}
+                    disabled={!canGenerate}
+                    style={{
+                      padding: "8px 16px", borderRadius: 8, border: "none", fontSize: 13, fontWeight: 600,
+                      cursor: canGenerate ? "pointer" : "not-allowed",
+                      background: canGenerate ? "#630ed4" : "#e5e7eb",
+                      color: canGenerate ? "#fff" : "#7b7487",
+                      fontFamily: "'Inter', sans-serif",
+                    }}
+                  >
+                    {aiGenerating ? "⏳ Generating..." : "✨ Generate Draft"}
+                  </button>
+                </div>
+              )}
+            </div>
+
             {/* Title field */}
             <div>
               <label style={fieldLabelStyle}>Title</label>

@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useAuthStore } from "../../store/authStore";
+import { API_BASE } from "../../lib/api";
 import { LinearGradient } from "expo-linear-gradient";
 import MaskedView from "@react-native-masked-view/masked-view";
 import { useNavigation } from '@react-navigation/native';
@@ -92,18 +93,38 @@ export default function Profile() {
     return "I can help with rent, lease, property, payments, or scores. Ask something simple!";
   };
 
-  const handleSend = () => {
+  const token = useAuthStore((state) => state.token);
+
+  const handleSend = async () => {
     if (!inputText.trim()) return;
 
     const userMsg = { role: 'user' as const, text: inputText };
     setMessages(prev => [...prev, userMsg]);
+    const inputMsg = inputText;
     setInputText('');
 
-    // Simulate bot response delay
-    setTimeout(() => {
-      const botMsg = { role: 'bot' as const, text: getBotResponse(inputText) };
+    try {
+      const response = await fetch(`${API_BASE}/api/ai/chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ message: inputMsg })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      const botMsg = { role: 'bot' as const, text: data.reply };
       setMessages(prev => [...prev, botMsg]);
-    }, 800);
+    } catch (err) {
+      console.warn("Orion Chatbot API failed in profile, fallback to local:", err);
+      const botMsg = { role: 'bot' as const, text: getBotResponse(inputMsg) };
+      setMessages(prev => [...prev, botMsg]);
+    }
   };
 
   const handleSignOut = async () => {

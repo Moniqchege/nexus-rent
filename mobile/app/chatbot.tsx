@@ -13,6 +13,7 @@ import {
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "expo-router";
 import { useAuthStore } from "../store/authStore";
+import { API_BASE } from "../lib/api";
 
 type Message = {
   role: "user" | "bot";
@@ -84,19 +85,42 @@ export default function ChatBotScreen() {
     scrollToEnd();
   }, [messages, scrollToEnd]);
 
-  const handleSend = (text?: string) => {
+  const token = useAuthStore((state) => state.token);
+
+  const handleSend = async (text?: string) => {
     const msg = (text ?? inputText).trim();
     if (!msg) return;
 
     setMessages((prev) => [...prev, { role: "user", text: msg }]);
     setInputText("");
 
-    setTimeout(() => {
+    try {
+      const response = await fetch(`${API_BASE}/api/ai/chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ message: msg })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
       setMessages((prev) => [
         ...prev,
-        { role: "bot", text: getBotResponse(msg, user) },
+        { role: "bot", text: data.reply }
       ]);
-    }, 700);
+    } catch (err) {
+      console.warn("Orion Chatbot API failed, fallback to local logic:", err);
+      const fallbackMsg = getBotResponse(msg, user);
+      setMessages((prev) => [
+        ...prev,
+        { role: "bot", text: fallbackMsg }
+      ]);
+    }
   };
 
   return (

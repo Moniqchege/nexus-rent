@@ -21,6 +21,7 @@ import paymentRoutes, { stripeWebhookHandler } from "./routes/payments.js";
 import leaseRoutes from "./routes/leases.js";
 import cronRoutes from "./routes/cron.js";
 import expensesRoutes from "./routes/expenses.js";
+import aiRoutes from "./routes/ai.js";
 
 import { setupOAuth } from "./services/oauthStrategies.js";
 
@@ -94,6 +95,7 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/expenses", expensesRoutes);
 app.use("/api/leases", leaseRoutes);
 app.use("/api/cron", cronRoutes);
+app.use("/api/ai", aiRoutes);
 
 // Start cron
 await import('./services/paymentService.js').then(m => m.startCronJobs());
