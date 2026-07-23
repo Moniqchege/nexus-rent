@@ -36,6 +36,22 @@ export function MultiSelectDropdown<T>({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+    const determineDropdownDirection = () => {
+  if (!ref.current) return false;
+
+  const rect = ref.current.getBoundingClientRect();
+
+  const spaceBelow = window.innerHeight - rect.bottom;
+  const spaceAbove = rect.top;
+
+  const dropdownHeight = 250;
+
+  return (
+    spaceBelow < dropdownHeight &&
+    spaceAbove > spaceBelow
+  );
+};
+
   useEffect(() => {
   const handleResize = () => {
     if (open) {
@@ -61,22 +77,6 @@ export function MultiSelectDropdown<T>({
       onChange([...values, val]);
     }
   };
-
-  const determineDropdownDirection = () => {
-  if (!ref.current) return false;
-
-  const rect = ref.current.getBoundingClientRect();
-
-  const spaceBelow = window.innerHeight - rect.bottom;
-  const spaceAbove = rect.top;
-
-  const dropdownHeight = 250;
-
-  return (
-    spaceBelow < dropdownHeight &&
-    spaceAbove > spaceBelow
-  );
-};
 
   return (
     <div ref={ref} style={{ position: "relative", minWidth }}>
