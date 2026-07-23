@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
+import { format } from 'date-fns'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -12,9 +13,9 @@ export function formatScore(score: number) {
 }
 
 export function scoreColor(score: number) {
-  if (score >= 85) return '#B8FF00'  
-  if (score >= 65) return '#00D4FF'  
-  return '#FF4D6D'                  
+  if (score >= 85) return '#B8FF00'
+  if (score >= 65) return '#00D4FF'
+  return '#FF4D6D'
 }
 
 export function scoreLabel(score: number) {
@@ -50,3 +51,16 @@ export const AMENITY_OPTIONS = [
   { label: "Borehole Water Supply", value: "BOREHOLE" },
   { label: "Internet Connectivity", value: "INTERNET" },
 ];
+
+// Currency formatting helpers for KES amounts
+// Full format: KES 12,500
+export const formatKES = (n: number): string =>
+  `KES ${n.toLocaleString('en-KE', { maximumFractionDigits: 0 })}`;
+
+// Chart Y-axis: KES 5K
+export const formatKESShort = (n: number): string =>
+  n >= 1000 ? `KES ${(n / 1000).toFixed(0)}K` : `KES ${n}`;
+
+// Date: 15 Jan 2025
+export const formatDate = (iso: string): string => format(new Date(iso), 'dd MMM yyyy');
+

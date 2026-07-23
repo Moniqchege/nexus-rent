@@ -1,19 +1,165 @@
 "use client";
-import React from "react";
+import React, { useEffect } from "react";
+import Link from "next/link";
 import {
   Building2,
   TrendingUp,
   Wallet,
-  Sparkles,
-  ArrowUpRight,
   Users,
-  CheckCircle2,
+  AlertTriangle,
+  ChevronRight,
 } from "lucide-react";
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+} from "recharts";
 
+import { useDashboardStore } from "../store/dashboardStore";
+import { formatKES, formatKESShort, formatDate } from "../lib/utils";
+
+// ── Color palette for the expense donut slices ─────────────
+const PIE_COLORS = ["#2563EB", "#7C3AED", "#16A34A", "#D97706", "#DC2626"];
+
+// ── Skeleton placeholder ───────────────────────────────────
+function Skeleton({
+  height = 24,
+  width = "100%",
+  borderRadius = 6,
+}: {
+  height?: number | string;
+  width?: number | string;
+  borderRadius?: number;
+}) {
+  return (
+    <div
+      style={{
+        height,
+        width,
+        borderRadius,
+        background: "rgba(255,255,255,0.07)",
+        animation: "pulse 1.5s ease-in-out infinite",
+      }}
+    />
+  );
+}
+
+// ── Custom Tooltip for LineChart ───────────────────────────
+function RevenueTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: { value: number }[];
+  label?: string;
+}) {
+  if (active && payload && payload.length) {
+    return (
+      <div
+        style={{
+          background: "var(--bg-card, #1a1a2e)",
+          border: "1px solid rgba(255,255,255,0.12)",
+          borderRadius: 8,
+          padding: "8px 14px",
+          fontSize: 13,
+          color: "var(--text-primary)",
+        }}
+      >
+        <div style={{ fontWeight: 600, marginBottom: 2 }}>{label}</div>
+        <div style={{ color: "var(--neon-blue)" }}>
+          {formatKES(payload[0].value)}
+        </div>
+      </div>
+    );
+  }
+  return null;
+}
+
+// ── Custom Tooltip for PieChart ────────────────────────────
+function ExpenseTooltip({
+  active,
+  payload,
+}: {
+  active?: boolean;
+  payload?: { name: string; value: number }[];
+}) {
+  if (active && payload && payload.length) {
+    return (
+      <div
+        style={{
+          background: "var(--bg-card, #1a1a2e)",
+          border: "1px solid rgba(255,255,255,0.12)",
+          borderRadius: 8,
+          padding: "8px 14px",
+          fontSize: 13,
+          color: "var(--text-primary)",
+        }}
+      >
+        <div style={{ fontWeight: 600, marginBottom: 2 }}>{payload[0].name}</div>
+        <div style={{ color: "var(--neon-purple)" }}>
+          {formatKES(payload[0].value)}
+        </div>
+      </div>
+    );
+  }
+  return null;
+}
+
+// ── Main page ──────────────────────────────────────────────
 export default function DashboardPage() {
+  const { stats, loading, error, fetchStats } = useDashboardStore();
+
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
+
+  const totalExpenses =
+  stats?.expenseByCategory?.reduce(
+    (sum, item) => sum + item.total,
+    0
+  ) ?? 0;
+
+const expenseData =
+  stats?.expenseByCategory?.map((item, index) => ({
+    ...item,
+    color: PIE_COLORS[index % PIE_COLORS.length],
+    percent:
+      totalExpenses > 0
+        ? ((item.total / totalExpenses) * 100).toFixed(1)
+        : "0",
+  })) ?? [];
+
   return (
     <div className="dashboard-content">
-      <div className="page-tag">📊 ANALYTICS DASHBOARD</div>
+      {/* Error banner */}
+      {error && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            background: "rgba(220, 38, 38, 0.12)",
+            border: "1px solid rgba(220, 38, 38, 0.4)",
+            borderRadius: 8,
+            padding: "10px 16px",
+            marginBottom: 20,
+            color: "#fca5a5",
+            fontSize: 14,
+          }}
+        >
+          <AlertTriangle size={16} />
+          Could not load dashboard data. Please refresh.
+        </div>
+      )}
 
       <div
         style={{
@@ -29,211 +175,572 @@ export default function DashboardPage() {
       </div>
       <h2
         style={{
-          fontSize: 24,
+          fontSize: 14,
           fontWeight: 700,
           color: "var(--text-primary)",
-          marginBottom: 24,
+          marginBottom: 18,
         }}
       >
-        Welcome back, here's what's happening today
+        Welcome back, here&apos;s what&apos;s happening today
       </h2>
 
-      {/* Stats Section */}
+      {/* ── KPI Stat Cards ──────────────────────────────── */}
       <section className="stats-section">
         <div className="stats-row">
+          {/* Total Properties */}
           <div className="overview-stat animate-in delay-1">
-            <div
-              style={{
+            <div className="stat-header">
+              <div className="stat-title">
+                <div className="ov-label">Total Properties</div>
+              </div>
+              <div
+                className="stat-icon"
+                style={{
                 background: "rgba(37, 99, 235, 0.1)",
                 color: "var(--neon-blue)",
               }}
-              className="stat-icon"
-            >
-              <Building2 size={20} />
-            </div>
-            <div className="ov-label">Total Properties</div>
-            <div className="ov-value" style={{ color: "var(--neon-blue)" }}>
-              2,847
-            </div>
-            <div className="ov-change" style={{ color: "var(--accent-success)" }}>
-              <ArrowUpRight size={12} /> 12.4% this month
-            </div>
+              >
+               <Building2 size={18} />
+              </div>
+           </div>
+            {loading ? (
+              <div style={{ marginTop: 6 }}>
+                <Skeleton height={32} width={80} />
+              </div>
+            ) : (
+              <div className="ov-value" style={{ color: "var(--neon-blue)" }}>
+                {stats?.totalProperties ?? 0}
+              </div>
+            )}
           </div>
 
+          {/* Occupancy Rate */}
           <div className="overview-stat animate-in delay-2">
-            <div
-              style={{
-                background: "rgba(124, 58, 237, 0.1)",
+            <div className="stat-header">
+              <div className="stat-title">
+                <div className="ov-label">Occupancy Rate</div>
+              </div>
+              <div
+                className="stat-icon"
+                style={{
+                background: "rgba(37, 99, 235, 0.1)",
                 color: "var(--neon-purple)",
               }}
-              className="stat-icon"
-            >
-              <Users size={20} />
+              >
+                <Users size={20} />
+              </div>
             </div>
-            <div className="ov-label">Occupancy Rate</div>
-            <div className="ov-value" style={{ color: "var(--neon-purple)" }}>
-              89.2%
-            </div>
-            <div className="ov-change" style={{ color: "var(--accent-success)" }}>
-              <ArrowUpRight size={12} /> 3.1% vs last quarter
-            </div>
+            {loading ? (
+              <div style={{ marginTop: 6 }}>
+                <Skeleton height={32} width={80} />
+              </div>
+            ) : (
+              <div className="ov-value" style={{ color: "var(--neon-purple)" }}>
+                {(stats?.occupancyRate ?? 0).toFixed(1)}%
+              </div>
+            )}
           </div>
 
+          {/* Monthly Revenue */}
           <div className="overview-stat animate-in delay-3">
-            <div
-              style={{
-                background: "rgba(22, 163, 74, 0.1)",
+            <div className="stat-header">
+              <div className="stat-title">
+                <div className="ov-label">Monthly Revenue</div>
+              </div>
+              <div
+                className="stat-icon"
+                style={{
+                background: "rgba(37, 99, 235, 0.1)",
                 color: "var(--accent-success)",
               }}
-              className="stat-icon"
-            >
-              <Wallet size={20} />
-            </div>
-            <div className="ov-label">Total Revenue</div>
-            <div className="ov-value" style={{ color: "var(--accent-success)" }}>
-              $1.4M
-            </div>
-            <div className="ov-change" style={{ color: "var(--accent-success)" }}>
-              <ArrowUpRight size={12} /> 8.7% vs last month
-            </div>
+              >
+               <Wallet size={20} />
+              </div>
+           </div>
+            {loading ? (
+              <div style={{ marginTop: 6 }}>
+                <Skeleton height={32} width={120} />
+              </div>
+            ) : (
+              <div
+                className="ov-value"
+                style={{ color: "var(--accent-success)" }}
+              >
+                {formatKES(stats?.monthlyRevenue ?? 0)}
+              </div>
+            )}
           </div>
 
+          {/* Total Arrears */}
           <div className="overview-stat animate-in delay-4">
-            <div
-              style={{
-                background: "rgba(217, 119, 6, 0.1)",
+            <div className="stat-header">
+              <div className="stat-title">
+                <div className="ov-label">Total Arrears</div>
+              </div>
+              <div
+                className="stat-icon"
+                style={{
+                background: "rgba(37, 99, 235, 0.1)",
                 color: "var(--accent-warning)",
               }}
-              className="stat-icon"
-            >
-              <Sparkles size={20} />
-            </div>
-            <div className="ov-label">AI Growth Index</div>
-            <div className="ov-value" style={{ color: "var(--accent-warning)" }}>
-              +14.3%
-            </div>
-            <div className="ov-change" style={{ color: "var(--text-secondary)" }}>
-              Predicted next 90 days
-            </div>
+              >
+               <AlertTriangle size={20} />
+              </div>
+           </div>
+            {loading ? (
+              <div style={{ marginTop: 6 }}>
+                <Skeleton height={32} width={120} />
+              </div>
+            ) : (
+              <div
+                className="ov-value"
+                style={{ color: "var(--accent-warning)" }}
+              >
+                {formatKES(stats?.totalArrears ?? 0)}
+              </div>
+            )}
           </div>
         </div>
       </section>
 
-      {/* Charts */}
+      {/* ── Charts Row ──────────────────────────────────── */}
       <div className="charts-row">
-        {/* Line Chart */}
+        {/* Revenue Trend Line Chart */}
         <div className="chart-card">
-          <div className="chart-card-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div
+            className="chart-card-title"
+            style={{ display: "flex", alignItems: "center", gap: 8 }}
+          >
             <TrendingUp size={16} color="var(--neon-blue)" />
             Revenue Trend
           </div>
 
-          <svg viewBox="0 0 400 200" style={{ width: "100%", height: "200px" }}>
-            <line x1="0" y1="40" x2="400" y2="40" stroke="#e3e8ef" strokeWidth="1" />
-            <line x1="0" y1="100" x2="400" y2="100" stroke="#e3e8ef" strokeWidth="1" />
-            <line x1="0" y1="160" x2="400" y2="160" stroke="#e3e8ef" strokeWidth="1" />
-
-            <polyline
-              points="20,140 80,110 160,90 240,80 320,95 380,70"
-              fill="none"
-              stroke="url(#lineGrad)"
-              strokeWidth="3"
-              strokeLinecap="round"
-            />
-
-            <circle cx="80" cy="110" r="4" fill="var(--neon-blue)" />
-            <circle cx="160" cy="90" r="4" fill="var(--neon-blue)" />
-            <circle cx="240" cy="80" r="4" fill="var(--neon-blue)" />
-            <circle cx="320" cy="95" r="4" fill="var(--neon-blue)" />
-            <circle cx="380" cy="70" r="4" fill="var(--neon-blue)" />
-
-            <defs>
-              <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0" stopColor="var(--neon-blue)" />
-                <stop offset="1" stopColor="var(--neon-purple)" />
-              </linearGradient>
-            </defs>
-          </svg>
+          {loading ? (
+            <Skeleton height={200} borderRadius={8} />
+          ) : (
+            <ResponsiveContainer width="100%" height={280}>
+              <LineChart
+                data={stats?.revenueTrend ?? []}
+                margin={{ top: 8, right: 8, bottom: 0, left: 8 }}
+              >
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="rgba(255,255,255,0.07)"
+                />
+                <XAxis
+                  dataKey="month"
+                  tick={{ fill: "var(--text-secondary)", fontSize: 11 }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  tickFormatter={formatKESShort}
+                  tick={{ fill: "var(--text-secondary)", fontSize: 11 }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={70}
+                />
+                <Tooltip content={<RevenueTooltip />} />
+                <Line
+                  type="monotone"
+                  dataKey="revenue"
+                  stroke="var(--neon-blue)"
+                  strokeWidth={2.5}
+                  dot={{ fill: "var(--neon-blue)", r: 4 }}
+                  activeDot={{ r: 6 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          )}
         </div>
 
-        {/* Pie Chart */}
-        <div className="chart-card">
-          <div className="chart-card-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <CheckCircle2 size={16} color="var(--accent-success)" />
-            Occupancy Rate
+        {/* Expense Breakdown Donut Chart */}
+        <div className="chart-card expense-card">
+          <div className="expense-header">
+           <div className="chart-card-title">
+            Expense Breakdown
+           </div>
+           <span className="expense-period-label">This Month</span>
+          </div>
+        {loading ? (
+          <Skeleton height={260} borderRadius={10} />
+        ) : expenseData.length === 0 ? (
+        <div
+          style={{
+            height: 260,
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            color: "var(--text-secondary)",
+            fontSize: 14,
+          }}
+        >
+          No expense data available
+       </div>
+
+      ) : (
+      <div className="expense-content"> 
+        <div className="expense-chart">
+          <ResponsiveContainer width="100%" height={280}>
+            <PieChart>
+              <Pie
+                data={expenseData}
+                dataKey="total"
+                nameKey="category"
+                cx="40%"
+                cy="40%"
+                innerRadius={80}
+                outerRadius={100}
+                paddingAngle={3}
+                cornerRadius={5}
+              >
+              {expenseData.map((entry, index) => (
+                <Cell
+                  key={index}
+                  fill={entry.color}
+                />
+              ))}
+            </Pie>
+
+            <Tooltip content={<ExpenseTooltip />} />
+
+            <text
+              x="40%"
+              y="42%"
+              textAnchor="middle"
+              className="donut-value"
+            >
+              {formatKES(totalExpenses)}
+            </text>
+
+            <text
+              x="40%"
+              y="48%"
+              textAnchor="middle"
+              className="donut-label"
+            >
+              Total Expenses
+            </text>
+
+          </PieChart>
+        </ResponsiveContainer>
+
+      </div>
+
+      <div className="expense-legend">
+
+        {expenseData.map((item) => (
+          <div
+            className="legend-row"
+            key={item.category}
+          >
+            <div className="legend-left">
+              <span
+                className="legend-dot"
+                style={{
+                  background: item.color,
+                }}
+              />
+              <span>{item.category}</span>
+            </div>
+
+            <div className="legend-right">
+
+              <span className="legend-value">
+                {formatKES(item.total)}
+              </span>
+
+              <span className="legend-percent">
+                {item.percent}%
+              </span>
+            </div>
           </div>
 
-          <svg viewBox="0 0 200 200" style={{ width: "100%", height: "200px" }}>
-            <circle
-              cx="100"
-              cy="100"
-              r="75"
-              fill="none"
-              stroke="var(--accent-success)"
-              strokeWidth="32"
-              strokeLinecap="round"
-              strokeDasharray="236 377"
-            />
-            <circle
-              cx="100"
-              cy="100"
-              r="75"
-              fill="none"
-              stroke="#e3e8ef"
-              strokeWidth="32"
-              strokeDasharray="141 472"
-            />
-            <text
-              x="100"
-              y="108"
-              textAnchor="middle"
-              fill="var(--text-primary)"
-              fontSize="28"
-              fontWeight="700"
-            >
-              89%
-            </text>
-          </svg>
+        ))}
 
+        <button className="report-link">
+          View Full Report
+          <ChevronRight size={15} />
+        </button>
+      </div>
+    </div>
+  )}
+</div>
+      </div>
+
+      {/* ── Recent Payments ─────────────────────────────── */}
+      <section
+        style={{
+          marginTop: 24,
+          marginBottom: 30,
+          background: "var(--bg-card, rgba(255,255,255,0.03))",
+          border: "1px solid var(--border-glow, rgba(255,255,255,0.08))",
+          borderRadius: 12,
+          padding: "20px 24px",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 16,
+          }}
+        >
           <div
             style={{
-              marginTop: "12px",
-              fontSize: "12px",
-              color: "var(--text-secondary)",
+              fontWeight: 600,
+              fontSize: 15,
+              color: "var(--text-primary)",
               display: "flex",
-              gap: "16px",
-              flexWrap: "wrap",
+              alignItems: "center",
+              gap: 8,
             }}
           >
-            <div style={{ display: "flex", alignItems: "center" }}>
-              <span
-                style={{
-                  width: "10px",
-                  height: "10px",
-                  backgroundColor: "var(--accent-success)",
-                  borderRadius: "50%",
-                  display: "inline-block",
-                  marginRight: "6px",
-                }}
-              ></span>
-              Occupied
-            </div>
-            <div style={{ display: "flex", alignItems: "center" }}>
-              <span
-                style={{
-                  width: "10px",
-                  height: "10px",
-                  backgroundColor: "var(--border-glow)",
-                  borderRadius: "50%",
-                  display: "inline-block",
-                  marginRight: "6px",
-                }}
-              ></span>
-              Vacant
-            </div>
+            <Wallet size={16} color="var(--neon-blue)" />
+            Recent Payments
           </div>
+          <Link
+            href="/payments"
+            style={{
+              fontSize: 13,
+              color: "var(--neon-blue)",
+              textDecoration: "none",
+              fontWeight: 500,
+            }}
+          >
+            View all →
+          </Link>
         </div>
-      </div>
+
+        {loading ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {[...Array(3)].map((_, i) => (
+              <Skeleton key={i} height={40} borderRadius={6} />
+            ))}
+          </div>
+        ) : (stats?.recentPayments ?? []).length === 0 ? (
+          <div
+            style={{
+              color: "var(--text-secondary)",
+              fontSize: 14,
+              padding: "12px 0",
+            }}
+          >
+            No payments yet.
+          </div>
+        ) : (
+          <div style={{ overflowX: "auto" }}>
+            <table
+              style={{
+                width: "100%",
+                borderCollapse: "collapse",
+                fontSize: 13,
+              }}
+            >
+              <thead>
+                <tr
+                  style={{
+                    color: "var(--text-secondary)",
+                    borderBottom:
+                      "1px solid var(--border-glow, rgba(255,255,255,0.08))",
+                  }}
+                >
+                  <th
+                    style={{
+                      textAlign: "left",
+                      padding: "6px 8px",
+                      fontWeight: 500,
+                    }}
+                  >
+                    Tenant
+                  </th>
+                  <th
+                    style={{
+                      textAlign: "left",
+                      padding: "6px 8px",
+                      fontWeight: 500,
+                    }}
+                  >
+                    Property
+                  </th>
+                  <th
+                    style={{
+                      textAlign: "right",
+                      padding: "6px 8px",
+                      fontWeight: 500,
+                    }}
+                  >
+                    Amount
+                  </th>
+                  <th
+                    style={{
+                      textAlign: "left",
+                      padding: "6px 8px",
+                      fontWeight: 500,
+                    }}
+                  >
+                    Method
+                  </th>
+                  <th
+                    style={{
+                      textAlign: "right",
+                      padding: "6px 8px",
+                      fontWeight: 500,
+                    }}
+                  >
+                    Date
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {(stats?.recentPayments ?? []).slice(0, 5).map((p) => (
+                  <tr
+                    key={p.id}
+                    style={{
+                      borderBottom:
+                        "1px solid var(--border-glow, rgba(255,255,255,0.05))",
+                    }}
+                  >
+                    <td
+                      style={{
+                        padding: "10px 8px",
+                        color: "var(--text-primary)",
+                        fontWeight: 500,
+                      }}
+                    >
+                      {p.tenantName}
+                    </td>
+                    <td
+                      style={{
+                        padding: "10px 8px",
+                        color: "var(--text-secondary)",
+                      }}
+                    >
+                      {p.propertyTitle}
+                    </td>
+                    <td
+                      style={{
+                        padding: "10px 8px",
+                        color: "var(--accent-success)",
+                        textAlign: "right",
+                        fontWeight: 600,
+                      }}
+                    >
+                      {formatKES(p.amount)}
+                    </td>
+                    <td
+                      style={{
+                        padding: "10px 8px",
+                        color: "var(--text-secondary)",
+                      }}
+                    >
+                      {p.method}
+                    </td>
+                    <td
+                      style={{
+                        padding: "10px 8px",
+                        color: "var(--text-secondary)",
+                        textAlign: "right",
+                      }}
+                    >
+                      {formatDate(p.paidAt)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      {/* ── Leases Expiring Soon ─────────────────────────── */}
+      {loading && !stats ? (
+        <section style={{ marginTop: 24 }}>
+          <Skeleton height={80} borderRadius={12} />
+        </section>
+      ) : (stats?.leasesExpiringSoon ?? []).length > 0 ? (
+        <section
+          style={{
+            marginTop: 24,
+            background: "rgba(217, 119, 6, 0.08)",
+            border: "1px solid rgba(217, 119, 6, 0.35)",
+            borderRadius: 12,
+            padding: "20px 24px",
+          }}
+        >
+          <div
+            style={{
+              fontWeight: 600,
+              fontSize: 15,
+              color: "var(--accent-warning)",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              marginBottom: 14,
+            }}
+          >
+            <AlertTriangle size={16} />
+            Leases Expiring Soon
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {(stats?.leasesExpiringSoon ?? []).map((lease) => (
+              <Link
+                key={lease.id}
+                href="/leases"
+                style={{ textDecoration: "none" }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "10px 14px",
+                    background: "rgba(217, 119, 6, 0.07)",
+                    border: "1px solid rgba(217, 119, 6, 0.2)",
+                    borderRadius: 8,
+                    cursor: "pointer",
+                    transition: "background 0.15s",
+                  }}
+                >
+                  <div>
+                    <div
+                      style={{
+                        fontWeight: 600,
+                        color: "var(--text-primary)",
+                        fontSize: 14,
+                      }}
+                    >
+                      {lease.propertyTitle}
+                    </div>
+                    <div
+                      style={{
+                        color: "var(--text-secondary)",
+                        fontSize: 12,
+                        marginTop: 2,
+                      }}
+                    >
+                      {lease.tenantNames.join(", ")}
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      color: "var(--accent-warning)",
+                      fontSize: 13,
+                      fontWeight: 500,
+                      whiteSpace: "nowrap",
+                      marginLeft: 16,
+                    }}
+                  >
+                    Expires {formatDate(lease.endDate)}
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }
