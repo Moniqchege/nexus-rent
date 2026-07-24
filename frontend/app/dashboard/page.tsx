@@ -663,6 +663,7 @@ const expenseData =
         <section
           style={{
             marginTop: 24,
+            marginBottom: 34,
             background: "rgba(217, 119, 6, 0.08)",
             border: "1px solid rgba(217, 119, 6, 0.35)",
             borderRadius: 12,
