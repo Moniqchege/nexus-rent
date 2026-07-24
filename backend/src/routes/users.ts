@@ -86,13 +86,11 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
                 id: true,
                 title: true,
                 location: true,
-                price: true,
-                beds: true,
-                baths: true,
-                sqft: true,
+                floors: true,
                 status: true,
                 amenities: true,
                 image: true,
+                unitTypes: true,
               },
             },
           },
@@ -181,7 +179,7 @@ router.post(
             propertyId: item.propertyId,
             roleId: item.roleId,
             ...(item.floor && { floor: item.floor }),
-            ...(item.unit  && { unit:  item.unit  }),
+            ...(item.unit && { unit: item.unit }),
           })),
           skipDuplicates: true,
         });
@@ -259,7 +257,7 @@ router.post('/:id/reset-password', requireAuth, async (req: Request, res: Respon
       where: { id: userId },
       data: {
         password_hash: hashedPassword,
-        firstLogin: true, 
+        firstLogin: true,
       },
     });
 
@@ -288,7 +286,7 @@ router.post('/:id/reset-password', requireAuth, async (req: Request, res: Respon
 // GET /api/users/contacts - Get caretakers & property managers from same properties
 router.get('/contacts', requireAuth, async (req: Request, res: Response) => {
   try {
-    const currentUserId = (req as any).user.id; 
+    const currentUserId = (req as any).user.id;
     const currentUserProperties = await db.userProperty.findMany({
       where: { userId: currentUserId },
       select: { propertyId: true },
@@ -355,7 +353,7 @@ router.get('/contacts', requireAuth, async (req: Request, res: Response) => {
           email: user.email,
           phone: user.phone,
           role,
-          property, 
+          property,
         })
       );
 
@@ -400,13 +398,11 @@ router.get('/:id', requireAuth, async (req: Request, res: Response) => {
                 id: true,
                 title: true,
                 location: true,
-                price: true,
-                beds: true,
-                baths: true,
-                sqft: true,
+                floors: true,
                 status: true,
                 amenities: true,
                 image: true,
+                unitTypes: true,
               },
             },
           },
@@ -460,7 +456,7 @@ router.patch('/:id', requireAuth, async (req: Request, res: Response) => {
 
     res.json(user);
   } catch (error: any) {
-    console.error('Update user error:', error); 
+    console.error('Update user error:', error);
     if (error.code === 'P2025') {
       res.status(404).json({ error: 'User not found' });
     } else {

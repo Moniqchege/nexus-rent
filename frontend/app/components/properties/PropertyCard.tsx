@@ -3,15 +3,21 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 
+export interface UnitType {
+  id: number;
+  propertyId: number;
+  type: string;
+  baths: number;
+  price: number;
+  totalUnits: number;
+}
+
 export interface Property {
   id: number;
   title: string;
   location: string;
-  floor?: string;
-  price: number;
-  beds: number;
-  baths: number;
-  sqft?: number | null;
+  floors?: string;
+  unitTypes: UnitType[];
   distance: number;
   image?: string;
   amenities: string[];
@@ -84,24 +90,32 @@ export default function PropertyCard({ property, onSaveToggle }: PropertyCardPro
       </div>
       <div className="prop-body">
         <div className="prop-price">
-          ${property.price.toLocaleString()} <span>/month</span>
+          {(() => {
+            const units = property.unitTypes ?? [];
+            if (units.length === 0) return 'N/A';
+            const prices = units.map(u => u.price);
+            const min = Math.min(...prices);
+            const max = Math.max(...prices);
+            return min === max
+              ? `Ksh ${min.toLocaleString()}`
+              : `Ksh ${min.toLocaleString()} – ${max.toLocaleString()}`;
+          })()} <span>/month</span>
         </div>
         <div className="prop-name">{property.title}</div>
         <div className="prop-loc">
           📍 {property.location}
         </div>
         <div className="prop-meta">
-          {property.floor && (
+          {property.floors && (
             <div className="meta-item">
-              <span className="meta-icon">⬆️</span> Floor {property.floor}
+              <span className="meta-icon">🏢</span> {property.floors} Floors
             </div>
           )}
-          <div className="meta-item">
-            <span className="meta-icon">⊞</span> {property.beds} Beds
-          </div>
-          <div className="meta-item">
-            <span className="meta-icon">◎</span> {property.baths} Baths
-          </div>
+          {(property.unitTypes ?? []).slice(0, 2).map(ut => (
+            <div className="meta-item" key={ut.id}>
+              <span className="meta-icon">🏠</span> {ut.type} ×{ut.totalUnits}
+            </div>
+          ))}
           {property.distance && (
             <div className="meta-item">
               <span className="meta-icon">◉</span> {property.distance} km

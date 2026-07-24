@@ -589,7 +589,7 @@ export default function SendNotificationForm({
                                 color: "#0b1c30",
                               }}
                             >
-                              {up.property.floor}
+                              {up.property.floors}
                             </span>
                           </span>
                         ))}

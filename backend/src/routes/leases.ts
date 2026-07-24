@@ -12,7 +12,15 @@ const VALID_STATUSES = ["active", "ended", "suspended"];
 
 // Reusable include for all lease queries
 const leaseInclude = {
-    property: { select: { id: true, title: true, location: true } },
+    property: {
+        select: {
+            id: true,
+            title: true,
+            location: true,
+            unitTypes: true,
+        },
+    },
+    unitType: true,
     tenants: {
         include: {
             tenant: { select: { id: true, name: true, email: true, phone: true } },
@@ -43,14 +51,18 @@ router.post("/", requireAuth, async (req: Request, res: Response) => {
         const userId = authReq.userId;
         const {
             propertyId, tenantIds, startDate, endDate, rentAmount,
+            unitTypeId, depositAmount,
             billingCycle = "monthly", status = "active",
             lateFeePercent = 0, graceDays = 0,
         } = req.body;
 
-        if (!propertyId || !tenantIds?.length || !startDate || !endDate || rentAmount == null) {
+        if (!propertyId || !tenantIds?.length || !startDate || !endDate) {
             return res.status(400).json({
-                error: "propertyId, tenantIds, startDate, endDate, and rentAmount are required",
+                error: "propertyId, tenantIds, startDate, and endDate are required",
             });
+        }
+        if (!unitTypeId && rentAmount == null) {
+            return res.status(400).json({ error: "rentAmount is required when unitTypeId is not provided" });
         }
 
         const propertyIdNum = Number(propertyId);
@@ -73,19 +85,27 @@ router.post("/", requireAuth, async (req: Request, res: Response) => {
             return res.status(404).json({ error: "One or more tenants not found for this property" });
         }
 
+        let finalRentAmount = Number(rentAmount);
+        if (unitTypeId) {
+            const unitType = await db.unitType.findUnique({ where: { id: Number(unitTypeId) } });
+            if (!unitType) return res.status(400).json({ error: "Unit type not found" });
+            if (unitType.propertyId !== propertyIdNum) return res.status(400).json({ error: "Unit type does not belong to the specified property" });
+            finalRentAmount = unitType.price;
+        }
+
         const lease = await db.lease.create({
             data: {
                 propertyId: propertyIdNum,
+                unitTypeId: unitTypeId ? Number(unitTypeId) : null,
                 startDate: new Date(startDate),
                 endDate: new Date(endDate),
-                rentAmount: Number(rentAmount),
+                rentAmount: finalRentAmount,
+                depositAmount: depositAmount != null ? Number(depositAmount) : null,
                 billingCycle: VALID_BILLING_CYCLES.includes(billingCycle) ? billingCycle : "monthly",
                 status: VALID_STATUSES.includes(status) ? status : "active",
                 lateFeePercent: Number(lateFeePercent) || 0,
                 graceDays: Number(graceDays) || 0,
-                tenants: {
-                    create: tenantIdNums.map((tenantId) => ({ tenantId })),
-                },
+                tenants: { create: tenantIdNums.map((tenantId) => ({ tenantId })) },
             },
             include: leaseInclude,
         });
@@ -138,6 +158,24 @@ router.patch("/:id", requireAuth, async (req: Request, res: Response) => {
             else if (key === "billingCycle" && VALID_BILLING_CYCLES.includes(req.body[key])) updateData[key] = req.body[key];
             else if (key === "status" && VALID_STATUSES.includes(req.body[key])) updateData[key] = req.body[key];
             else updateData[key] = req.body[key];
+        }
+
+        // Re-derive rentAmount if unitTypeId is being changed
+        if (req.body.unitTypeId !== undefined) {
+            const newUnitTypeId = req.body.unitTypeId ? Number(req.body.unitTypeId) : null;
+            updateData.unitTypeId = newUnitTypeId;
+            if (newUnitTypeId) {
+                const unitType = await db.unitType.findUnique({ where: { id: newUnitTypeId } });
+                if (!unitType) return res.status(400).json({ error: "Unit type not found" });
+                if (unitType.propertyId !== existing.propertyId) {
+                    return res.status(400).json({ error: "Unit type does not belong to the specified property" });
+                }
+                updateData.rentAmount = unitType.price;
+            }
+        }
+        // Handle depositAmount explicitly (can be set to null)
+        if (req.body.depositAmount !== undefined) {
+            updateData.depositAmount = req.body.depositAmount != null ? Number(req.body.depositAmount) : null;
         }
 
         // Re-sync tenants if provided

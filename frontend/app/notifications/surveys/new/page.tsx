@@ -530,7 +530,7 @@ export default function NewSurveyPage() {
                   </div>
                   {user.userProperties.map(up => (
                     <div key={up.property.id} style={{ fontSize: "12px", color: "var(--neon-purple)" }}>
-                      {up.property.title} ({up.property.floor})
+                      {up.property.title} ({up.property.floors})
                     </div>
                   ))}
                 </div>

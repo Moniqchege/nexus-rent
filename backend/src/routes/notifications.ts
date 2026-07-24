@@ -122,7 +122,7 @@ router.get("/users", async (req, res) => {
               select: {
                 id: true,
                 title: true,
-                floor: true,
+                floors: true,
               },
             },
           },
@@ -193,8 +193,8 @@ router.post("/send", async (req, res) => {
     const { title, message, userIds } = req.body;
 
     if (!title || title.trim().length === 0) {
-  return res.status(400).json({ error: "Title is required" });
-}
+      return res.status(400).json({ error: "Title is required" });
+    }
 
     if (!message || message.trim().length === 0) {
       return res.status(400).json({ error: "Message is required" });
@@ -220,7 +220,7 @@ router.post("/send", async (req, res) => {
         title: title.trim(),
         message: message.trim(),
         landlordId: authReq.userId!,
-        recipientIds: userIds.map(id => String(id)) 
+        recipientIds: userIds.map(id => String(id))
       }
     });
 
@@ -348,7 +348,7 @@ router.get("/", async (req, res) => {
       notifications = notifications.filter(n => !n.isRead);
     }
 
-    res.json({ notifications }); 
+    res.json({ notifications });
   } catch (error) {
     console.error("Notifications error:", error);
     res.status(500).json({ error: "Failed to fetch notifications" });
@@ -391,7 +391,7 @@ router.patch("/:id/read", async (req, res) => {
 router.get("/:id", async (req, res) => {
   const authReq = req as AuthRequest;
   const notificationId = Number(req.params.id);
- 
+
   try {
     const notification = await db.notification.findUnique({
       where: { id: notificationId },
@@ -405,22 +405,22 @@ router.get("/:id", async (req, res) => {
         landlordId: true,
       },
     });
- 
+
     if (!notification) {
       return res.status(404).json({ error: "Notification not found" });
     }
- 
+
     if (notification.landlordId !== authReq.userId) {
       return res.status(403).json({ error: "Unauthorized" });
     }
- 
+
     const recipientIds = Array.isArray(notification.recipientIds)
       ? notification.recipientIds
       : [];
     const recipientCount = recipientIds.length;
     const deliveryRate = recipientCount > 0 ? 100 : 0;
     const readReceipts = recipientCount > 0 ? Math.floor(recipientCount * 0.5) : 0;
- 
+
     res.json({
       id: notification.id,
       title: notification.title,
@@ -442,7 +442,7 @@ router.get("/:id", async (req, res) => {
 router.get("/:id/recipients", async (req, res) => {
   const authReq = req as AuthRequest;
   const notificationId = Number(req.params.id);
- 
+
   try {
     const notification = await db.notification.findUnique({
       where: { id: notificationId },
@@ -451,19 +451,19 @@ router.get("/:id/recipients", async (req, res) => {
         landlordId: true,
       },
     });
- 
+
     if (!notification) {
       return res.status(404).json({ error: "Notification not found" });
     }
- 
+
     if (notification.landlordId !== authReq.userId) {
       return res.status(403).json({ error: "Unauthorized" });
     }
- 
+
     const recipientIds = Array.isArray(notification.recipientIds)
       ? notification.recipientIds.map((id) => Number(id))
       : [];
- 
+
     const recipients = await db.user.findMany({
       where: {
         id: { in: recipientIds },
@@ -481,20 +481,20 @@ router.get("/:id/recipients", async (req, res) => {
               },
             },
           },
-          take: 1, 
+          take: 1,
         },
       },
     });
- 
+
     const recipientsWithStatus = recipients.map((user) => ({
       id: String(user.id),
       name: user.name,
       email: user.email,
       unit: user.userProperties?.[0]?.property?.title || undefined,
-      building: undefined, 
+      building: undefined,
       hasRead: false,
     }));
- 
+
     res.json({ recipients: recipientsWithStatus });
   } catch (error) {
     console.error("Get recipients error:", error);
@@ -506,7 +506,7 @@ router.get("/:id/recipients", async (req, res) => {
 router.delete("/:id", async (req, res) => {
   const authReq = req as AuthRequest;
   const notificationId = Number(req.params.id);
- 
+
   try {
     const notification = await db.notification.findUnique({
       where: { id: notificationId },
@@ -514,19 +514,19 @@ router.delete("/:id", async (req, res) => {
         landlordId: true,
       },
     });
- 
+
     if (!notification) {
       return res.status(404).json({ error: "Notification not found" });
     }
- 
+
     if (notification.landlordId !== authReq.userId) {
       return res.status(403).json({ error: "Unauthorized" });
     }
- 
+
     await db.notification.delete({
       where: { id: notificationId },
     });
- 
+
     res.json({
       message: "Notification deleted successfully",
       notificationId,

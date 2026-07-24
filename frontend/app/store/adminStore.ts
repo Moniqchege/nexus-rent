@@ -3,7 +3,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import api from '../lib/api';
-import { Lease } from '../../types/lease';
+import { Lease, CreateLeaseInput, UpdateLeaseInput } from '../../types/lease';
 
 
 export interface Permission {
@@ -20,6 +20,15 @@ export interface Role {
   permissions: string[];
   description?: string;
   // code?: string;
+}
+
+export interface UnitType {
+  id: number;
+  propertyId: number;
+  type: string;
+  baths: number;
+  price: number;
+  totalUnits: number;
 }
 
 interface User {
@@ -42,14 +51,12 @@ interface Property {
   id: number;
   title: string;
   location: string;
-  price: number;
-  beds: number;
-  baths: number;
-  sqft: number;
+  floors?: string;
   status: string;
   amenities?: string[];
   image?: string;
   createdAt: string;
+  unitTypes: UnitType[];
   userProperties?: any[];
 }
 
@@ -89,8 +96,8 @@ interface AdminState {
   fetchAmenities: () => Promise<void>;
   fetchPermissionsFromDb: () => Promise<void>;
   fetchLeases: () => Promise<void>;
-  createLease: (data: any) => Promise<void>;
-  updateLease: (id: number, data: any) => Promise<void>;
+  createLease: (data: CreateLeaseInput) => Promise<void>;
+  updateLease: (id: number, data: UpdateLeaseInput) => Promise<void>;
   deleteLease: (id: number) => Promise<void>;
   uploadSignedLease: (id: number, formData: FormData) => Promise<void>;
 }
@@ -314,7 +321,7 @@ export const useAdminStore = create<AdminState>()(
         }
       },
 
-      createLease: async (data) => {
+      createLease: async (data: CreateLeaseInput) => {
         set({ loading: true });
         try {
           const res = await api.post('/api/leases', data);
@@ -327,7 +334,7 @@ export const useAdminStore = create<AdminState>()(
         }
       },
 
-      updateLease: async (id, data) => {
+      updateLease: async (id: number, data: UpdateLeaseInput) => {
         set({ loading: true });
         try {
           const res = await api.patch(`/api/leases/${id}`, data);

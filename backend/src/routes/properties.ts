@@ -8,30 +8,31 @@ import { STANDARD_AMENITIES } from '../services/seedData';
 const router = Router();
 
 
+interface UnitTypeInput {
+  type: string;
+  baths: number;
+  price: number;
+  totalUnits: number;
+}
+
 interface CreatePropertyInput {
   title: string;
   location: string;
-  price: number;
-  beds: number;
-  baths: number;
-  sqft?: number;
-  floor?: string;
+  floors?: string;
   status?: string;
   image?: string;
   amenities?: string[];
+  unitTypes: UnitTypeInput[];
 }
 
 interface UpdatePropertyInput {
   title?: string;
   location?: string;
-  price?: number;
-  beds?: number;
-  baths?: number;
-  sqft?: number;
-  floor?: string;
+  floors?: string;
   status?: string;
   image?: string;
   amenities?: string[];
+  unitTypes?: UnitTypeInput[];
 }
 
 // GET /api/properties - List user's properties
@@ -57,15 +58,12 @@ router.get('/', requireAuth, async (req, res) => {
         id: true,
         title: true,
         location: true,
-        price: true,
-        beds: true,
-        baths: true,
-        sqft: true,
-        floor: true,
+        floors: true,
         status: true,
         image: true,
         amenities: true,
         createdAt: true,
+        unitTypes: true,
         users: {
           where: {
             userId
@@ -108,49 +106,57 @@ router.post('/', requireAuth, async (req, res) => {
     const {
       title,
       location,
-      price,
-      beds,
-      baths,
-      sqft,
-      floor,
+      floors,
       status = 'active',
       image,
       amenities = [],
+      unitTypes,
     } = req.body as CreatePropertyInput;
 
-    if (!title || !location || price == null || beds == null || baths == null) {
-      return res.status(400).json({ error: 'Title, location, price, beds, baths are required' });
+    if (!title || !location) {
+      return res.status(400).json({ error: 'title and location are required' });
     }
+
+    if (!unitTypes || !Array.isArray(unitTypes) || unitTypes.length === 0) {
+      return res.status(400).json({ error: 'unitTypes must be a non-empty array' });
+    }
+
+    if (unitTypes.some(u => !u.type || u.price == null)) {
+      return res.status(400).json({ error: 'Each unit type must have a type and price' });
+    }
+
     const validAmenities = await db.amenity.findMany({ select: { key: true } });
     const validKeys = validAmenities.map(a => a.key);
     const sanitizedAmenities = (amenities || []).filter(a => validKeys.includes(a));
+
     const property = await db.property.create({
       data: {
         title,
         location,
-        price,
-        beds,
-        baths,
-        sqft: sqft ?? null,
-        floor,
+        floors,
         status,
         image,
         landlordId: userId,
         amenities: sanitizedAmenities,
+        unitTypes: {
+          create: unitTypes.map(u => ({
+            type: u.type,
+            baths: u.baths ?? 0,
+            price: u.price,
+            totalUnits: u.totalUnits ?? 0,
+          }))
+        }
       },
       select: {
         id: true,
         title: true,
         location: true,
-        price: true,
-        beds: true,
-        baths: true,
-        sqft: true,
-        floor: true,
+        floors: true,
         status: true,
         image: true,
         amenities: true,
         createdAt: true,
+        unitTypes: true,
       },
     });
 
@@ -206,15 +212,12 @@ router.get('/:id', requireAuth, async (req, res) => {
         id: true,
         title: true,
         location: true,
-        price: true,
-        beds: true,
-        baths: true,
-        sqft: true,
-        floor: true,
+        floors: true,
         status: true,
         image: true,
         amenities: true,
         createdAt: true,
+        unitTypes: true,
         users: {
           where: { userId },
           select: {
@@ -247,7 +250,8 @@ router.patch('/:id', requireAuth, async (req, res) => {
     const idParam = req.params.id;
     const propertyId = parseInt(Array.isArray(idParam) ? idParam[0] : idParam, 10);
 
-    const { amenities, ...rest } = req.body as UpdatePropertyInput;
+    const { unitTypes, amenities, ...rest } = req.body as UpdatePropertyInput;
+
     const existing = await db.property.findFirst({
       where: {
         id: propertyId,
@@ -259,24 +263,39 @@ router.patch('/:id', requireAuth, async (req, res) => {
     });
 
     if (!existing) return res.status(404).json({ error: 'Property not found or access denied' });
-    const editableFields: (keyof UpdatePropertyInput)[] = [
-      'title', 'location', 'price', 'beds', 'baths', 'sqft', 'floor', 'status', 'image'
+
+    const editableFields: (keyof Omit<UpdatePropertyInput, 'unitTypes' | 'amenities'>)[] = [
+      'title', 'location', 'floors', 'status', 'image'
     ];
-    let updateData: Partial<UpdatePropertyInput> = {};
+
+    let updateData: Record<string, any> = {};
     const restAny = rest as Record<string, any>;
     for (const key of editableFields) {
       if (restAny[key] !== undefined) {
-        updateData[key] =
-          key === 'sqft'
-            ? restAny[key] ?? null
-            : restAny[key];
+        updateData[key] = restAny[key];
       }
     }
+
     if (amenities) {
       const validAmenities = await db.amenity.findMany({ select: { key: true } });
       const validKeys = validAmenities.map(a => a.key);
-
       updateData.amenities = (amenities || []).filter(a => validKeys.includes(a));
+    }
+
+    // Replace unit types if provided
+    if (unitTypes && Array.isArray(unitTypes) && unitTypes.length > 0) {
+      await db.$transaction([
+        db.unitType.deleteMany({ where: { propertyId } }),
+        db.unitType.createMany({
+          data: unitTypes.map(u => ({
+            propertyId,
+            type: u.type,
+            baths: u.baths ?? 0,
+            price: u.price,
+            totalUnits: u.totalUnits ?? 0,
+          }))
+        })
+      ]);
     }
 
     const property = await db.property.update({
@@ -286,15 +305,12 @@ router.patch('/:id', requireAuth, async (req, res) => {
         id: true,
         title: true,
         location: true,
-        price: true,
-        beds: true,
-        baths: true,
-        sqft: true,
-        floor: true,
+        floors: true,
         status: true,
         image: true,
         amenities: true,
         createdAt: true,
+        unitTypes: true,
       },
     });
 

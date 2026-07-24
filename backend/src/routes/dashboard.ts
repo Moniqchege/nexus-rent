@@ -19,7 +19,8 @@ router.get("/stats", requireAuth, async (req: Request, res: Response) => {
         const [
             totalProperties,
             activeLeases,
-            occupiedPropertyIds,
+            unitAggregate,
+            totalOccupiedUnits,
             monthlyRevenue,
             totalArrears,
             revenueTrend,
@@ -40,17 +41,21 @@ router.get("/stats", requireAuth, async (req: Request, res: Response) => {
                 },
             }),
 
-            // 3. Occupied properties (for occupancy rate calculation)
-            db.lease.findMany({
+            // 3. Total available units (sum of all unit type capacities)
+            db.unitType.aggregate({
+                where: { property: { landlordId: userId } },
+                _sum: { totalUnits: true },
+            }),
+
+            // 4. Total occupied units (one active lease = one unit occupied)
+            db.lease.count({
                 where: {
                     status: "active",
                     property: { landlordId: userId },
                 },
-                select: { propertyId: true },
-                distinct: ["propertyId"],
             }),
 
-            // 4. Monthly revenue (current calendar month)
+            // 5. Monthly revenue (current calendar month)
             (async () => {
                 const now = new Date();
                 const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -71,7 +76,7 @@ router.get("/stats", requireAuth, async (req: Request, res: Response) => {
                 return result._sum.amount || 0;
             })(),
 
-            // 5. Total arrears
+            // 6. Total arrears
             (async () => {
                 const now = new Date();
                 const result = await db.rentSchedule.aggregate({
@@ -94,7 +99,7 @@ router.get("/stats", requireAuth, async (req: Request, res: Response) => {
                 return totalAmount + totalLateFees;
             })(),
 
-            // 6. Revenue trend (last 6 months including current)
+            // 7. Revenue trend (last 6 months including current)
             (async () => {
                 const now = new Date();
                 const trend: { month: string; revenue: number }[] = [];
@@ -126,7 +131,7 @@ router.get("/stats", requireAuth, async (req: Request, res: Response) => {
                 return trend;
             })(),
 
-            // 7. Expense by category
+            // 8. Expense by category
             (async () => {
                 const expenses = await db.expense.groupBy({
                     by: ["category"],
@@ -140,7 +145,7 @@ router.get("/stats", requireAuth, async (req: Request, res: Response) => {
                 }));
             })(),
 
-            // 8. Recent payments (last 5)
+            // 9. Recent payments (last 5)
             (async () => {
                 const payments = await db.payment.findMany({
                     where: {
@@ -165,7 +170,7 @@ router.get("/stats", requireAuth, async (req: Request, res: Response) => {
                 }));
             })(),
 
-            // 9. Leases expiring soon (within 30 days)
+            // 10. Leases expiring soon (within 30 days)
             (async () => {
                 const now = new Date();
                 const thirtyDaysFromNow = new Date(now);
@@ -199,9 +204,10 @@ router.get("/stats", requireAuth, async (req: Request, res: Response) => {
             })(),
         ]);
 
-        // Calculate occupancy rate
-        const occupancyRate = totalProperties > 0
-            ? (occupiedPropertyIds.length / totalProperties) * 100
+        // Calculate occupancy rate (unit-count based)
+        const totalAvailableUnits = unitAggregate._sum.totalUnits ?? 0;
+        const occupancyRate = totalAvailableUnits > 0
+            ? Math.round((totalOccupiedUnits / totalAvailableUnits) * 100 * 100) / 100
             : 0;
 
         // Return DashboardStats response

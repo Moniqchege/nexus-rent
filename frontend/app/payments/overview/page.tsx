@@ -130,15 +130,30 @@ export default function OverviewPage() {
   const [schedules, setSchedules]   = useState<RentSchedule[]>([]);
   const [activityFilter, setActivityFilter] = useState<"all" | PayStatus>("all");
   const [chartRange, setChartRange] = useState<"7" | "30">("7");
+  const [reconciling, setReconciling] = useState<number | null>(null);
+
+  async function loadPayments() {
+    const [p, s] = await Promise.all([getPayments(), getRentSchedules()]);
+    setPayments(p);
+    setSchedules(s);
+  }
 
   useEffect(() => {
-    async function load() {
-      const [p, s] = await Promise.all([getPayments(), getRentSchedules()]);
-      setPayments(p);
-      setSchedules(s);
-    }
-    load();
+    loadPayments();
   }, []);
+
+  async function handleReconcile(paymentId: number) {
+    setReconciling(paymentId);
+    try {
+      const { default: api } = await import("../../lib/api");
+      await api.post("/api/payments/mpesa/reconcile", { paymentId });
+      await loadPayments(); // refresh
+    } catch (err) {
+      console.error("Reconcile failed", err);
+    } finally {
+      setReconciling(null);
+    }
+  }
 
   const collected = sumByStatus(payments, "paid");
   const arrears   = sumByStatus(payments, "overdue");
@@ -536,6 +551,26 @@ export default function OverviewPage() {
                       {p.status === "paid" ? "+" : "-"}{fmt(p.amount)}
                     </div>
                     <StatusBadge status={p.status} />
+                    {p.status === "pending" && p.method === "mpesa" && (
+                      <button
+                        onClick={() => handleReconcile(p.id)}
+                        disabled={reconciling === p.id}
+                        style={{
+                          marginTop: 4,
+                          fontSize: 10,
+                          fontWeight: 600,
+                          padding: "2px 8px",
+                          borderRadius: 6,
+                          border: "1px solid #f59e0b",
+                          background: reconciling === p.id ? "#fef3c7" : "#fffbeb",
+                          color: "#b45309",
+                          cursor: reconciling === p.id ? "not-allowed" : "pointer",
+                          display: "block",
+                        }}
+                      >
+                        {reconciling === p.id ? "..." : "Reconcile"}
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}

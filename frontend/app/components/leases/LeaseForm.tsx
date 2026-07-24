@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAdminStore } from "@/app/store/adminStore";
+import { useAdminStore, UnitType } from "@/app/store/adminStore";
 import api from "@/app/lib/api";
 import { Lease, BillingCycle, LeaseStatus } from "@/types/lease";
 import DatePickerPopup from "../ui/Datepickerpopup";
@@ -85,7 +85,14 @@ export default function LeaseForm({
     status: (initialData.status as LeaseStatus) || "active",
     lateFeePercent: initialData.lateFeePercent || 0,
     graceDays: initialData.graceDays || 0,
+    // Task 10.1: new fields
+    unitTypeId: (initialData.unitTypeId ?? undefined) as number | undefined,
+    depositAmount: initialData.depositAmount ?? 0,
   });
+
+  // Task 10.2: derive available unit types from selected property
+  const selectedProperty = properties.find((p) => p.id === data.propertyId);
+  const availableUnitTypes: UnitType[] = selectedProperty?.unitTypes ?? [];
 
   useEffect(() => {
     fetchProperties();
@@ -117,18 +124,35 @@ export default function LeaseForm({
     e.preventDefault();
     if (!onSuccess) return;
 
+    // Task 10.3: validate unit type when property has unit types defined
+    if (availableUnitTypes.length > 0 && !data.unitTypeId) {
+      setError("Please select a unit type");
+      return;
+    }
+
     setError(null);
     setLoading(true);
 
     try {
-      await onSuccess({
-        ...data,
+      // Task 10.3: build payload — omit rentAmount when unitTypeId is set
+      const payload: any = {
         propertyId: Number(data.propertyId),
         tenantIds: data.tenantIds.map(Number),
-        rentAmount: Number(data.rentAmount),
+        startDate: data.startDate,
+        endDate: data.endDate,
+        billingCycle: data.billingCycle,
+        status: data.status,
         lateFeePercent: Number(data.lateFeePercent),
         graceDays: Number(data.graceDays),
-      });
+        depositAmount: data.depositAmount ? Number(data.depositAmount) : undefined,
+      };
+      if (data.unitTypeId) {
+        payload.unitTypeId = data.unitTypeId;
+        // rentAmount intentionally omitted — server derives from unit type
+      } else {
+        payload.rentAmount = Number(data.rentAmount);
+      }
+      await onSuccess(payload);
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {
@@ -180,6 +204,7 @@ export default function LeaseForm({
       {/* AGREEMENT */}
       <Section title="Agreement Details" icon="description">
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px" }}>
+          {/* Property */}
           <div>
             <label style={labelStyle}>Property *</label>
             <CustomDropdown
@@ -189,7 +214,13 @@ export default function LeaseForm({
               }))}
               value={data.propertyId}
               onChange={(val) =>
-                setData({ ...data, propertyId: Number(val), tenantIds: [] })
+                setData({
+                  ...data,
+                  propertyId: Number(val),
+                  tenantIds: [],
+                  unitTypeId: undefined,
+                  rentAmount: 0,
+                })
               }
               labelKey="label"
               valueKey="value"
@@ -197,6 +228,38 @@ export default function LeaseForm({
             />
           </div>
 
+          {/* Task 10.2: Unit Type cascade dropdown */}
+          <div>
+            <label style={labelStyle}>Unit Type *</label>
+            <div
+              style={
+                data.propertyId === 0
+                  ? { pointerEvents: "none", opacity: 0.5 }
+                  : {}
+              }
+            >
+              <CustomDropdown
+                options={availableUnitTypes.map((ut) => ({
+                  label: `${ut.type} — Ksh ${ut.price.toLocaleString()}`,
+                  value: ut.id,
+                }))}
+                value={data.unitTypeId ?? ""}
+                onChange={(val) => {
+                  const ut = availableUnitTypes.find((u) => u.id === Number(val));
+                  setData({
+                    ...data,
+                    unitTypeId: Number(val),
+                    rentAmount: ut ? ut.price : data.rentAmount,
+                  });
+                }}
+                labelKey="label"
+                valueKey="value"
+                placeholder="Select Unit Type"
+              />
+            </div>
+          </div>
+
+          {/* Tenants */}
           <div>
             <label style={labelStyle}>Tenants *</label>
             <MultiSelectDropdown
@@ -212,36 +275,63 @@ export default function LeaseForm({
             />
           </div>
 
+          {/* Dates */}
           <div>
-  <label style={labelStyle}>Start Date *</label>
-  <DatePickerPopup
-    value={data.startDate}
-    onChange={(val) => setData({ ...data, startDate: val })}
-  />
-</div>
+            <label style={labelStyle}>Start Date *</label>
+            <DatePickerPopup
+              value={data.startDate}
+              onChange={(val) => setData({ ...data, startDate: val })}
+            />
+          </div>
 
-<div>
-  <label style={labelStyle}>End Date *</label>
-  <DatePickerPopup
-    value={data.endDate}
-    onChange={(val) => setData({ ...data, endDate: val })}
-  />
-</div>
+          <div>
+            <label style={labelStyle}>End Date *</label>
+            <DatePickerPopup
+              value={data.endDate}
+              onChange={(val) => setData({ ...data, endDate: val })}
+            />
+          </div>
         </div>
       </Section>
 
       {/* FINANCIAL */}
       <Section title="Financial Terms" icon="payments">
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "24px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px" }}>
+          {/* Task 10.3: Rent Amount — read-only when unit type is selected */}
           <div>
-            <label style={labelStyle}>Rent Amount (ksh)</label>
+            <label style={labelStyle}>
+              Rent Amount (Ksh)
+              {data.unitTypeId && (
+                <span style={{ fontSize: "10px", color: "#6b7280", marginLeft: "6px" }}>
+                  auto-filled
+                </span>
+              )}
+            </label>
+            <input
+              style={{
+                ...inputStyle,
+                ...(data.unitTypeId
+                  ? { backgroundColor: "#f3f4f6", cursor: "not-allowed", opacity: 0.7 }
+                  : {}),
+              }}
+              type="number"
+              value={data.rentAmount}
+              readOnly={!!data.unitTypeId}
+              onChange={(e) => {
+                if (!data.unitTypeId) setData({ ...data, rentAmount: Number(e.target.value) });
+              }}
+            />
+          </div>
+
+          {/* Task 10.3: Deposit Amount */}
+          <div>
+            <label style={labelStyle}>Deposit Amount (Ksh)</label>
             <input
               style={inputStyle}
               type="number"
-              value={data.rentAmount}
-              onChange={(e) =>
-                setData({ ...data, rentAmount: Number(e.target.value) })
-              }
+              placeholder="e.g. 30000"
+              value={data.depositAmount || ""}
+              onChange={(e) => setData({ ...data, depositAmount: Number(e.target.value) })}
             />
           </div>
 
@@ -287,7 +377,7 @@ export default function LeaseForm({
             />
           </div>
 
-          <div style={{ position: 'relative', zIndex: 5000 }}>
+          <div style={{ position: "relative", zIndex: 5000 }}>
             <label style={labelStyle}>Status</label>
             <CustomDropdown
               options={STATUS_OPTIONS}
@@ -297,7 +387,6 @@ export default function LeaseForm({
               }
               labelKey="label"
               valueKey="value"
-              
             />
           </div>
         </div>

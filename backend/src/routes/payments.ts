@@ -234,6 +234,41 @@ router.post('/mpesa/callback', async (req: Request, res: Response) => {
   }
 });
 
+// POST /api/payments/mpesa/reconcile
+// Force-confirms a stuck pending M-Pesa payment.
+// Accepts { paymentId } OR { checkoutRequestId } (the referenceId stored on the payment).
+// Useful when the Safaricom sandbox callback never arrives.
+router.post('/mpesa/reconcile', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { paymentId, checkoutRequestId } = req.body;
+
+    let payment;
+    if (paymentId) {
+      payment = await db.payment.findUnique({ where: { id: Number(paymentId) } });
+    } else if (checkoutRequestId) {
+      payment = await db.payment.findUnique({ where: { referenceId: checkoutRequestId } });
+    } else {
+      return res.status(400).json({ error: 'Provide paymentId or checkoutRequestId' });
+    }
+
+    if (!payment) return res.status(404).json({ error: 'Payment not found' });
+    if (payment.status === 'paid') return res.json({ message: 'Already paid', payment });
+
+    const updated = await db.payment.update({
+      where: { id: payment.id },
+      data: { status: 'paid', paidAt: new Date() },
+    });
+
+    await allocatePayment(payment.id);
+    await sendReceipt(payment.id);
+
+    res.json({ success: true, payment: updated });
+  } catch (error: any) {
+    console.error('Reconcile error:', error);
+    res.status(500).json({ error: error.message || 'Reconcile failed' });
+  }
+});
+
 // POST /api/payments/airtel
 router.post('/airtel', async (req: Request, res: Response) => {
   try {

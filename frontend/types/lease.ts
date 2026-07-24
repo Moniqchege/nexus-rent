@@ -1,6 +1,15 @@
 export type LeaseStatus = "active" | "ended" | "suspended";
 export type BillingCycle = "monthly" | "weekly";
 
+export interface UnitType {
+  id: number;
+  propertyId: number;
+  type: string;
+  baths: number;
+  price: number;
+  totalUnits: number;
+}
+
 export interface LeaseTenant {
   id: number;
   leaseId: number;
@@ -27,20 +36,26 @@ export interface Lease {
   signedDocumentUrl?: string | null;
   createdAt: string;
   updatedAt: string;
+  unitTypeId?: number | null;
+  depositAmount?: number | null;
+  unitType?: UnitType | null;
   property: {
     id: number;
     title: string;
     location: string;
+    unitTypes: UnitType[];
   };
-  tenants: LeaseTenant[];   
+  tenants: LeaseTenant[];
 }
 
 export interface CreateLeaseInput {
   propertyId: number;
-  tenantIds: number[];       
+  tenantIds: number[];
   startDate: string;
   endDate: string;
-  rentAmount: number;
+  rentAmount?: number;
+  unitTypeId?: number;
+  depositAmount?: number;
   billingCycle?: BillingCycle;
   status?: LeaseStatus;
   lateFeePercent?: number;
@@ -51,6 +66,8 @@ export interface UpdateLeaseInput {
   startDate?: string;
   endDate?: string;
   rentAmount?: number;
+  unitTypeId?: number | null;
+  depositAmount?: number | null;
   billingCycle?: BillingCycle;
   status?: LeaseStatus;
   lateFeePercent?: number;
