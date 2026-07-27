@@ -1,35 +1,50 @@
 "use client";
 
 import api from "@/app/lib/api";
-import { ArrowLeft } from "lucide-react";
+import {
+  ArrowLeft,
+  Building2,
+  Calendar,
+  Hash,
+  FileText,
+  MapPin,
+  UserRound,
+  Phone,
+  Mail,
+  CheckCircle2,
+  Clock,
+  AlertTriangle,
+  Receipt,
+  Pencil,
+  Tag,
+} from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 
+type PaymentStatus = "pending" | "paid" | "overdue";
+
 type Expense = {
-  id: string;
-  title?: string;
-  description?: string;
-  paymentStatus: "paid" | "pending" | "failed";
+  id: number;
   amount: number;
-  currency?: string;
-  category?: string;
-  propertyName?: string;
-  property?: { id: number; title: string };
-  vendorName?: string;
-  vendorAccount?: { id: number; name: string; identifier: string };
-  referenceId?: string;
-  mpesaPaidTo?: string;
-  createdAt?: string;
-  approvedBy?: string;
-  paidAt?: string;
-  receiptUrl?: string;
+  category: string;
+  description?: string | null;
   date?: string;
+  createdAt?: string;
+  unit?: string | null;
+  invoiceNumber?: string | null;
+  vendorName?: string | null;
+  vendorEmail?: string | null;
+  vendorDescription?: string | null;
+  mpesaPaidTo?: string | null;
+  receiptUrl?: string | null;
+  paymentStatus: PaymentStatus;
+  property?: { id: number; title: string };
 };
 
-const statusConfig = {
-  paid: { bg: "#ecfdf5", color: "#059669", label: "Paid", icon: "check_circle" },
-  pending: { bg: "#fef3c7", color: "#d97706", label: "Pending", icon: "schedule" },
-  failed: { bg: "#fee2e2", color: "#dc2626", label: "Failed", icon: "error" },
+const statusConfig: Record<PaymentStatus, { bg: string; color: string; label: string; icon: typeof CheckCircle2 }> = {
+  paid: { bg: "#ecfdf5", color: "#059669", label: "Paid", icon: CheckCircle2 },
+  pending: { bg: "#fef3c7", color: "#d97706", label: "Pending", icon: Clock },
+  overdue: { bg: "#fee2e2", color: "#dc2626", label: "Overdue", icon: AlertTriangle },
 };
 
 export default function ExpenseDetails() {
@@ -40,6 +55,7 @@ export default function ExpenseDetails() {
   const [expense, setExpense] = useState<Expense | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [markingPaid, setMarkingPaid] = useState(false);
 
   useEffect(() => {
     async function fetchExpense() {
@@ -60,211 +76,203 @@ export default function ExpenseDetails() {
     }
   }, [expenseId]);
 
-  const styles = {
-    // Layout
+  const handleMarkPaid = async () => {
+    if (!expense || markingPaid) return;
+    setMarkingPaid(true);
+    try {
+      const res = await api.patch(`/api/expenses/${expense.id}/status`, { status: "paid" });
+      setExpense((prev) =>
+        prev ? { ...prev, paymentStatus: res.data?.expense?.paymentStatus ?? "paid" } : prev
+      );
+    } catch (e: any) {
+      alert(e?.response?.data?.error ?? "Failed to update expense status");
+    } finally {
+      setMarkingPaid(false);
+    }
+  };
+
+  const s = {
     page: {
       minHeight: "100vh",
-      background: "linear-gradient(to bottom right, #f8fafc, #f1f5f9)",
+      background: "#f8fafc",
       fontFamily: "'Inter', sans-serif",
       color: "#0f172a",
+      padding: "14px 18px 60px",
     },
-    headerContainer: {
-      maxWidth: "80rem",
+    container: {
+      maxWidth: 1100,
       margin: "0 auto",
       display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-    },
-    headerLeft: {
-      display: "flex",
-      alignItems: "center",
-      gap: "1rem",
-      border: "1px solid var(--neon-blue)",
+      flexDirection: "column" as const,
+      gap: 20,
     },
     backButton: {
-      padding: "1",
-      background: "transparent",
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 6,
+      background: "none",
       border: "none",
+      padding: 0,
+      color: "#4f46e5",
+      fontSize: 13,
+      fontWeight: 600,
       cursor: "pointer",
-      borderRadius: "0.5rem",
-      transition: "background 0.2s",
     },
-    headerTitle: {
-      fontSize: "16px",
+    heroRow: {
+      display: "flex",
+      flexWrap: "wrap" as const,
+      justifyContent: "space-between",
+      alignItems: "flex-end",
+      gap: 16,
+    },
+    heroTitleRow: {
+      display: "flex",
+      alignItems: "center",
+      gap: 10,
+      flexWrap: "wrap" as const,
+    },
+    heroTitle: {
+      fontSize: 18,
       fontWeight: 700,
       color: "#0f172a",
       margin: 0,
+      letterSpacing: "-0.01em",
     },
-    // Main Content
-    main: {
-      maxWidth: "80rem",
-      margin: "0 auto",
-      padding: "10px 10px",
-    },
-    // Hero Section
-    heroSection: {
-      marginBottom: "2rem",
-    },
-    heroContent: {
-      display: "flex",
-      flexDirection: "column" as const,
-      justifyContent: "space-between",
-      gap: "1.5rem",
-    },
-    heroText: {
-      maxWidth: "100%",
-    },
-    breadcrumb: {
-      fontSize: "0.875rem",
-      fontWeight: 600,
+    heroSubtitle: {
+      fontSize: 11,
       color: "#64748b",
-      textTransform: "uppercase" as const,
-      letterSpacing: "0.05em",
-      marginBottom: "0.5rem",
+      margin: "6px 0 0",
     },
-    breadcrumbHighlight: {
-      color: "#4f46e5",
-    },
-    heroTitle: {
-      fontSize: "1.20rem",
-      fontWeight: 700,
-      color: "#0f172a",
-      margin: "0",
-      lineHeight: 1.2,
-    },
-    heroDescription: {
-      color: "#475569",
-      fontSize: "1rem",
-      margin: "0.75rem 0 0",
-      maxWidth: "42rem",
-    },
-    statusBadge: {
-      padding: "0.5rem 1rem",
-      borderRadius: "9999px",
-      fontSize: "0.875rem",
-      fontWeight: 600,
+    statusBadge: (status: PaymentStatus) => ({
       display: "inline-flex",
       alignItems: "center",
-      gap: "0.5rem",
-      border: "none",
-      cursor: "default",
+      gap: 6,
+      padding: "4px 12px",
+      borderRadius: 999,
+      fontSize: 12,
+      fontWeight: 700,
+      background: statusConfig[status].bg,
+      color: statusConfig[status].color,
+    }),
+    amountLabel: {
+      fontSize: 11,
+      fontWeight: 600,
+      color: "#94a3b8",
+      textTransform: "uppercase" as const,
+      letterSpacing: "0.05em",
+      marginBottom: 4,
     },
-    headerRow: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: "12px",
-    padding: "12px 8px",
-  },
-
-    left: {
-    display: "flex",
-    alignItems: "center",
-    gap: "6px",
-    flexWrap: "wrap",
-    minWidth: 0,
-  },
-
-  category: {
-    fontWeight: 600,
-    color: "#000000",
-    whiteSpace: "nowrap",
-  },
-
-  description: {
-    color: "#000000",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
-    maxWidth: "400px",
-  },
-    // Grid Layout
-    contentGrid: {
+    amountValue: {
+      fontSize: 18,
+      fontWeight: 700,
+      color: "#4f46e5",
+      margin: 0,
+    },
+    grid: {
       display: "grid",
-      // gridTemplateColumns: "1fr 1fr 1fr",
-      gap: "1.5rem",
-      marginBottom: "2rem",
+      gridTemplateColumns: "2fr 1fr",
+      gap: 20,
+      alignItems: "start",
     },
-    mainColumn: {
-      gridColumn: "span 2",
+    mainCol: {
       display: "flex",
       flexDirection: "column" as const,
-      gap: "1.5rem",
+      gap: 20,
     },
-    sidebarColumn: {
-      gridColumn: "span 1",
+    sideCol: {
       display: "flex",
       flexDirection: "column" as const,
-      gap: "1.5rem",
+      gap: 20,
     },
-    // Cards
     card: {
       background: "#fff",
-      borderRadius: "1rem",
       border: "1px solid #e2e8f0",
-      padding: "1rem",
-      boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
+      borderRadius: 14,
+      padding: "18px 20px",
+    },
+    cardHeader: {
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      borderBottom: "1px solid #f1f5f9",
+      paddingBottom: 12,
+      marginBottom: 18,
     },
     cardTitle: {
-      fontSize: "0.65rem",
+      fontSize: 11,
       fontWeight: 700,
       color: "#64748b",
       textTransform: "uppercase" as const,
-      letterSpacing: "0.1em",
-      marginBottom: "1rem",
+      letterSpacing: "0.06em",
+      margin: 0,
     },
-    // Transaction Details
     detailsGrid: {
       display: "grid",
       gridTemplateColumns: "1fr 1fr",
-      gap: "2rem",
-    },
-    detailColumn: {
-      display: "flex",
-      flexDirection: "column" as const,
-      gap: "1.5rem",
+      gap: "18px 24px",
     },
     detailItem: {
       display: "flex",
       flexDirection: "column" as const,
+      gap: 4,
     },
     detailLabel: {
-      fontSize: "0.55rem",
+      fontSize: 10,
       fontWeight: 600,
-      color: "#64748b",
+      color: "#94a3b8",
       textTransform: "uppercase" as const,
-      letterSpacing: "0.05em",
-      marginBottom: "0.25rem",
+      letterSpacing: "0.04em",
     },
     detailValue: {
-      fontSize: "0.8rem",
+      fontSize: 14,
       fontWeight: 600,
       color: "#0f172a",
       display: "flex",
       alignItems: "center",
-      gap: "0.5rem",
+      gap: 6,
     },
-    detailValueIcon: {
-      color: "#4800a0",
-      fontSize: "1rem",
+    descriptionBox: {
+      marginTop: 10,
+      paddingTop: 10,
+      borderTop: "1px solid #f1f5f9",
     },
-    amountValue: {
-      fontSize: "1rem",
+    vendorHeader: {
+      display: "flex",
+      alignItems: "flex-start",
+      gap: 14,
+    },
+    vendorIcon: {
+      width: 42,
+      height: 42,
+      borderRadius: 12,
+      background: "#eef2ff",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      flexShrink: 0,
+    },
+    vendorName: {
+      fontSize: 14,
       fontWeight: 700,
-      color: "#4800a0",
+      color: "#0f172a",
+      margin: 0,
     },
-    referenceCode: {
-      padding: "0.5rem 0.75rem",
-      background: "#f1f5f9",
-      borderRadius: "0.5rem",
-      fontFamily: "monospace",
-      fontSize: "0.875rem",
-      fontWeight: 700,
+    vendorSub: {
+      fontSize: 11,
+      color: "#64748b",
+      margin: "2px 0 2px",
+    },
+    vendorContactRow: {
+      display: "flex",
+      alignItems: "center",
+      gap: 6,
+      fontSize: 13,
+      fontWeight: 600,
       color: "#4f46e5",
+      marginTop: 4,
     },
-    // Receipt Image
-    receiptContainer: {
-      borderRadius: "0.75rem",
+    receiptWrap: {
+      borderRadius: 12,
       overflow: "hidden",
       background: "#f8fafc",
     },
@@ -272,146 +280,108 @@ export default function ExpenseDetails() {
       width: "100%",
       height: "auto",
       display: "block",
-      maxHeight: "24rem",
+      maxHeight: 384,
       objectFit: "cover" as const,
     },
-    // Timeline
-    timeline: {
+    actionBtn: {
+      width: "100%",
+      padding: "11px 0",
+      borderRadius: 10,
+      border: "none",
+      background: "#4f46e5",
+      color: "#fff",
+      fontSize: 14,
+      fontWeight: 700,
+      cursor: "pointer",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+    },
+    actionBtnDisabled: {
+      opacity: 0.6,
+      cursor: "not-allowed" as const,
+    },
+    paidBanner: {
+      width: "100%",
+      padding: "11px 0",
+      borderRadius: 10,
+      background: "#ecfdf5",
+      color: "#059669",
+      fontSize: 14,
+      fontWeight: 700,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+    },
+    secondaryBtn: {
+      width: "100%",
+      padding: "11px 0",
+      borderRadius: 10,
+      border: "1px solid #e2e8f0",
+      background: "#fff",
+      color: "#94a3b8",
+      fontSize: 14,
+      fontWeight: 600,
+      cursor: "not-allowed" as const,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      marginTop: 10,
+    },
+    timelineWrap: {
+      position: "relative" as const,
+      paddingLeft: 4,
+    },
+    timelineLine: {
+      position: "absolute" as const,
+      left: 11,
+      top: 8,
+      bottom: 8,
+      width: 2,
+      background: "#e2e8f0",
+    },
+    timelineSteps: {
       display: "flex",
       flexDirection: "column" as const,
-      gap: "1.5rem",
+      gap: 24,
     },
     timelineItem: {
-      display: "flex",
-      gap: "1rem",
+      position: "relative" as const,
+      paddingLeft: 36,
     },
-    timelineItemColumn: {
-      display: "flex",
-      flexDirection: "column" as const,
-      alignItems: "center",
-    },
-    timelineCircle: {
-      width: "2rem",
-      height: "2rem",
+    timelineDot: (bg: string) => ({
+      position: "absolute" as const,
+      left: 0,
+      top: 2,
+      width: 24,
+      height: 24,
       borderRadius: "50%",
+      background: bg,
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      color: "#fff",
-      fontSize: "0.875rem",
-      flexShrink: 0,
-    },
-    timelineCircleActive: {
-      background: "#4f46e5",
-    },
-    timelineCircleInactive: {
-      background: "#cbd5e1",
-      color: "#64748b",
-    },
-    timelineLinea: {
-      width: "2px",
-      height: "3rem",
-      background: "#e2e8f0",
-      margin: "0.5rem 0",
-    },
-    timelineContent: {
-      paddingBottom: "1.5rem",
-    },
-    timelineLabel: {
-      fontSize: "0.75rem",
+      zIndex: 1,
+    }),
+    timelineTitle: (color: string) => ({
+      fontSize: 14,
       fontWeight: 700,
-      textTransform: "uppercase" as const,
-      letterSpacing: "0.05em",
-      marginBottom: "0.25rem",
-    },
-    timelineLabelActive: {
-      color: "#4f46e5",
-    },
-    timelineLabelInactive: {
+      color,
+      margin: 0,
+    }),
+    timelineSub: {
+      fontSize: 12,
       color: "#94a3b8",
+      marginTop: 2,
     },
-    timelineTitle: {
-      fontSize: "1rem",
-      fontWeight: 600,
-      color: "#0f172a",
-      margin: "0.25rem 0",
+    timelineTimestamp: {
+      fontSize: 11,
+      fontFamily: "'JetBrains Mono', monospace",
+      color: "#94a3b8",
+      whiteSpace: "nowrap" as const,
     },
-    timelineSubtitle: {
-      fontSize: "0.875rem",
-      color: "#64748b",
-      marginTop: "0.25rem",
-    },
-    // M-Pesa Card
-    mpesaCard: {
-      display: "flex",
-      alignItems: "center",
-      gap: "0.75rem",
-    },
-    mpesaIcon: {
-      width: "2.5rem",
-      height: "2.5rem",
-      background: "#dcfce7",
-      borderRadius: "0.5rem",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      fontSize: "1.25rem",
-      fontWeight: 700,
-      color: "#16a34a",
-      flexShrink: 0,
-    },
-    mpesaInfo: {
-      display: "flex",
-      flexDirection: "column" as const,
-    },
-    mpesaLabel: {
-      fontSize: "0.75rem",
-      color: "#64748b",
-      marginBottom: "0.25rem",
-    },
-    mpesaValue: {
-      fontSize: "1.125rem",
-      fontWeight: 700,
-      color: "#16a34a",
-    },
-    // Audit Card
-    auditCard: {
-      background: "linear-gradient(to bottom right, #4f46e5, #7c3aed)",
-      color: "#fff",
-      display: "flex",
-      flexDirection: "column" as const,
-      gap: "1rem",
-    },
-    auditContent: {
-      display: "flex",
-      alignItems: "flex-start",
-      gap: "0.75rem",
-    },
-    auditIcon: {
-      fontSize: "2rem",
-      opacity: 0.6,
-      flexShrink: 0,
-    },
-    auditText: {
-      fontSize: "0.875rem",
-      lineHeight: 1.5,
-    },
-    auditButton: {
-      width: "100%",
-      padding: "0.5rem",
-      background: "rgba(255, 255, 255, 0.2)",
-      border: "1px solid rgba(255, 255, 255, 0.3)",
-      borderRadius: "0.5rem",
-      color: "#fff",
-      fontSize: "0.875rem",
-      fontWeight: 600,
-      cursor: "pointer",
-      transition: "background 0.2s",
-    },
-    auditButtonHover: {
-      background: "rgba(255, 255, 255, 0.3)",
-    },
-    // Loading State
     loadingContainer: {
       minHeight: "100vh",
       display: "flex",
@@ -419,75 +389,39 @@ export default function ExpenseDetails() {
       justifyContent: "center",
       background: "#f8fafc",
     },
-    loadingContent: {
-      textAlign: "center" as const,
-    },
     spinner: {
-      width: "3rem",
-      height: "3rem",
+      width: 48,
+      height: 48,
       borderRadius: "50%",
       border: "4px solid #e2e8f0",
       borderTop: "4px solid #4f46e5",
       animation: "spin 1s linear infinite",
-      margin: "0 auto 1rem",
+      margin: "0 auto 16px",
     },
-    loadingText: {
-      color: "#475569",
-      fontWeight: 500,
-    },
-    // Error State
     errorContainer: {
       minHeight: "100vh",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      padding: "1rem",
+      padding: 16,
       background: "#f8fafc",
     },
     errorCard: {
       background: "#fee2e2",
       border: "1px solid #fecaca",
-      borderRadius: "0.75rem",
-      padding: "1.5rem",
-      maxWidth: "28rem",
+      borderRadius: 12,
+      padding: 24,
+      maxWidth: 448,
       textAlign: "center" as const,
-    },
-    errorIcon: {
-      fontSize: "1.25rem",
-      color: "#dc2626",
-      marginBottom: "1rem",
-      display: "block",
-    },
-    errorTitle: {
-      fontSize: "1.125rem",
-      fontWeight: 600,
-      color: "#991b1b",
-      marginBottom: "0.5rem",
-    },
-    errorMessage: {
-      color: "#b91c1c",
-      fontSize: "0.875rem",
-    },
-    errorButton: {
-      marginTop: "1rem",
-      padding: "0.3rem 1rem",
-      background: "#dc2626",
-      color: "#fff",
-      border: "none",
-      borderRadius: "0.5rem",
-      fontSize: "0.875rem",
-      fontWeight: 500,
-      cursor: "pointer",
-      transition: "background 0.2s",
     },
   };
 
   if (loading) {
     return (
-      <div style={styles.loadingContainer}>
-        <div style={styles.loadingContent}>
-          <div style={styles.spinner}></div>
-          <p style={styles.loadingText}>Loading expense...</p>
+      <div style={s.loadingContainer}>
+        <div style={{ textAlign: "center" }}>
+          <div style={s.spinner}></div>
+          <p style={{ color: "#475569", fontWeight: 500 }}>Loading expense...</p>
         </div>
         <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
       </div>
@@ -496,18 +430,17 @@ export default function ExpenseDetails() {
 
   if (error || !expense) {
     return (
-      <div style={styles.errorContainer}>
-        <div style={styles.errorCard}>
-          <span style={styles.errorIcon} className="material-symbols-outlined">
-            error
-          </span>
-          <h2 style={styles.errorTitle}>Error</h2>
-          <p style={styles.errorMessage}>{error || "Expense not found"}</p>
+      <div style={s.errorContainer}>
+        <div style={s.errorCard}>
+          <AlertTriangle size={28} color="#dc2626" style={{ margin: "0 auto 12px" }} />
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: "#991b1b", marginBottom: 8 }}>Error</h2>
+          <p style={{ color: "#b91c1c", fontSize: 14 }}>{error || "Expense not found"}</p>
           <button
-            style={styles.errorButton}
+            style={{
+              marginTop: 16, padding: "6px 18px", background: "#dc2626", color: "#fff",
+              border: "none", borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: "pointer",
+            }}
             onClick={() => router.back()}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "#b91c1c")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "#dc2626")}
           >
             Go Back
           </button>
@@ -517,162 +450,274 @@ export default function ExpenseDetails() {
   }
 
   const status = statusConfig[expense.paymentStatus];
+  const StatusIcon = status.icon;
   const formattedAmount = expense.amount?.toLocaleString("en-KE", {
     style: "currency",
-    currency: expense.currency || "KES",
+    currency: "KES",
   });
 
+  const recordedAt = expense.createdAt ? new Date(expense.createdAt) : null;
+  const recordedLabel = recordedAt
+    ? recordedAt.toLocaleString("en-KE", { month: "short", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" })
+    : "—";
+
+  const expenseDateLabel = expense.date
+    ? new Date(expense.date).toLocaleDateString("en-KE", { year: "numeric", month: "short", day: "2-digit" })
+    : "—";
+
   return (
-    <div style={styles.page}>
-      {/* Header */}
-       <div style={{ marginBottom: "15px" }}>
-        <button
-          onClick={() => router.back()}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            color: "var(--neon-blue)",
-            border: "1px solid var(--neon-blue)",
-            padding: "8px 16px",
-            marginTop: "14px",
-            marginBottom: "14px",
-            borderRadius: "8px",
-            textDecoration: "hover",
-            fontWeight: 600,
-            fontSize: "14px",
-            background: "none",
-            cursor: "pointer",
-            marginLeft: "12px",
-            fontFamily: "'Inter', sans-serif",
-          }}
-        >
-          <ArrowLeft size={18} />
+    <div style={s.page}>
+      <div style={s.container}>
+        <button style={s.backButton} onClick={() => router.back()}>
+          <ArrowLeft size={16} />
           Back to Expenses
         </button>
-      </div>
 
-      {/* Main Content */}
-      <main style={styles.main}>
-        {/* Hero Section */}
-        <section style={styles.headerRow}>
-          <div style={styles.left}>
-          <span style={styles.category}>
-            {expense.category || "Category"}:
-          </span>
-
-          <span style={styles.description}>
-            {expense.description || "No description"}
-          </span>
+        {/* Hero */}
+        <div style={s.heroRow}>
+          <div>
+            <div style={s.heroTitleRow}>
+              <h1 style={s.heroTitle}>{expense.description || expense.category}</h1>
+              <span style={s.statusBadge(expense.paymentStatus)}>
+                <StatusIcon size={13} />
+                {status.label}
+              </span>
+            </div>
+            <p style={s.heroSubtitle}>
+              {expense.property?.title || "—"}
+              {expense.unit ? ` • ${expense.unit}` : ""} • {expense.category}
+            </p>
+          </div>
+          <div style={{ textAlign: "right" }}>
+            <p style={s.amountLabel}>Total Amount</p>
+            <h3 style={s.amountValue}>{formattedAmount}</h3>
+          </div>
         </div>
 
-        <div style={{ ...styles.statusBadge, background: status.bg, color: status.color }}>
-          <span className="material-symbols-outlined" style={{ fontSize: "1rem", marginRight: 4 }}>
-            {status.icon}
-          </span>
-            {status.label}
-        </div>
-      </section>
-
-        {/* Content Grid */}
-        <div style={styles.contentGrid}>
-          {/* Main Column */}
-          <div style={styles.mainColumn}>
-            {/* Transaction Details */}
-            <div style={styles.card}>
-              <h2 style={styles.cardTitle}>Transaction Details</h2>
-              <div style={styles.detailsGrid}>
-                <div style={styles.detailColumn}>
-                  <div style={styles.detailItem}>
-                    <span style={styles.detailLabel}>Property</span>
-                    <div style={styles.detailValue}>
-                      <span className="material-symbols-outlined" style={styles.detailValueIcon}>
-                        domain
-                      </span>
-                      {expense.property?.title || expense.propertyName || "N/A"}
-                    </div>
-                  </div>
-                  <div style={styles.detailItem}>
-                    <span style={styles.detailLabel}>Category</span>
-                    <div style={styles.detailValue}>
-                      <span className="material-symbols-outlined" style={styles.detailValueIcon}>
-                        category
-                      </span>
-                      {expense.category || "—"}
-                    </div>
-                  </div>
-                  <div style={styles.detailItem}>
-                    <span style={styles.detailLabel}>Vendor / Recipient</span>
-                    <div style={styles.detailValue}>
-                      <span className="material-symbols-outlined" style={styles.detailValueIcon}>
-                        person_pin
-                      </span>
-                      {expense.vendorAccount?.name || expense.vendorName || expense.mpesaPaidTo || "—"}
-                    </div>
-                  </div>
+        {/* Two column grid */}
+        <div style={s.grid}>
+          {/* Main column */}
+          <div style={s.mainCol}>
+            {/* Transaction Overview */}
+            <div style={s.card}>
+              <div style={s.cardHeader}>
+                <Tag size={16} color="#4f46e5" />
+                <h4 style={s.cardTitle}>Transaction Overview</h4>
+              </div>
+              <div style={s.detailsGrid}>
+                <div style={s.detailItem}>
+                  <span style={s.detailLabel}>Category</span>
+                  <span style={s.detailValue}>
+                    <Tag size={14} color="#64748b" />
+                    {expense.category}
+                  </span>
                 </div>
-                <div style={styles.detailColumn}>
-                  <div style={styles.detailItem}>
-                    <span style={styles.detailLabel}>Date Created</span>
-                    <div style={styles.detailValue}>
-                      <span className="material-symbols-outlined" style={styles.detailValueIcon}>
-                        event
-                      </span>
-                      {expense.date
-                        ? new Date(expense.date).toLocaleDateString("en-KE", {
-                            year: "numeric",
-                            month: "short",
-                            day: "2-digit",
-                          })
-                        : expense.createdAt
-                        ? new Date(expense.createdAt).toLocaleDateString("en-KE", {
-                            year: "numeric",
-                            month: "short",
-                            day: "2-digit",
-                          })
-                        : "—"}
+                <div style={s.detailItem}>
+                  <span style={s.detailLabel}>Date</span>
+                  <span style={s.detailValue}>
+                    <Calendar size={14} color="#64748b" />
+                    {expenseDateLabel}
+                  </span>
+                </div>
+                <div style={s.detailItem}>
+                  <span style={s.detailLabel}>Property</span>
+                  <span style={s.detailValue}>
+                    <Building2 size={14} color="#64748b" />
+                    {expense.property?.title || "—"}
+                  </span>
+                </div>
+                {expense.unit && (
+                  <div style={s.detailItem}>
+                    <span style={s.detailLabel}>Unit</span>
+                    <span style={s.detailValue}>
+                      <MapPin size={14} color="#64748b" />
+                      {expense.unit}
+                    </span>
+                  </div>
+                )}
+                {expense.invoiceNumber && (
+                  <div style={s.detailItem}>
+                    <span style={s.detailLabel}>Invoice Number</span>
+                    <span style={s.detailValue}>
+                      <FileText size={14} color="#64748b" />
+                      {expense.invoiceNumber}
+                    </span>
+                  </div>
+                )}
+                <div style={s.detailItem}>
+                  <span style={s.detailLabel}>Reference ID</span>
+                  <span style={s.detailValue}>
+                    <Hash size={14} color="#64748b" />
+                    EXP-{expense.id}
+                  </span>
+                </div>
+              </div>
+
+              {expense.description && (
+                <div style={s.descriptionBox}>
+                  <span style={s.detailLabel}>Description</span>
+                  <p style={{ fontSize: 14, color: "#334155", marginTop: 6, lineHeight: 1.6 }}>
+                    {expense.description}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Vendor Information */}
+            <div style={s.card}>
+              <div style={s.cardHeader}>
+                <UserRound size={16} color="#4f46e5" />
+                <h4 style={s.cardTitle}>Vendor Information</h4>
+              </div>
+              <div style={s.vendorHeader}>
+                <div style={s.vendorIcon}>
+                  <UserRound size={26} color="#4f46e5" />
+                </div>
+                <div>
+                  <h5 style={s.vendorName}>{expense.vendorName || "Unnamed Vendor"}</h5>
+                  <p style={s.vendorSub}>
+                    {expense.vendorDescription || "No additional vendor details provided."}
+                  </p>
+                  {expense.mpesaPaidTo && (
+                    <div style={s.vendorContactRow}>
+                      <Phone size={13} />
+                      <span style={{ fontFamily: "'JetBrains Mono', monospace" }}>{expense.mpesaPaidTo}</span>
                     </div>
-                  </div>
-                  <div style={styles.detailItem}>
-                    <span style={styles.detailLabel}>Amount</span>
-                    <div style={styles.amountValue}>{formattedAmount}</div>
-                  </div>
-                  <div style={styles.detailItem}>
-                    <span style={styles.detailLabel}>Reference ID</span>
-                    <code style={styles.referenceCode}>{expense.referenceId || expense.id}</code>
-                  </div>
+                  )}
+                  {expense.vendorEmail && (
+                    <div style={s.vendorContactRow}>
+                      <Mail size={13} />
+                      <span>{expense.vendorEmail}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
 
             {/* Receipt */}
             {expense.receiptUrl && (
-              <div style={styles.card}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
-                  <h2 style={styles.cardTitle}>Payment Proof</h2>
+              <div style={s.card}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <Receipt size={16} color="#4f46e5" />
+                    <h4 style={s.cardTitle}>Payment Proof</h4>
+                  </div>
                   {expense.paymentStatus === "paid" && (
-                    <span
-                      style={{
-                        fontSize: "0.75rem",
-                        fontWeight: 700,
-                        color: "#047857",
-                        background: "#dcfce7",
-                        padding: "0.25rem 0.75rem",
-                        borderRadius: "9999px",
-                      }}
-                    >
+                    <span style={{ fontSize: 11, fontWeight: 700, color: "#047857", background: "#dcfce7", padding: "4px 12px", borderRadius: 999 }}>
                       VERIFIED
                     </span>
                   )}
                 </div>
-                <div style={styles.receiptContainer}>
-                  <img src={expense.receiptUrl} alt="Receipt" style={styles.receiptImage} />
+                <div style={s.receiptWrap}>
+                  <img src={expense.receiptUrl} alt="Receipt" style={s.receiptImage} />
                 </div>
               </div>
             )}
           </div>
+
+          {/* Sidebar column */}
+          <div style={s.sideCol}>
+            {/* Actions */}
+            <div style={s.card}>
+              <h4 style={{ ...s.cardTitle, marginBottom: 16, borderBottom: "none", paddingBottom: 0 }}>
+                Actions
+              </h4>
+
+              {expense.paymentStatus === "paid" ? (
+                <div style={s.paidBanner}>
+                  <CheckCircle2 size={16} />
+                  Paid
+                </div>
+              ) : (
+                <button
+                  style={{ ...s.actionBtn, ...(markingPaid ? s.actionBtnDisabled : {}) }}
+                  onClick={handleMarkPaid}
+                  disabled={markingPaid}
+                >
+                  <CheckCircle2 size={16} />
+                  {markingPaid ? "Marking…" : "Mark as Paid"}
+                </button>
+              )}
+
+              <button style={s.secondaryBtn} disabled title="Editing isn't available yet">
+                <Pencil size={14} />
+                Edit Details
+              </button>
+            </div>
+
+            {/* Activity Timeline — built from real expense data */}
+            <div style={s.card}>
+              <h4 style={{ ...s.cardTitle, marginBottom: 20, borderBottom: "none", paddingBottom: 0 }}>
+                Activity Timeline
+              </h4>
+              <div style={s.timelineWrap}>
+                <div style={s.timelineLine}></div>
+                <div style={s.timelineSteps}>
+                  {/* Step 1: always completed */}
+                  <div style={s.timelineItem}>
+                    <div style={s.timelineDot("#4f46e5")}>
+                      <FileText size={12} color="#fff" />
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+                      <div>
+                        <p style={s.timelineTitle("#0f172a")}>Expense Recorded</p>
+                        <p style={s.timelineSub}>Logged in the system</p>
+                      </div>
+                      <span style={s.timelineTimestamp}>{recordedLabel}</span>
+                    </div>
+                  </div>
+
+                  {/* Step 2: current live status */}
+                  {expense.paymentStatus === "paid" && (
+                    <div style={s.timelineItem}>
+                      <div style={s.timelineDot("#10b981")}>
+                        <CheckCircle2 size={12} color="#fff" />
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+                        <div>
+                          <p style={s.timelineTitle("#059669")}>Paid</p>
+                          <p style={s.timelineSub}>Payment confirmed</p>
+                        </div>
+                        <span style={{ ...s.timelineTimestamp, color: "#059669" }}>Completed</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {expense.paymentStatus === "overdue" && (
+                    <div style={s.timelineItem}>
+                      <div style={s.timelineDot("#dc2626")}>
+                        <AlertTriangle size={12} color="#fff" />
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+                        <div>
+                          <p style={s.timelineTitle("#dc2626")}>Overdue</p>
+                          <p style={s.timelineSub}>Unpaid for more than 7 days</p>
+                        </div>
+                        <span style={{ ...s.timelineTimestamp, color: "#dc2626" }}>Current</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {expense.paymentStatus === "pending" && (
+                    <div style={s.timelineItem}>
+                      <div style={{ ...s.timelineDot("#fff"), border: "2px solid #4f46e5" }}>
+                        <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#4f46e5" }}></div>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+                        <div>
+                          <p style={s.timelineTitle("#4f46e5")}>Pending Payment</p>
+                          <p style={s.timelineSub}>Awaiting confirmation</p>
+                        </div>
+                        <span style={{ ...s.timelineTimestamp, color: "#4f46e5" }}>Current</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

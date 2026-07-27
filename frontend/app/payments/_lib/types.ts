@@ -37,6 +37,7 @@ export interface Expense {
   id: number;
   category: string;
   description: string | null;
+  vendorName: string | null;
   amount: number;
   date: string;
   propertyId: number;

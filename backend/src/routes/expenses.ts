@@ -3,11 +3,13 @@ import { requireAuth } from "../middleware/auth.js";
 import { audit } from "../middleware/audit.js";
 import { AuthRequest } from "../middleware/auth-types.js";
 import { db } from "../db/prisma.js";
-import { createExpensePay, getExpenseWithVendor } from "../services/expenseService.js";
+import { getExpense, autoMarkOverdueExpenses } from "../services/expenseService.js";
 import { uploadReceipt } from "../middleware/upload.js";
 
 const router = Router();
 router.use(requireAuth);
+
+const ALLOWED_STATUSES = ["pending", "paid", "overdue"] as const;
 
 // GET /api/expenses?propertyId=&status=
 router.get(
@@ -17,6 +19,13 @@ router.get(
         try {
             const authReq = req as AuthRequest;
             const { propertyId, status } = req.query;
+
+            // Sweep this landlord's stale "pending" expenses to "overdue"
+            // before reading, so the list is always current even without
+            // a cron wired up.
+            await autoMarkOverdueExpenses({
+                property: { landlordId: authReq.userId! },
+            });
 
             // Landlord scoping: only expenses from properties owned by this landlord
             // (expense -> property -> landlordId)
@@ -33,7 +42,6 @@ router.get(
                 where,
                 include: {
                     property: { select: { id: true, title: true } },
-                    vendorAccount: { select: { id: true, name: true, identifier: true } },
                 },
                 orderBy: { createdAt: "desc" },
             });
@@ -73,6 +81,8 @@ router.get(
 );
 
 // POST /api/expenses
+// Expenses are recorded directly on the Expense table — this is the ledger.
+// No money moves, no Account/VendorAccount/LedgerEntry involvement.
 router.post(
     "/",
     uploadReceipt.single("receipt"),
@@ -93,6 +103,10 @@ router.post(
                 date,
                 mpesaPaidTo,
                 vendor,
+                unit,
+                invoiceNumber,
+                vendorEmail,
+                vendorDescription,
             } = req.body;
 
             const receiptFile = req.file;
@@ -108,64 +122,45 @@ router.post(
                 });
             }
 
-            const expense = await db.$transaction(async (tx) => {
-                const property = await tx.property.findFirst({
-                    where: {
-                        id: Number(propertyId),
-                        landlordId: authReq.userId!,
-                    },
-                });
+            const property = await db.property.findFirst({
+                where: {
+                    id: Number(propertyId),
+                    landlordId: authReq.userId!,
+                },
+            });
 
-                if (!property) {
-                    throw new Error("Property not found");
-                }
+            if (!property) {
+                return res.status(404).json({ error: "Property not found" });
+            }
 
-                const vendorAccount = await tx.vendorAccount.upsert({
-                    where: {
-                        identifier: String(mpesaPaidTo),
-                    },
-                    update: {
-                        name: vendor || String(mpesaPaidTo),
-                    },
-                    create: {
-                        identifier: String(mpesaPaidTo),
-                        name: vendor || String(mpesaPaidTo),
-                    },
-                });
+            const expense = await db.expense.create({
+                data: {
+                    propertyId: Number(propertyId),
+                    amount: Number(amount),
+                    category: String(category),
+                    description: description || null,
 
-                return tx.expense.create({
-                    data: {
-                        propertyId: Number(propertyId),
-                        amount: Number(amount),
-                        category: String(category),
-                        description: description || null,
+                    unit: unit || null,
+                    invoiceNumber: invoiceNumber || null,
+                    vendorEmail: vendorEmail || null,
+                    vendorDescription: vendorDescription || null,
 
-                        vendorName: vendor || null,
-                        receiptUrl,
+                    vendorName: vendor || null,
+                    receiptUrl,
 
-                        date: date ? new Date(date) : new Date(),
+                    date: date ? new Date(date) : new Date(),
 
-                        mpesaPaidTo: String(mpesaPaidTo),
-                        paymentStatus: "pending",
-
-                        vendorAccountId: vendorAccount.id,
-                    },
-                    include: {
-                        property: {
-                            select: {
-                                id: true,
-                                title: true,
-                            },
-                        },
-                        vendorAccount: {
-                            select: {
-                                id: true,
-                                name: true,
-                                identifier: true,
-                            },
+                    mpesaPaidTo: String(mpesaPaidTo),
+                    paymentStatus: "pending",
+                },
+                include: {
+                    property: {
+                        select: {
+                            id: true,
+                            title: true,
                         },
                     },
-                });
+                },
             });
 
             res.json({ expense });
@@ -190,24 +185,13 @@ router.get(
                 return res.status(400).json({ error: "Invalid expense id" });
             }
 
-            const expense = await db.expense.findFirst({
-                where: {
-                    id: expenseId,
-                    property: {
-                        landlordId: authReq.userId!,
-                    },
-                },
-                include: {
-                    property: { select: { id: true, title: true } },
-                    vendorAccount: { select: { id: true, name: true, identifier: true } },
-                },
-            });
+            const expense = await getExpense(expenseId, authReq.userId!);
 
             if (!expense) {
                 return res.status(404).json({ error: "Expense not found" });
             }
 
-            // ✅ Return the expense directly, not wrapped
+            // Return the expense directly, not wrapped
             res.json(expense);
         } catch (e: any) {
             res.status(500).json({ error: "Failed to fetch expense" });
@@ -215,30 +199,58 @@ router.get(
     }
 );
 
-// POST /api/expenses/:id/pay
-router.post(
-    "/:id/pay",
-    audit({ action: "expense_paid", title: "Expense Pay", metadata: (req) => req.body }),
+// PATCH /api/expenses/:id/status
+// Marks an expense as paid/pending/overdue. Record-keeping only — no
+// balances move and nothing is debited from any system account.
+router.patch(
+    "/:id/status",
+    audit({
+        action: "expense_status_updated",
+        title: "Expense Status",
+        metadata: (req) => req.body,
+    }),
     async (req: Request, res: Response) => {
         try {
             const authReq = req as AuthRequest;
             const expenseId = Number(req.params.id);
-            const { paymentType, paymentDetails, description } = req.body;
+            const { status } = req.body;
 
-            const result = await createExpensePay({
-                landlordId: authReq.userId!,
-                expenseId,
-                paymentType,
-                paymentDetails,
-                description,
+            if (isNaN(expenseId)) {
+                return res.status(400).json({ error: "Invalid expense id" });
+            }
+
+            if (!status || !ALLOWED_STATUSES.includes(status)) {
+                return res.status(400).json({
+                    error: `status must be one of: ${ALLOWED_STATUSES.join(", ")}`,
+                });
+            }
+
+            const existing = await db.expense.findFirst({
+                where: {
+                    id: expenseId,
+                    property: { landlordId: authReq.userId! },
+                },
             });
 
-            res.json(result);
+            if (!existing) {
+                return res.status(404).json({ error: "Expense not found" });
+            }
+
+            const expense = await db.expense.update({
+                where: { id: expenseId },
+                data: { paymentStatus: status },
+                include: {
+                    property: { select: { id: true, title: true } },
+                },
+            });
+
+            res.json({ expense });
         } catch (e: any) {
-            res.status(500).json({ error: e?.message || "Failed to pay expense" });
+            res.status(500).json({
+                error: e?.message || "Failed to update expense status",
+            });
         }
     }
 );
 
 export default router;
-
