@@ -82,7 +82,7 @@ const CRON_DEFS = [
     name: "Generate Schedules",
     fn: "generateMonthlySchedules()",
     schedule: "1st of month",
-    endpoint: "/api/payments/schedules",
+    endpoint: "/api/cron/schedules",
   },
   {
     key: "reminders",
@@ -143,12 +143,23 @@ export default function AutomationPage() {
       .finally(() => setLoadingLeases(false));
   }, []);
 
-  useEffect(() => {
-  const es = new EventSource("/api/cron/sse");
+useEffect(() => {
+  const baseUrl =
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+
+  const es = new EventSource(`${baseUrl}/api/cron/sse`);
+
+  es.onopen = () => {
+    console.log("SSE connected");
+  };
 
   es.onmessage = (event) => {
     const data = JSON.parse(event.data);
     setCronLogs(data);
+  };
+
+  es.onerror = (err) => {
+    console.error("SSE error:", err);
   };
 
   return () => es.close();
@@ -175,37 +186,53 @@ export default function AutomationPage() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+  
 
 const handleSendReminders = async () => {
   try {
     const res = await api.post("/api/cron/reminders/manual");
     const { affected } = res.data;
-    setRunLog((l) => ({
-      ...l,
-      reminders: affected > 0
-        ? `${affected} reminder${affected !== 1 ? "s" : ""} sent (email + WhatsApp) at ${new Date().toLocaleTimeString()}`
-        : `No new reminders to send`,
-    }));
+    showRunLog(
+  "reminders",
+  affected > 0
+    ? `${affected} reminder${affected !== 1 ? "s" : ""} sent (email + WhatsApp) at ${new Date().toLocaleTimeString()}`
+    : "No new reminders to send"
+);
   } catch (e: any) {
-    setRunLog((l) => ({
-      ...l,
-      reminders: `Failed: ${e?.message ?? "error"}`,
-    }));
+   showRunLog(
+  "reminders",
+  `Failed: ${e?.message ?? "error"}`
+);
   }
 };
 
-  const triggerRun = async (key: string, endpoint: string) => {
-    setRunLoading((l) => ({ ...l, [key]: true }));
-    try {
-      await api.post(endpoint);
-      setRunLog((l) => ({ ...l, [key]: `Manual run at ${new Date().toLocaleTimeString()}` }));
-      await fetchData();
-    } catch (e: any) {
-      setRunLog((l) => ({ ...l, [key]: `Failed: ${e?.message ?? "error"}` }));
-    } finally {
-      setRunLoading((l) => ({ ...l, [key]: false }));
-    }
-  };
+ const triggerRun = async (key: string, endpoint: string) => {
+  setRunLoading((prev) => ({
+    ...prev,
+    [key]: true,
+  }));
+
+  try {
+    await api.post(endpoint);
+
+    showRunLog(
+      key,
+      `Manual run at ${new Date().toLocaleTimeString()}`
+    );
+
+    await fetchData();
+  } catch (e: any) {
+    showRunLog(
+      key,
+      `Failed: ${e?.message ?? "error"}`
+    );
+  } finally {
+    setRunLoading((prev) => ({
+      ...prev,
+      [key]: false,
+    }));
+  }
+};
 
   const flow = [
     { step: "Step 1: Received", detail: "M-Pesa / Stripe / manual Entry" },
@@ -238,6 +265,21 @@ const handleSendReminders = async () => {
 
   return map;
 }, [cronLogs]);
+
+const showRunLog = (key: string, message: string) => {
+  setRunLog((prev) => ({
+    ...prev,
+    [key]: message,
+  }));
+
+  setTimeout(() => {
+    setRunLog((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  }, 3000); // 3 seconds
+};
 
 return (
   <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 18, background: "#f8f9ff" }}>
@@ -339,6 +381,7 @@ return (
         <div
           key={c.key}
           style={{
+            position: "relative",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
@@ -448,10 +491,17 @@ return (
           {runLog[c.key] && (
             <div
               style={{
+                position: "absolute",
+                top: -28,
+                right: 0,
+                padding: "4px 8px",
+                background: "#4ae176",
+                color: "#fff",
+                borderRadius: 6,
                 fontSize: 10,
-                color: "#4ae176",
-                marginLeft: 8,
-                maxWidth: 140,
+                whiteSpace: "nowrap",
+                boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
+                zIndex: 10,
               }}
             >
               {runLog[c.key]}
@@ -563,7 +613,6 @@ return (
           alignItems: "center",
         }}
       >
-        {/* connector */}
         {/* connectors */}
 <div
   style={{
