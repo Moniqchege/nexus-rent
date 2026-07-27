@@ -20,8 +20,8 @@ export interface Payment {
   scheduleId: number;
 }
 
-type RentScheduleStatus = "scheduled" | "overdue" | "paid";
-type PaymentStatus = "pending" | "paid" | "failed" | "refunded";
+type RentScheduleStatus = "scheduled" | "partial" | "overdue" | "paid";
+type PaymentStatus = "pending" | "paid" | "failed" | "refunded" | "overdue";
 
 type DerivedStatus = "scheduled" | "partial" | "paid";
 
@@ -34,6 +34,14 @@ export const getPaymentState = (schedule: RentSchedule, payments: Payment[]): De
   if (totalPaid < schedule.amount) return "partial";
   return "paid";
 };
+
+export interface PaymentAllocation {
+  id: number;
+  paymentId: number;
+  scheduleId: number;
+  amount: number;
+  createdAt: string;
+}
 
 export interface RentSchedule {
   id: number;
@@ -48,4 +56,5 @@ export interface RentSchedule {
   property: { title: string, location?: string; };
   allocatedAmount: number;
   unit: string;
+  allocations: PaymentAllocation[];
 }

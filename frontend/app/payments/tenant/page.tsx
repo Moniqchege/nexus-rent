@@ -558,6 +558,9 @@ console.log(raw);
                 <div style={{ fontSize: 13, fontWeight: 600 }}>
                   {l.tenant.name}
                 </div>
+                <div style={{ fontSize: 10, color: "#6366f1", fontWeight: 600 }}>
+                  {l.tenant.email}
+                </div>
                 <div style={{ fontSize: 11, color: "#6b7280" }}>
                   {l.property.title}
                 </div>

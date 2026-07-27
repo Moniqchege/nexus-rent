@@ -10,7 +10,7 @@ import {
   Checkbox,
 } from "../_lib/components";
 import { theme, pageStyle, LightAlert, SkeletonRow } from "../_lib/theme";
-import { getRentSchedules, resendReceipt, verifyPayment } from "../../lib/payments";
+import { getPayments, getRentSchedules, resendReceipt, verifyPayment } from "../../lib/payments";
 import { getPaymentState, type Payment, type RentSchedule } from "../../../types/payment";
 import type { SchedStatus } from "../_lib/types";
 import { CustomDropdown } from "@/app/components/ui/CustomDropdown";
@@ -44,18 +44,18 @@ export default function SchedulesPage() {
   const receipt = useRowAction();
   const verify = useRowAction();
 
-  const fetchSchedules = useCallback(async (status?: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await getRentSchedules(status === "all" ? undefined : status);
-      setSchedules(data);
-    } catch (err: any) {
-      setError(err?.message || "Failed to load schedules");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+const fetchSchedules = useCallback(async (status?: string) => {
+  setLoading(true);
+  setError(null);
+  try {
+    const scheduleData = await getRentSchedules(status === "all" ? undefined : status);
+    setSchedules(scheduleData);
+  } catch (err: any) {
+    setError(err?.message || "Failed to load schedules");
+  } finally {
+    setLoading(false);
+  }
+}, []);
 
   useEffect(() => {
     fetchSchedules();
@@ -117,56 +117,41 @@ export default function SchedulesPage() {
     );
   };
   const getDisplayStatus = (
-    s: RentSchedule,
-    payments: Payment[]
-  ): "scheduled" | "partial" | "paid" | "overdue" => {
-    const paymentState = getPaymentState(s, payments);
-    if (s.status === "overdue" && paymentState !== "paid") return "overdue";
-    return paymentState;
-  };
+  s: RentSchedule
+): "scheduled" | "partial" | "paid" | "overdue" => {
+  return s.status as "scheduled" | "partial" | "paid" | "overdue";
+};
 
-  const counts = useMemo(
-    () => ({
-      all: schedules.length,
-      paid: schedules.filter(
-        (s) => getDisplayStatus(s, payments) === "paid"
-      ).length,
-      overdue: schedules.filter(
-        (s) => getDisplayStatus(s, payments) === "overdue"
-      ).length,
-      partial: schedules.filter(
-        (s) => getDisplayStatus(s, payments) === "partial"
-      ).length,
-      scheduled: schedules.filter(
-        (s) => getDisplayStatus(s, payments) === "scheduled"
-      ).length,
-    }),
-    [schedules, payments]
-  );
+const counts = useMemo(
+  () => ({
+    all: schedules.length,
+    paid: schedules.filter((s) => getDisplayStatus(s) === "paid").length,
+    overdue: schedules.filter((s) => getDisplayStatus(s) === "overdue").length,
+    partial: schedules.filter((s) => getDisplayStatus(s) === "partial").length,
+    scheduled: schedules.filter((s) => getDisplayStatus(s) === "scheduled").length,
+  }),
+  [schedules]
+);
 
-  const totals = useMemo(() => {
-    let overdue = 0;
-    let partial = 0;
-    let scheduled = 0;
-    let paid = 0;
-    for (const s of schedules) {
-      const totalPaid = payments
-        .filter((p) => p.status === "paid" && p.scheduleId === s.id)
-        .reduce((sum, p) => sum + p.amount, 0);
-      const isFullyPaid = totalPaid >= s.amount;
-      const isPartial = totalPaid > 0 && totalPaid < s.amount;
-      if (s.status === "overdue" && !isFullyPaid) {
-        overdue += s.amount + (s.lateFeeAmount || 0);
-      } else if (isPartial) {
-        partial += s.amount - totalPaid;
-      } else if (s.status === "scheduled") {
-        scheduled += s.amount;
-      } else if (isFullyPaid) {
-        paid += s.amount;
-      }
+const totals = useMemo(() => {
+  let overdue = 0;
+  let partial = 0;
+  let scheduled = 0;
+  let paid = 0;
+  for (const s of schedules) {
+    const allocated = s.allocatedAmount ?? 0;
+    if (s.status === "overdue") {
+      overdue += s.amount + (s.lateFeeAmount || 0) - allocated;
+    } else if (s.status === "partial") {
+      partial += s.amount - allocated;
+    } else if (s.status === "scheduled") {
+      scheduled += s.amount;
+    } else if (s.status === "paid") {
+      paid += s.amount;
     }
-    return { overdue, partial, scheduled, paid };
-  }, [schedules, payments]);
+  }
+  return { overdue, partial, scheduled, paid };
+}, [schedules]);
 
   const filtered = useMemo(() => {
     let r = [...schedules];
@@ -409,7 +394,7 @@ const pageSizeOptions = [5, 10, 20, 50, 100];
                         c.count
                       )}
                     </div>
-                    <div
+                    {/* <div
                       style={{
                         fontSize: 10,
                         color: theme.textMuted,
@@ -419,7 +404,7 @@ const pageSizeOptions = [5, 10, 20, 50, 100];
                       {loading
                         ? "Loading…"
                         : `ksh ${Math.round(c.total / 1000)}K outstanding`}
-                    </div>
+                    </div> */}
                   </div>
                   {isActive ? (
                     <div
