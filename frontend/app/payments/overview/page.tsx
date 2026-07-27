@@ -8,29 +8,25 @@ import {
   METHOD_ICON,
 } from "../_lib/data";
 
-import {
-  getPayments,
-  getRentSchedules,
-  getPaymentReport,
-} from "../../lib/payments";
-
 import type { PayMethod, PayStatus } from "../_lib/types";
 import type { Payment, RentSchedule } from "../../../types/payment";
-
+import { getBatchReport, getCashFlow, getExpensesSummary, getPaymentReport, getPayments, getRentSchedules } from "@/app/lib/payments";
 // ─── helpers ────────────────────────────────────────────────────────────────
 function sumByStatus(payments: Payment[], status: string) {
   return payments
     .filter((p) => p.status === status)
     .reduce((s, p) => s + p.amount, 0);
 }
+
 function countByStatus(payments: Payment[], status: string) {
   return payments.filter((p) => p.status === status).length;
 }
 
-// ─── mock cash-flow data (replace with real endpoint when ready) ─────────────
-const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const INFLOW  = [5200, 6800, 4900, 9600, 5100, 4200, 3800];
-const OUTFLOW = [3100, 4200, 3600, 5800, 3900, 2900, 2600];
+function formatKES(amount: number) {
+  if (amount >= 1_000_000) return `KES ${(amount / 1_000_000).toFixed(1)}M`;
+  if (amount >= 1_000) return `KES ${(amount / 1_000).toFixed(1)}K`;
+  return `KES ${amount.toLocaleString()}`;
+}
 
 // ─── tiny SVG area chart ─────────────────────────────────────────────────────
 function AreaChart({
@@ -46,9 +42,9 @@ function AreaChart({
   width?: number;
   height?: number;
 }) {
-  const max = Math.max(...data) * 1.1;
+  const max = Math.max(...data, 1) * 1.1;
   const pts = data.map((v, i) => {
-    const x = (i / (data.length - 1)) * width;
+    const x = (i / Math.max(data.length - 1, 1)) * width;
     const y = height - (v / max) * height;
     return `${x},${y}`;
   });
@@ -131,6 +127,9 @@ export default function OverviewPage() {
   const [activityFilter, setActivityFilter] = useState<"all" | PayStatus>("all");
   const [chartRange, setChartRange] = useState<"7" | "30">("7");
   const [reconciling, setReconciling] = useState<number | null>(null);
+  const [expenses, setExpenses] = useState(0);
+  const [cashFlow, setCashFlow] = useState<{ label: string; inflow: number; outflow: number }[]>([]);
+  const [exporting, setExporting] = useState(false);
 
   async function loadPayments() {
     const [p, s] = await Promise.all([getPayments(), getRentSchedules()]);
@@ -140,7 +139,14 @@ export default function OverviewPage() {
 
   useEffect(() => {
     loadPayments();
+    getExpensesSummary().then(setExpenses).catch(() => setExpenses(0));
   }, []);
+
+  useEffect(() => {
+    getCashFlow(chartRange === "30" ? 30 : 7)
+      .then(setCashFlow)
+      .catch(() => setCashFlow([]));
+  }, [chartRange]);
 
   async function handleReconcile(paymentId: number) {
     setReconciling(paymentId);
@@ -155,10 +161,20 @@ export default function OverviewPage() {
     }
   }
 
+  async function handleBatchExport() {
+    setExporting(true);
+    try {
+      await getBatchReport();
+    } catch (err) {
+      console.error("Batch export failed", err);
+    } finally {
+      setExporting(false);
+    }
+  }
+
   const collected = sumByStatus(payments, "paid");
   const arrears   = sumByStatus(payments, "overdue");
   const pending   = sumByStatus(payments, "pending");
-  const expenses  = 128900; // placeholder until endpoint exists
   const total     = collected + arrears + pending;
   const rate      = total ? ((collected / total) * 100).toFixed(1) : "0.0";
 
@@ -200,18 +216,23 @@ export default function OverviewPage() {
     getPaymentReport(propertyId, month);
   }
 
-  // avg inflow / outflow
-  const avgIn  = Math.round(INFLOW.reduce((a, b) => a + b, 0) / INFLOW.length);
-  const avgOut = Math.round(OUTFLOW.reduce((a, b) => a + b, 0) / OUTFLOW.length);
+  // chart series derived from fetched cash flow
+  const DAYS    = cashFlow.map((d) => d.label);
+  const INFLOW  = cashFlow.map((d) => d.inflow);
+  const OUTFLOW = cashFlow.map((d) => d.outflow);
+  const avgIn   = INFLOW.length ? Math.round(INFLOW.reduce((a, b) => a + b, 0) / INFLOW.length) : 0;
+  const avgOut  = OUTFLOW.length ? Math.round(OUTFLOW.reduce((a, b) => a + b, 0) / OUTFLOW.length) : 0;
 
   // ─── styles ───────────────────────────────────────────────────────────────
   const S = {
     card: {
-      background: "#ffffff",
-      border: "1px solid #e8eaf0",
-      borderRadius: 14,
-      padding: 18,
-      boxShadow: "0 1px 3px rgba(15,23,42,0.06)",
+       position: "relative" as const,
+       background: "#ffffff",
+       border: "1px solid #e8eaf0",
+       borderRadius: 14,
+       padding: 13,
+       overflow: "hidden" as const,
+       boxShadow: "0 1px 3px rgba(15,23,42,0.06)",
     } as React.CSSProperties,
 
     label: {
@@ -251,40 +272,45 @@ export default function OverviewPage() {
         {[
           {
             label: "Collected",
-            value: `$${(collected / 1000).toFixed(1)}K`,
-            sub: "+12% from last month",
-            accent: "#0f172a",
+            value: formatKES(collected),
+            accent: "#0F52BA",
           },
           {
             label: "Arrears",
-            value: `$${(arrears / 1000).toFixed(1)}K`,
-            sub: `${countByStatus(payments, "overdue")} overdue properties`,
+            value: formatKES(arrears),
             accent: "#e11d48",
           },
           {
             label: "Pending",
-            value: `$${(pending / 1000).toFixed(1)}K`,
-            sub: "Expected by EOM",
+            value: formatKES(pending),
             accent: "#f59e0b",
           },
           {
             label: "Expenses",
-            value: `$${(expenses / 1000).toFixed(1)}K`,
-            sub: "Maintenance & Utilities",
-            accent: "#f59e0b",
+            value: formatKES(expenses),
+            accent: "#8b5cf6",
           },
           {
             label: "Collection Rate",
             value: `${rate}%`,
-            sub: "Target: 95%",
-            accent: "#0f172a",
+            accent: "#10b981",
           },
         ].map((m, i) => (
           <div key={i} style={S.card}>
+            <div 
+              style={{
+                position: "absolute",
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: 6,
+                background: m.accent,
+              }}
+            />
             <div style={S.label}>{m.label}</div>
             <div
               style={{
-                fontSize: 22,
+                fontSize: 18,
                 fontWeight: 700,
                 color: m.accent,
                 margin: "6px 0 4px",
@@ -293,7 +319,6 @@ export default function OverviewPage() {
             >
               {m.value}
             </div>
-            <div style={S.sub}>{m.sub}</div>
           </div>
         ))}
       </div>
@@ -343,12 +368,12 @@ export default function OverviewPage() {
         {/* action buttons */}
         <div style={{ display: "flex", gap: 8 }}>
           {[
-            { label: "Pay",       icon: "north_east",  primary: true },
-            { label: "Schedules", icon: "event_repeat", primary: false },
-            { label: "Reports",   icon: "bar_chart",    primary: false },
+            { label: "Schedules", icon: "event_repeat", primary: false, href: "http://localhost:3000/payments/schedules" },
+            { label: "Reports",   icon: "bar_chart",    primary: false, href: "http://localhost:3000/payments/reports" },
           ].map((btn) => (
             <button
               key={btn.label}
+              onClick={() => { window.location.href = btn.href; }}
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -447,14 +472,18 @@ export default function OverviewPage() {
                     }}
                   />
                 ))}
-                {/* outflow area */}
-                <div style={{ position: "absolute", inset: 0 }}>
-                  <AreaChart data={OUTFLOW} color="#93c5fd" fill="url(#fill-93c5fd)" />
-                </div>
-                {/* inflow area */}
-                <div style={{ position: "absolute", inset: 0 }}>
-                  <AreaChart data={INFLOW} color="#4f46e5" fill="url(#fill-4f46e5)" />
-                </div>
+                {cashFlow.length > 0 && (
+                  <>
+                    {/* outflow area */}
+                    <div style={{ position: "absolute", inset: 0 }}>
+                      <AreaChart data={OUTFLOW} color="#93c5fd" fill="url(#fill-93c5fd)" />
+                    </div>
+                    {/* inflow area */}
+                    <div style={{ position: "absolute", inset: 0 }}>
+                      <AreaChart data={INFLOW} color="#4f46e5" fill="url(#fill-4f46e5)" />
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* X-axis */}
@@ -469,7 +498,7 @@ export default function OverviewPage() {
                   paddingRight: 2,
                 }}
               >
-                {DAYS.map((d) => <span key={d}>{d}</span>)}
+                {DAYS.map((d, i) => <span key={`${d}-${i}`}>{d}</span>)}
               </div>
             </div>
           </div>
@@ -477,8 +506,8 @@ export default function OverviewPage() {
           {/* legend */}
           <div style={{ display: "flex", gap: 20, marginTop: 16 }}>
             {[
-              { dot: "#4f46e5", label: "Avg. Inflow:", val: `$${avgIn.toLocaleString()}` },
-              { dot: "#93c5fd", label: "Avg. Outflow:", val: `$${avgOut.toLocaleString()}` },
+              { dot: "#4f46e5", label: "Avg. Inflow:", val: `KES ${avgIn.toLocaleString()}` },
+              { dot: "#93c5fd", label: "Avg. Outflow:", val: `KES ${avgOut.toLocaleString()}` },
             ].map((l) => (
               <div key={l.label} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#475569" }}>
                 <div style={{ width: 8, height: 8, borderRadius: "50%", background: l.dot }} />
@@ -593,55 +622,6 @@ export default function OverviewPage() {
               View Full History
             </button>
           </div>
-
-          {/* Smart Insights */}
-          <div
-            style={{
-              borderRadius: 14,
-              padding: 18,
-              background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
-              color: "#ffffff",
-              position: "relative",
-              overflow: "hidden",
-            }}
-          >
-            {/* subtle bg arrow */}
-            <div
-              style={{
-                position: "absolute",
-                right: 16,
-                top: 12,
-                opacity: 0.25,
-                fontSize: 60,
-                fontWeight: 900,
-                color: "#fff",
-                lineHeight: 1,
-                pointerEvents: "none",
-              }}
-            >
-              ↗
-            </div>
-
-            <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>Smart Insights</div>
-            <div style={{ fontSize: 11, opacity: 0.75, marginBottom: 14 }}>Based on your activity.</div>
-
-            <div style={{ marginBottom: 10 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, marginBottom: 6, fontWeight: 600 }}>
-                <span>Monthly Spending Limit</span>
-                <span>72%</span>
-              </div>
-              <div style={{ height: 6, background: "rgba(255,255,255,0.25)", borderRadius: 4, overflow: "hidden" }}>
-                <div style={{ height: "100%", width: "72%", background: "#f97316", borderRadius: 4 }} />
-              </div>
-            </div>
-
-            <div style={{ fontSize: 12, fontWeight: 600, lineHeight: 1.5 }}>
-              You&apos;ve saved{" "}
-              <span style={{ textDecoration: "underline" }}>$420.00</span>{" "}
-              more this week compared to previous month.
-            </div>
-          </div>
-
         </div>
       </div>
 
@@ -702,9 +682,9 @@ export default function OverviewPage() {
             ) : (
               /* fallback skeleton rows */
               [
-                { icon: "account_balance", label: "Bank Transfer", sub: "142 tx", val: "$542,000" },
-                { icon: "credit_card",     label: "Credit Card",   sub: "89 tx",  val: "$210,500" },
-                { icon: "sync",            label: "Cash/Check",    sub: "24 tx",  val: "$89,200" },
+                { icon: "account_balance", label: "Bank Transfer", sub: "142 tx", val: "KES 542,000" },
+                { icon: "credit_card",     label: "Credit Card",   sub: "89 tx",  val: "KES 210,500" },
+                { icon: "sync",            label: "Cash/Check",    sub: "24 tx",  val: "KES 89,200" },
               ].map((row) => (
                 <div
                   key={row.label}
@@ -746,6 +726,8 @@ export default function OverviewPage() {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
             <div style={S.h3}>Property Summary</div>
             <button
+              onClick={handleBatchExport}
+              disabled={exporting}
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -757,11 +739,12 @@ export default function OverviewPage() {
                 border: "1px solid #e2e8f0",
                 background: "#fff",
                 color: "#374151",
-                cursor: "pointer",
+                cursor: exporting ? "not-allowed" : "pointer",
+                opacity: exporting ? 0.6 : 1,
               }}
             >
               <span className="material-symbols-outlined" style={{ fontSize: 15 }}>download</span>
-              Batch Export
+              {exporting ? "Exporting…" : "Batch Export"}
             </button>
           </div>
 
@@ -805,7 +788,7 @@ export default function OverviewPage() {
                     {typeof row.occupancy === "string" ? row.occupancy : "—"}
                   </td>
                   <td style={{ padding: "12px 8px", fontSize: 13, fontWeight: 600, color: "#0f172a" }}>
-                    ${row.revenue.toLocaleString()}
+                    KES {row.revenue.toLocaleString()}
                   </td>
                   <td style={{ padding: "12px 8px" }}>
                     <PropBadge label={row.status} />

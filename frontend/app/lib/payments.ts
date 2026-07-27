@@ -1,7 +1,6 @@
 import api from './api';
 import type { Payment, RentSchedule } from '../../types/payment';
 
-// ── Payments ──────────────────────────────────────────────
 export const getPayments = (params?: {
     propertyId?: number;
     tenantId?: number;
@@ -14,11 +13,6 @@ export const getPayments = (params?: {
 
     return api.get(`/api/payments?${query.toString()}`).then(res => res.data.payments as Payment[]);
 };
-
-// export const getRentSchedules = (status?: string) => {
-//     const query = status ? `?status=${status}` : '';
-//     return api.get(`/api/payments/schedules${query}`).then(res => res.data.schedules as RentSchedule[]);
-// };
 
 export const getRentSchedules = (status?: string, leaseId?: number): Promise<RentSchedule[]> => {
   const params = new URLSearchParams();
@@ -86,7 +80,6 @@ export const getPaymentReport = (propertyId: number, month?: string) => {
     return api.get(`/api/payments/reports${query}`, {
         responseType: 'blob'
     }).then(res => {
-        // Create download link
         const url = window.URL.createObjectURL(new Blob([res.data]));
         const link = document.createElement('a');
         link.href = url;
@@ -95,3 +88,30 @@ export const getPaymentReport = (propertyId: number, month?: string) => {
     });
 };
 
+export const getBatchReport = (month?: string) => {
+    const query = month ? `?month=${month}` : '';
+    return api.get(`/api/payments/reports/batch${query}`, {
+        responseType: 'blob'
+    }).then(res => {
+        const url = window.URL.createObjectURL(new Blob([res.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `batch-report-${month ?? 'current'}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+    });
+};
+
+export const getCashFlow = (days: 7 | 30 = 7) => {
+    return api.get(`/api/payments/cashflow?days=${days}`).then(
+        res => res.data.days as { date: string; label: string; inflow: number; outflow: number }[]
+    );
+};
+
+// ── Expenses ──────────────────────────────────────────────
+export const getExpensesSummary = (month?: string) => {
+    const query = month ? `?month=${month}` : '';
+    return api.get(`/api/expenses/summary${query}`).then(res => res.data.expenses as number);
+};

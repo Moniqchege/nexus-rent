@@ -383,6 +383,143 @@ router.get('/sse/:propertyId', (req, res) => {
   req.on('close', () => clearInterval(interval));
 });
 
+// GET /api/payments/cashflow?days=7|30
+router.get('/cashflow', async (req: Request, res: Response) => {
+  try {
+    const authReq = req as AuthRequest;
+    const days = req.query.days === '30' ? 30 : 7;
+
+    const end = new Date();
+    end.setHours(23, 59, 59, 999);
+    const start = new Date(end);
+    start.setDate(start.getDate() - (days - 1));
+    start.setHours(0, 0, 0, 0);
+
+    const userProperties = await db.userProperty.findMany({
+      where: { userId: authReq.userId! },
+      include: { role: true },
+    });
+    const isTenant = userProperties.some((up) => up.role.name.toLowerCase() === 'tenant');
+    const isLandlord = userProperties.some((up) => up.role.name.toLowerCase() === 'landlord');
+
+    const paymentWhere: any = { status: 'paid', paidAt: { gte: start, lte: end } };
+    if (isTenant && !isLandlord) {
+      paymentWhere.tenantId = authReq.userId!;
+    } else {
+      paymentWhere.property = { landlordId: authReq.userId! };
+    }
+
+    const [payments, expenses] = await Promise.all([
+      db.payment.findMany({ where: paymentWhere, select: { amount: true, paidAt: true } }),
+      isLandlord
+        ? db.expense.findMany({
+            where: { property: { landlordId: authReq.userId! }, date: { gte: start, lte: end } },
+            select: { amount: true, date: true },
+          })
+        : Promise.resolve([]),
+    ]);
+
+    const dayKeys: string[] = [];
+    const inflowMap: Record<string, number> = {};
+    const outflowMap: Record<string, number> = {};
+    for (let i = 0; i < days; i++) {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      const key = d.toISOString().slice(0, 10);
+      dayKeys.push(key);
+      inflowMap[key] = 0;
+      outflowMap[key] = 0;
+    }
+
+    payments.forEach((p) => {
+      const key = (p.paidAt as Date).toISOString().slice(0, 10);
+      if (key in inflowMap) inflowMap[key] += p.amount;
+    });
+    expenses.forEach((e) => {
+      const key = (e.date as Date).toISOString().slice(0, 10);
+      if (key in outflowMap) outflowMap[key] += e.amount;
+    });
+
+    res.json({
+      days: dayKeys.map((key) => ({
+        date: key,
+        label: new Date(key + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short' }),
+        inflow: inflowMap[key],
+        outflow: outflowMap[key],
+      })),
+    });
+  } catch (error) {
+    console.error('Cash flow fetch failed:', error);
+    res.status(500).json({ error: 'Failed to fetch cash flow' });
+  }
+});
+
+// GET /api/payments/reports/batch?month=2026-07 — combined CSV across all of the landlord's properties
+router.get(
+  '/reports/batch',
+  audit({ action: 'generate_batch_report', title: 'Batch Financial Report' }),
+  async (req: Request, res: Response) => {
+    try {
+      const authReq = req as AuthRequest;
+      const { month } = req.query;
+      const monthStart = month
+        ? new Date(`${month}-01`)
+        : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+      const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0, 23, 59, 59, 999);
+
+      const properties = await db.property.findMany({
+        where: { landlordId: authReq.userId! },
+        select: { id: true, title: true },
+      });
+
+      const rows = await Promise.all(
+        properties.map(async (property) => {
+          const [paymentsTotal, arrearsTotal, expensesTotal] = await Promise.all([
+            db.payment.aggregate({
+              where: { propertyId: property.id, status: 'paid', paidAt: { gte: monthStart, lte: monthEnd } },
+              _sum: { amount: true },
+            }),
+            db.rentSchedule.aggregate({
+              where: {
+                propertyId: property.id,
+                status: { in: ['scheduled', 'overdue'] },
+                dueDate: { gte: monthStart, lt: monthEnd },
+              },
+              _sum: { amount: true },
+            }),
+            db.expense.aggregate({
+              where: { propertyId: property.id, date: { gte: monthStart, lte: monthEnd } },
+              _sum: { amount: true },
+            }),
+          ]);
+
+          const revenue = paymentsTotal._sum.amount || 0;
+          const arrears = arrearsTotal._sum.amount || 0;
+          const expenses = expensesTotal._sum.amount || 0;
+
+          return { id: property.id, title: property.title, revenue, arrears, expenses, pnl: revenue - expenses };
+        })
+      );
+
+      const monthLabel = (month as string) || `${monthStart.getFullYear()}-${String(monthStart.getMonth() + 1).padStart(2, '0')}`;
+      const header = 'Property ID,Property Name,Month,Revenue,Arrears,Expenses,P&L\n';
+      const body = rows
+        .map(
+          (r) =>
+            `${r.id},"${r.title}",${monthLabel},KES${r.revenue.toLocaleString()},KES${r.arrears.toLocaleString()},KES${r.expenses.toLocaleString()},KES${r.pnl.toLocaleString()}`
+        )
+        .join('\n');
+
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename=batch-report-${monthLabel}.csv`);
+      res.send(header + body + '\n');
+    } catch (error) {
+      console.error('Batch report failed:', error);
+      res.status(500).json({ error: 'Batch report failed' });
+    }
+  }
+);
+
 export const stripeWebhookHandler = async (req: Request, res: Response) => {
   const sig = req.headers['stripe-signature'];
 

@@ -45,6 +45,33 @@ router.get(
     }
 );
 
+// GET /api/expenses/summary?month=2026-07 — total expenses for the period (dashboard card)
+router.get(
+    "/summary",
+    async (req: Request, res: Response) => {
+        try {
+            const authReq = req as AuthRequest;
+            const { month } = req.query;
+            const monthStart = month
+                ? new Date(`${month}-01`)
+                : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+            const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0, 23, 59, 59, 999);
+
+            const total = await db.expense.aggregate({
+                where: {
+                    property: { landlordId: authReq.userId! },
+                    date: { gte: monthStart, lte: monthEnd },
+                },
+                _sum: { amount: true },
+            });
+
+            res.json({ expenses: total._sum.amount || 0 });
+        } catch (e: any) {
+            res.status(500).json({ error: "Failed to fetch expense summary" });
+        }
+    }
+);
+
 // POST /api/expenses
 router.post(
     "/",
