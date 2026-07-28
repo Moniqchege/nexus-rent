@@ -376,15 +376,6 @@ export default function ExpensesPage() {
         <button style={s.actionBtn(false)} onClick={openDetails}>
           Details
         </button>
-        {!isPaid && (
-          <button
-            style={s.markPaidBtn(isMarking)}
-            onClick={() => handleMarkPaid(exp.id)}
-            disabled={isMarking}
-          >
-            {isMarking ? "Marking…" : "Mark Paid"}
-          </button>
-        )}
       </>
     );
   };

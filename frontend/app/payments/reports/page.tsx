@@ -71,7 +71,7 @@ function parseReportCSV(csv: string): ReportSummary | null {
     const lines = csv.trim().split("\n");
     if (lines.length < 2) return null;
     const row = lines[1];
-    const matches = row.match(/ksh\s*([0-9]{1,3}(?:,[0-9]{3})*|[0-9]+(?:\.[0-9]+)?)/g);
+    const matches = row.match(/(?:KES|ksh)\s*([0-9]{1,3}(?:,[0-9]{3})*|[0-9]+(?:\.[0-9]+)?)/gi);
     if (!matches || matches.length < 4) return null;
 
     const parseKES = (s: string) => {
@@ -84,6 +84,12 @@ function parseReportCSV(csv: string): ReportSummary | null {
   } catch {
     return null;
   }
+}
+
+function formatKES(amount: number) {
+  if (amount >= 1_000_000) return `KES ${(amount / 1_000_000).toFixed(1)}M`;
+  if (amount >= 1_000) return `KES ${(amount / 1_000).toFixed(1)}K`;
+  return `KES ${amount.toLocaleString()}`;
 }
 
 function sumSummaries(all: ReportSummary[]): ReportSummary {
@@ -100,9 +106,9 @@ function sumSummaries(all: ReportSummary[]): ReportSummary {
 
 const MONTHS_BACK = 4;
 
-function monthLabel(offset: number): string {
-  const d = new Date();
-  d.setMonth(d.getMonth() - offset);
+function monthLabel(baseMonth: string, offset: number): string {
+  const [y, m] = baseMonth.split("-").map(Number);
+  const d = new Date(y, m - 1 - offset, 1);
   return d.toISOString().slice(0, 7);
 }
 
@@ -219,41 +225,41 @@ export default function ReportsPage() {
       .reduce((sum, e) => sum + e.amount, 0);
   }, []);
 
-  const fetchMom = useCallback(async () => {
-    if (loadingProperties || properties.length === 0) return;
-    setLoadingMom(true);
-    try {
-      const months = Array.from({ length: MONTHS_BACK }, (_, i) => monthLabel(MONTHS_BACK - 1 - i));
-      const results = await Promise.all(
-        months.map(async (m) => {
-          try {
-            let revenue = 0;
-            let pl = 0;
+const fetchMom = useCallback(async () => {
+  if (loadingProperties || properties.length === 0) return;
+  setLoadingMom(true);
+  try {
+    const months = Array.from({ length: MONTHS_BACK }, (_, i) => monthLabel(month, MONTHS_BACK - 1 - i));
+    const results = await Promise.all(
+      months.map(async (m) => {
+        try {
+          let revenue = 0;
+          let pl = 0;
 
-            if (propertyId !== "all") {
-              const r = await fetchReportForProperty(Number(propertyId), m);
-              revenue = r.revenue;
-              pl = r.pl;
-            } else {
-              const all = await Promise.all(properties.map((p) => fetchReportForProperty(p.id, m)));
-              const summed = sumSummaries(all);
-              revenue = summed.revenue;
-              pl = summed.pl;
-            }
-
-            const expenses = await fetchExpensesForMonth(m, propertyId);
-
-            return { month: m, revenue, expenses, pl };
-          } catch {
-            return { month: m, revenue: 0, expenses: 0, pl: 0 };
+          if (propertyId !== "all") {
+            const r = await fetchReportForProperty(Number(propertyId), m);
+            revenue = r.revenue;
+            pl = r.pl;
+          } else {
+            const all = await Promise.all(properties.map((p) => fetchReportForProperty(p.id, m)));
+            const summed = sumSummaries(all);
+            revenue = summed.revenue;
+            pl = summed.pl;
           }
-        })
-      );
-      setMomData(results);
-    } finally {
-      setLoadingMom(false);
-    }
-  }, [propertyId, properties, loadingProperties, fetchReportForProperty, fetchExpensesForMonth]);
+
+          const expenses = await fetchExpensesForMonth(m, propertyId);
+
+          return { month: m, revenue, expenses, pl };
+        } catch {
+          return { month: m, revenue: 0, expenses: 0, pl: 0 };
+        }
+      })
+    );
+    setMomData(results);
+  } finally {
+    setLoadingMom(false);
+  }
+}, [propertyId, month, properties, loadingProperties, fetchReportForProperty, fetchExpensesForMonth]);
 
   const fetchExpenses = useCallback(async () => {
     setLoadingExpenses(true);
@@ -443,7 +449,7 @@ const metricIcons = {
               Total Revenue
             </p>
             <h3 style={{ fontSize: 18, fontWeight: 700, color: "#111827" }}>
-              {loadingSummary ? "…" : `ksh ${(revenue / 1000).toFixed(0)}K`}
+              {loadingSummary ? "…" : formatKES(revenue)}
             </h3>
           </div>
 
@@ -464,7 +470,7 @@ const metricIcons = {
               Total Arrears
             </p>
             <h3 style={{ fontSize: 18, fontWeight: 700, color: "#111827" }}>
-              {loadingSchedules ? "…" : `ksh ${(arrearsBySchedule / 1000).toFixed(0)}K`}
+              {loadingSchedules ? "…" : formatKES(arrearsBySchedule)}
             </h3>
           </div>
 
@@ -485,7 +491,7 @@ const metricIcons = {
               Total Expenses
             </p>
             <h3 style={{ fontSize: 18, fontWeight: 700, color: "#111827" }}>
-              {loadingExpenses ? "…" : `ksh ${(realExpensesTotal / 1000).toFixed(0)}K`}
+              {loadingExpenses ? "…" : formatKES(realExpensesTotal)}
             </h3>
           </div>
 
@@ -506,7 +512,7 @@ const metricIcons = {
               Net Profit
             </p>
             <h3 style={{ fontSize: 18, fontWeight: 700, color: "#059669" }}>
-              {loadingSummary ? "…" : `ksh ${(pl / 1000).toFixed(0)}K`}
+              {loadingSummary ? "…" : formatKES(pl)}
             </h3>
           </div>
 
@@ -627,7 +633,7 @@ const metricIcons = {
                       {/* Revenue Bar */}
                       <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
                         <div style={{ fontSize: 11, fontWeight: 700, color: "#4f46e5", marginBottom: 4 }}>
-                          {(m.revenue / 1000).toFixed(0)}K
+                          {formatKES(m.revenue)}
                         </div>
                         <div
                           style={{
@@ -643,7 +649,7 @@ const metricIcons = {
                       {/* Expenses Bar */}
                       <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
                         <div style={{ fontSize: 11, fontWeight: 700, color: "#d1d5db", marginBottom: 4 }}>
-                          {(m.expenses / 1000).toFixed(0)}K
+                          {formatKES(m.expenses)}
                         </div>
                         <div
                           style={{

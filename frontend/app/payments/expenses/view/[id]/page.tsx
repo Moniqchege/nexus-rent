@@ -224,7 +224,7 @@ export default function ExpenseDetails() {
       letterSpacing: "0.04em",
     },
     detailValue: {
-      fontSize: 14,
+      fontSize: 12,
       fontWeight: 600,
       color: "#0f172a",
       display: "flex",
@@ -366,13 +366,13 @@ export default function ExpenseDetails() {
       zIndex: 1,
     }),
     timelineTitle: (color: string) => ({
-      fontSize: 14,
+      fontSize: 11,
       fontWeight: 700,
       color,
       margin: 0,
     }),
     timelineSub: {
-      fontSize: 12,
+      fontSize: 10,
       color: "#94a3b8",
       marginTop: 2,
     },
