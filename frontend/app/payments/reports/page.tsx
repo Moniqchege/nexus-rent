@@ -104,12 +104,10 @@ function sumSummaries(all: ReportSummary[]): ReportSummary {
   );
 }
 
-const MONTHS_BACK = 4;
+const CURRENT_YEAR = new Date().getFullYear();
 
-function monthLabel(baseMonth: string, offset: number): string {
-  const [y, m] = baseMonth.split("-").map(Number);
-  const d = new Date(y, m - 1 - offset, 1);
-  return d.toISOString().slice(0, 7);
+function yearMonthLabel(year: number, monthIndex: number): string {
+  return `${year}-${String(monthIndex).padStart(2, "0")}`;
 }
 
 function shortMonth(ym: string) {
@@ -138,11 +136,25 @@ function scheduleStatusColor(status: string) {
   }
 }
 
+function niceCeil(value: number): number {
+  if (value <= 0) return 1;
+  const exponent = Math.floor(Math.log10(value));
+  const magnitude = Math.pow(10, exponent);
+  const residual = value / magnitude;
+  let niceResidual: number;
+  if (residual <= 1) niceResidual = 1;
+  else if (residual <= 2) niceResidual = 2;
+  else if (residual <= 5) niceResidual = 5;
+  else niceResidual = 10;
+  return niceResidual * magnitude;
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function ReportsPage() {
   const [propertyId, setPropertyId] = useState<string>("all");
   const [month, setMonth] = useState<string>(new Date().toISOString().slice(0, 7));
+  const [chartYear, setChartYear] = useState<number>(CURRENT_YEAR);
 
   const [properties, setProperties] = useState<Property[]>([]);
   const [loadingProperties, setLoadingProperties] = useState(true);
@@ -213,7 +225,7 @@ export default function ReportsPage() {
     } finally {
       setLoadingPayments(false);
     }
-  }, [propertyId, month]); 
+  }, [propertyId, month]);
 
   const fetchExpensesForMonth = useCallback(async (m: string, pid: string): Promise<number> => {
     const params: Record<string, string> = { month: m };
@@ -225,48 +237,48 @@ export default function ReportsPage() {
       .reduce((sum, e) => sum + e.amount, 0);
   }, []);
 
-const fetchMom = useCallback(async () => {
-  if (loadingProperties || properties.length === 0) return;
-  setLoadingMom(true);
-  try {
-    const months = Array.from({ length: MONTHS_BACK }, (_, i) => monthLabel(month, MONTHS_BACK - 1 - i));
-    const results = await Promise.all(
-      months.map(async (m) => {
-        try {
-          let revenue = 0;
-          let pl = 0;
+  const fetchMom = useCallback(async () => {
+    if (loadingProperties || properties.length === 0) return;
+    setLoadingMom(true);
+    try {
+      const months = Array.from({ length: 12 }, (_, i) => yearMonthLabel(chartYear, i + 1));
+      const results = await Promise.all(
+        months.map(async (m) => {
+          try {
+            let revenue = 0;
+            let pl = 0;
 
-          if (propertyId !== "all") {
-            const r = await fetchReportForProperty(Number(propertyId), m);
-            revenue = r.revenue;
-            pl = r.pl;
-          } else {
-            const all = await Promise.all(properties.map((p) => fetchReportForProperty(p.id, m)));
-            const summed = sumSummaries(all);
-            revenue = summed.revenue;
-            pl = summed.pl;
+            if (propertyId !== "all") {
+              const r = await fetchReportForProperty(Number(propertyId), m);
+              revenue = r.revenue;
+              pl = r.pl;
+            } else {
+              const all = await Promise.all(properties.map((p) => fetchReportForProperty(p.id, m)));
+              const summed = sumSummaries(all);
+              revenue = summed.revenue;
+              pl = summed.pl;
+            }
+
+            const expenses = await fetchExpensesForMonth(m, propertyId);
+
+            return { month: m, revenue, expenses, pl };
+          } catch {
+            return { month: m, revenue: 0, expenses: 0, pl: 0 };
           }
-
-          const expenses = await fetchExpensesForMonth(m, propertyId);
-
-          return { month: m, revenue, expenses, pl };
-        } catch {
-          return { month: m, revenue: 0, expenses: 0, pl: 0 };
-        }
-      })
-    );
-    setMomData(results);
-  } finally {
-    setLoadingMom(false);
-  }
-}, [propertyId, month, properties, loadingProperties, fetchReportForProperty, fetchExpensesForMonth]);
+        })
+      );
+      setMomData(results);
+    } finally {
+      setLoadingMom(false);
+    }
+  }, [propertyId, chartYear, properties, loadingProperties, fetchReportForProperty, fetchExpensesForMonth]);
 
   const fetchExpenses = useCallback(async () => {
     setLoadingExpenses(true);
     try {
       const params: Record<string, string> = {};
       if (propertyId !== "all") params.propertyId = propertyId;
-      params.month = month; 
+      params.month = month;
       const res = await api.get("/api/expenses", { params });
       setExpenses(res.data?.expenses ?? []);
     } catch (e: any) {
@@ -295,7 +307,7 @@ const fetchMom = useCallback(async () => {
     fetchSummary();
     fetchPayments();
     fetchMom();
-    fetchExpenses(); 
+    fetchExpenses();
     fetchArrears();
   }, [loadingProperties, fetchSummary, fetchPayments, fetchMom, fetchExpenses, fetchArrears]);
 
@@ -326,44 +338,44 @@ const fetchMom = useCallback(async () => {
   }, {} as Record<string, { total: number; items: Expense[] }>);
 
   const filteredSchedules = useMemo(
-  () => schedules.filter((s) => s.dueDate && s.dueDate.slice(0, 7) === month),
-  [schedules, month]
-);
+    () => schedules.filter((s) => s.dueDate && s.dueDate.slice(0, 7) === month),
+    [schedules, month]
+  );
 
-const groupedSchedules = useMemo(() => {
-  return filteredSchedules.reduce((acc, s) => {
-    const allocated = s.allocatedAmount ?? 0;
-    const lateFee = s.lateFeeAmount ?? 0;
-    const isFullyPaid = allocated >= s.amount;
+  const groupedSchedules = useMemo(() => {
+    return filteredSchedules.reduce((acc, s) => {
+      const allocated = s.allocatedAmount ?? 0;
+      const lateFee = s.lateFeeAmount ?? 0;
+      const isFullyPaid = allocated >= s.amount;
 
-    let key: string;
-    let outstanding: number;
+      let key: string;
+      let outstanding: number;
 
-    if (s.status === "overdue" && !isFullyPaid) {
-      key = "Overdue";
-      outstanding = Math.max(0, s.amount + lateFee - allocated);
-    } else if (allocated > 0 && !isFullyPaid) {
-      key = "Partial";
-      outstanding = s.amount - allocated;
-    } else if (s.status === "scheduled") {
-      key = "Scheduled";
-      outstanding = s.amount;
-    } else {
-      key = "Paid";
-      outstanding = s.amount;
-    }
+      if (s.status === "overdue" && !isFullyPaid) {
+        key = "Overdue";
+        outstanding = Math.max(0, s.amount + lateFee - allocated);
+      } else if (allocated > 0 && !isFullyPaid) {
+        key = "Partial";
+        outstanding = s.amount - allocated;
+      } else if (s.status === "scheduled") {
+        key = "Scheduled";
+        outstanding = s.amount;
+      } else {
+        key = "Paid";
+        outstanding = s.amount;
+      }
 
-    if (!acc[key]) acc[key] = { total: 0, items: [] as typeof schedules };
-    acc[key].total += outstanding;
-    acc[key].items.push(s);
-    return acc;
-  }, {} as Record<string, { total: number; items: typeof schedules }>);
-}, [filteredSchedules]);
+      if (!acc[key]) acc[key] = { total: 0, items: [] as typeof schedules };
+      acc[key].total += outstanding;
+      acc[key].items.push(s);
+      return acc;
+    }, {} as Record<string, { total: number; items: typeof schedules }>);
+  }, [filteredSchedules]);
 
-const scheduleTotal = useMemo(
-  () => Object.values(groupedSchedules).reduce((sum, g) => sum + g.total, 0),
-  [groupedSchedules]
-);
+  const scheduleTotal = useMemo(
+    () => Object.values(groupedSchedules).reduce((sum, g) => sum + g.total, 0),
+    [groupedSchedules]
+  );
 
   const arrearsBySchedule = useMemo(() => {
     return schedules
@@ -375,21 +387,45 @@ const scheduleTotal = useMemo(
       }, 0);
   }, [schedules]);
 
-  const maxVal = Math.max(
-    1,
-    ...momData.map((m) => Math.max(m.revenue, m.expenses, Math.abs(m.pl)))
+  const maxVal = niceCeil(
+    Math.max(1, ...momData.map((m) => Math.max(m.revenue, m.expenses, Math.abs(m.pl))))
   );
+
+  const yAxisTicks = [4, 3, 2, 1, 0].map((i) => Math.round((maxVal * i) / 4));
 
   const propertyOptions = useMemo(() => [
     { label: "All Properties", value: "all" },
     ...properties.map((p) => ({ label: p.title, value: String(p.id) })),
   ], [properties]);
 
-  const handleExportCSV = () => {
-    const params = new URLSearchParams({ month });
-    if (propertyId !== "all") params.set("propertyId", propertyId);
-    window.open(`/api/payments/reports?${params}`, "_blank");
-  };
+  const yearOptions = useMemo(() => {
+    const years = [];
+    for (let y = CURRENT_YEAR; y >= CURRENT_YEAR - 4; y--) {
+      years.push({ label: String(y), value: String(y) });
+    }
+    return years;
+  }, []);
+
+  const handleExportCSV = async () => {
+  try {
+    const params: Record<string, string> = { month };
+    if (propertyId !== "all") params.propertyId = propertyId;
+    const res = await api.get("/api/payments/reports", {
+      params,
+      responseType: "blob",
+    });
+    const url = window.URL.createObjectURL(new Blob([res.data]));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `payments-report-${propertyId}-${month}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (e: any) {
+    setError(e?.response?.data?.error ?? e?.message ?? "Failed to export report");
+  }
+};
 
   const getChangePercent = (current: number, prev: number) => {
     if (prev === 0) return 0;
@@ -400,38 +436,38 @@ const scheduleTotal = useMemo(
   const currMonthData = momData[momData.length - 1];
 
   const cardBase: CSSProperties = {
-  backgroundColor: "#ffffff",
-  borderRadius: 16,
-  padding: 16,
-  border: "1px solid rgba(15, 23, 42, 0.06)",
-  boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.04)",
-  position: "relative",
-  overflow: "hidden",
-};
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
+    padding: 16,
+    border: "1px solid rgba(15, 23, 42, 0.06)",
+    boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.04)",
+    position: "relative",
+    overflow: "hidden",
+  };
 
-const getCardAccent = (color: string): CSSProperties => ({
-  position: "absolute",
-  left: 0,
-  top: 0,
-  bottom: 0,
-  width: 4,
-  background: color,
-  borderRadius: "16px 0 0 16px",
-});
+  const getCardAccent = (color: string): CSSProperties => ({
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 4,
+    background: color,
+    borderRadius: "16px 0 0 16px",
+  });
 
-const metricIcons = {
-  revenue: "trending_up",
-  arrears: "schedule",
-  expenses: "payments",
-  profit: "account_balance_wallet",
-};
+  const metricIcons = {
+    revenue: "trending_up",
+    arrears: "schedule",
+    expenses: "payments",
+    profit: "account_balance_wallet",
+  };
 
   return (
     <div style={{ backgroundColor: "#f9fafb", minHeight: "100vh", padding: "32px 24px" }}>
       <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
         {/* Metric Cards - Stich AI style */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 16, marginBottom: 22 }}>
-          
+
           {/* Revenue Card */}
           <div style={{ ...cardBase, paddingLeft: 20 }}>
             <div style={getCardAccent("#4f46e5")} />
@@ -519,7 +555,7 @@ const metricIcons = {
         </div>
          {/* Filters & Actions */}
         <div style={{ display: "flex", gap: 16, marginBottom: 22, flexWrap: "wrap", alignItems: "flex-end" }}>
-          <div style={{ width: 200 }}>
+          <div style={{ width: 250 }}>
             <label style={{ fontSize: 11, fontWeight: 600, color: "#6b7280", display: "block", marginBottom: 8, textTransform: "uppercase" }}>
               Property
             </label>
@@ -533,20 +569,19 @@ const metricIcons = {
             />
           </div>
 
-          <div style={{ width: 200 }}>
-            <label style={{ fontSize: 11, fontWeight: 600, color: "#6b7280", display: "block", marginBottom: 8, textTransform: "uppercase" }}>
-              Month
-            </label>
-            <MonthPickerPopup
-              label=""
-              value={month}
-              onChange={setMonth}
-              placeholder="Select month"
-            />
-          </div>
+           <div style={{ width: 250 }}>
+              <CustomDropdown
+                options={yearOptions}
+                value={String(chartYear)}
+                onChange={(val) => setChartYear(Number(val))}
+                labelKey="label"
+                valueKey="value"
+                minWidth="100px"
+              />
+            </div>
 
           <button
-            onClick={() => { fetchSummary(); fetchPayments(); fetchMom(); fetchExpenses(); }}
+            onClick={() => { fetchSummary(); fetchPayments(); fetchMom(); fetchExpenses(); fetchArrears(); }}
             style={{
               padding: "13px 24px",
               borderRadius: 8,
@@ -563,25 +598,6 @@ const metricIcons = {
           >
             ↺ Refresh
           </button>
-
-          <button
-            onClick={handleExportCSV}
-            style={{
-              padding: "12px 24px",
-              borderRadius: 8,
-              backgroundColor: "var(--neon-blue)",
-              color: "#fff",
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: "pointer",
-              border: "none",
-              transition: "all 0.2s"
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#4338ca"}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "#4f46e5"}
-          >
-             KRA Report
-          </button>
         </div>
 
         {error && (
@@ -590,7 +606,7 @@ const metricIcons = {
           </div>
         )}
 
-        {/* Month-over-Month Chart */}
+        {/* Revenue vs Expenses Chart — full year */}
         <div style={{
           backgroundColor: "#fff",
           borderRadius: 12,
@@ -599,82 +615,130 @@ const metricIcons = {
           border: "1px solid #e5e7eb",
           marginBottom: 22
         }}>
-          <div style={{ marginBottom: 24 }}>
-            <h3 style={{ fontSize: 14, fontWeight: 700, color: "#111827", marginBottom: 8 }}>
-              Revenue vs Expenses
-            </h3>
-            <p style={{ fontSize: 11, color: "#6b7280" }}>
-              Comparison across the last 4 months
-            </p>
+          <div style={{ marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 12 }}>
+            <div>
+              <h3 style={{ fontSize: 14, fontWeight: 700, color: "#111827", marginBottom: 8 }}>
+                Revenue vs Expenses
+              </h3>
+              <p style={{ fontSize: 11, color: "#6b7280" }}>
+                Full-year comparison, {chartYear}
+              </p>
+            </div>
           </div>
 
           {loadingMom ? (
-            <div style={{ height: 240, display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af" }}>
-              Loading chart…
-            </div>
-          ) : (
-            <div style={{ display: "flex", gap: 16, height: 280, alignItems: "flex-end", paddingBottom: 12 }}>
-              {momData.map((m, i) => {
-                const revenueH = (m.revenue / maxVal) * 220;
-                const expensesH = (m.expenses / maxVal) * 220;
-                
-                return (
+  <div style={{ height: 240, display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af" }}>
+    Loading chart…
+  </div>
+) : (
+  <div style={{ display: "flex", gap: 8 }}>
+    {/* Y-axis labels */}
+    <div style={{
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "space-between",
+      height: 220,
+      paddingBottom: 0,
+      minWidth: 56,
+      textAlign: "right"
+    }}>
+      {yAxisTicks.map((v, i) => (
+        <span key={i} style={{ fontSize: 10, color: "#9ca3af", fontWeight: 600 }}>
+          {formatKES(v)}
+        </span>
+      ))}
+    </div>
+
+    <div style={{ flex: 1 }}>
+      <div style={{ position: "relative", height: 220 }}>
+        {/* horizontal gridlines */}
+        {[0, 1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            style={{
+              position: "absolute",
+              left: 0,
+              right: 0,
+              top: `${(i / 4) * 100}%`,
+              borderTop: "1px dashed #e5e7eb",
+            }}
+          />
+        ))}
+
+        {/* bars */}
+        <div style={{ position: "absolute", inset: 0, display: "flex", gap: 6, alignItems: "flex-end" }}>
+          {momData.map((m, i) => {
+            const revenueH = (m.revenue / maxVal) * 220;
+            const expensesH = (m.expenses / maxVal) * 220;
+
+            return (
+              <div
+                key={i}
+                style={{
+                  flex: 1,
+                  display: "flex",
+                  gap: 4,
+                  alignItems: "flex-end",
+                  height: 220,
+                }}
+              >
+                {/* Revenue Bar */}
+                <div style={{ flex: 1 }}>
                   <div
-                    key={i}
                     style={{
-                      flex: 1,
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      gap: 12
+                      width: "100%",
+                      height: revenueH,
+                      backgroundColor: "#4f46e5",
+                      borderRadius: "6px 6px 0 0",
+                      transition: "all 0.3s"
                     }}
-                  >
-                    <div style={{ display: "flex", gap: 8, alignItems: "flex-end", height: 220, width: "50%" }}>
-                      {/* Revenue Bar */}
-                      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: "#4f46e5", marginBottom: 4 }}>
-                          {formatKES(m.revenue)}
-                        </div>
-                        <div
-                          style={{
-                            width: "100%",
-                            height: revenueH,
-                            backgroundColor: "#4f46e5",
-                            borderRadius: "8px 8px 0 0",
-                            transition: "all 0.3s"
-                          }}
-                        />
-                      </div>
+                    title={formatKES(m.revenue)}
+                  />
+                </div>
 
-                      {/* Expenses Bar */}
-                      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: "#d1d5db", marginBottom: 4 }}>
-                          {formatKES(m.expenses)}
-                        </div>
-                        <div
-                          style={{
-                            width: "100%",
-                            height: expensesH,
-                            backgroundColor: "#f2bb46",
-                            borderRadius: "8px 8px 0 0",
-                            transition: "all 0.3s"
-                          }}
-                        />
-                      </div>
-                    </div>
+                {/* Expenses Bar */}
+                <div style={{ flex: 1 }}>
+                  <div
+                    style={{
+                      width: "100%",
+                      height: expensesH,
+                      backgroundColor: "#f2bb46",
+                      borderRadius: "6px 6px 0 0",
+                      transition: "all 0.3s"
+                    }}
+                    title={formatKES(m.expenses)}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
 
-                    {/* Month Label */}
-                    <div style={{ fontSize: 11, fontWeight: 600, color: "#6b7280", textTransform: "uppercase" }}>
-                      {shortMonth(m.month)}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+      {/* Month Labels */}
+      <div style={{ display: "flex", gap: 6, marginTop: 10, marginBottom: 10 }}>
+        {momData.map((m, i) => (
+          <div
+            key={i}
+            style={{
+              flex: 1,
+              textAlign: "center",
+              fontSize: 10,
+              fontWeight: 600,
+              color: "#6b7280",
+              textTransform: "uppercase"
+            }}
+          >
+            {shortMonth(m.month)}
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+)}
 
           {/* Legend */}
-          <div style={{ display: "flex", gap: 24, paddingTop: 16, borderTop: "1px solid #e5e7eb" }}>
+          <div style={{ display: "flex", gap: 24, paddingTop: 10, borderTop: "1px solid #e5e7eb" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <div style={{ width: 12, height: 12, backgroundColor: "#4f46e5", borderRadius: 2 }} />
               <span style={{ fontSize: 11, color: "#6b7280", fontWeight: 600 }}>Revenue</span>
@@ -936,7 +1000,7 @@ const metricIcons = {
             REFACTORED: Expense Analytics - Two Column Layout (Table + Pie Chart)
             ═════════════════════════════════════════════════════════════════════ */}
         <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 200px", gap: 6, marginTop: 22}}>
-          
+
           {/* LEFT: Recent Expenses Table */}
           <div style={{
             backgroundColor: "#fff",
@@ -1129,14 +1193,14 @@ const metricIcons = {
                       let offset = 0;
                       const categoryEntries = Object.entries(groupedExpenses);
                       const total = categoryEntries.reduce((sum, [, group]) => sum + group.total, 0);
-                      
+
                       return categoryEntries.map(([category, group], idx) => {
                         const colors = categoryColor(category);
                         const percentage = (group.total / total) * 100;
                         const circumference = 2 * Math.PI * 45;
                         const strokeDashoffset = circumference * (1 - percentage / 100);
                         const rotation = (offset / total) * 360;
-                        
+
                         const circle = (
                           <circle
                             key={`${category}-${idx}`}
@@ -1161,7 +1225,7 @@ const metricIcons = {
                       });
                     })()}
                   </svg>
-                  
+
                   {/* Center Text */}
                   <div style={{
                     position: "absolute",
