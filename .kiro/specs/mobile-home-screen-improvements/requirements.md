@@ -35,11 +35,12 @@ The mobile home screen (`mobile/app/(tabs)/home.tsx`) currently has five data ac
 
 #### Acceptance Criteria
 
-1. WHEN the Home_Screen mounts and the tenant has an active Lease, THE Home_Screen SHALL fetch the tenant's active Lease from the API and display `Lease.rentAmount` as the "CURRENT MONTHLY RENT" value.
-2. WHEN the API returns no active Lease for the tenant, THE Home_Screen SHALL display `"—"` in place of the rent amount and omit the hero card subtitle.
-3. WHEN the Lease fetch is in progress, THE Home_Screen SHALL display a loading placeholder in the hero card instead of a numeric value.
-4. IF the Lease fetch fails due to a network or server error, THEN THE Home_Screen SHALL display `"—"` as the rent amount, SHALL clear any previously cached rent data, and SHALL NOT crash or show an unhandled error specifically due to the failed lease fetch.
-5. THE Home_Screen SHALL derive the "NEXT DUE" date from the active Lease's billing cycle rather than always computing the first day of next month from the current date.
+1. WHEN the Home_Screen mounts, IF the tenant has a Lease with `status = "active"`, THEN the Home_Screen SHALL fetch the tenant's active Lease from the API and display `Lease.rentAmount` formatted as `"Ksh{amount}"` as the "CURRENT MONTHLY RENT" value. IF the tenant has more than one active Lease, the one with the most recent `startDate` SHALL be used.
+2. IF the API returns no Lease with `status = "active"` for the tenant, THEN the Home_Screen SHALL display `"—"` in place of the rent amount and SHALL omit the hero card subtitle text.
+3. WHILE the Lease fetch is in progress, the Home_Screen SHALL display a loading placeholder (e.g., `"..."` or an activity indicator) in the hero card rent value position instead of a numeric value.
+4. IF the Lease fetch fails due to a network or server error, THEN the Home_Screen SHALL display `"—"` as the rent amount, SHALL clear any previously cached rent amount and NEXT DUE date values, and SHALL NOT crash or propagate an unhandled error to the user as a result of the failed Lease fetch.
+5. WHEN the Home_Screen derives the "NEXT DUE" date and the active Lease has `billingCycle = "monthly"`, THE Home_Screen SHALL compute the next future date that falls on the same day-of-month as `Lease.startDate`. WHEN the active Lease has `billingCycle = "weekly"`, THE Home_Screen SHALL compute the next future date that falls on the same day-of-week as `Lease.startDate`.
+6. WHEN the active Lease has a `billingCycle` value other than `"monthly"` or `"weekly"`, THE Home_Screen SHALL fall back to displaying the first day of the next calendar month as the "NEXT DUE" date.
 
 ---
 
@@ -49,10 +50,10 @@ The mobile home screen (`mobile/app/(tabs)/home.tsx`) currently has five data ac
 
 #### Acceptance Criteria
 
-1. WHEN a tenant presses the "Pay Rent" quick-action button, THE Home_Screen SHALL navigate to the Payment_Method_Screen.
-2. WHEN navigating to the Payment_Method_Screen, THE Home_Screen SHALL pass the following route params: `amount` (from the active Lease's `rentAmount`), `propertyId` (from the tenant's first `UserProperty`), `tenantId` (the authenticated user's `id`), `propertyTitle` (from the associated property), `dueDate` (the next scheduled due date), `scheduleId` (the id of the next pending Rent_Schedule, or `0` if none), and `accountRef` (a reference string derived from the schedule or property).
-3. IF no active Lease exists for the tenant, THEN THE Home_Screen SHALL display an alert stating `"No active lease found. Contact your landlord."` and SHALL NOT navigate to the Payment_Method_Screen.
-4. WHILE a Lease fetch is in progress, THE Home_Screen SHALL disable the "Pay Rent" button continuously and SHALL NOT navigate to the Payment_Method_Screen until the fetch completes.
+1. WHEN a tenant presses the "Pay Rent" quick-action button, THE Home_Screen SHALL navigate to the Payment_Method_Screen at route `/pay/method`.
+2. WHEN navigating to the Payment_Method_Screen, THE Home_Screen SHALL pass the following route params: `amount` (from the active Lease's `rentAmount`), `propertyId` (from the tenant's first `UserProperty`), `tenantId` (the authenticated user's `id`), `propertyTitle` (from the associated property's `title`), `dueDate` (the next scheduled due date as formatted string), `scheduleId` (the `id` of the next pending `RentSchedule` with `status = "scheduled"`, or `0` if none exists), and `accountRef` (a reference string derived from the schedule or property identifier).
+3. IF no active Lease exists for the tenant at the time the button is pressed, THEN THE Home_Screen SHALL display an alert with the message `"No active lease found. Contact your landlord."` and SHALL NOT navigate to the Payment_Method_Screen.
+4. WHILE a Lease fetch is in progress, THE Home_Screen SHALL keep the "Pay Rent" button in a disabled state and SHALL NOT navigate to the Payment_Method_Screen until the fetch completes successfully.
 
 ---
 
@@ -62,10 +63,11 @@ The mobile home screen (`mobile/app/(tabs)/home.tsx`) currently has five data ac
 
 #### Acceptance Criteria
 
-1. THE Home_Screen SHALL fetch contacts from the `GET /api/users/contacts` endpoint, which already filters to Non_Tenant_Contact roles (Caretaker, Property Manager) for the current user's properties.
-2. WHEN the contacts list is rendered on the Home_Screen, THE Home_Screen SHALL only display users whose `role.name` is NOT `"Tenant"` (case-insensitive).
-3. WHEN the contacts list is empty after filtering, THE Home_Screen SHALL display a message `"No contacts available"` in the contacts section.
-4. WHERE a landlord contact exists for the tenant's property, THE Home_Screen SHALL include the landlord in the contacts display alongside caretakers and property managers.
+1. WHEN the Home_Screen mounts and the authenticated user has a token, THE Home_Screen SHALL fetch contacts from the `GET /api/users/contacts` endpoint using the authenticated token.
+2. WHEN the contacts list is rendered on the Home_Screen, THE Home_Screen SHALL only display contacts whose `role.name` does not equal `"Tenant"` using a case-insensitive string comparison.
+3. IF the contacts list is empty after client-side filtering, THEN THE Home_Screen SHALL display an empty-state message in the contacts section.
+4. IF a landlord user is associated with the same property as the tenant, THEN THE Home_Screen SHALL include that landlord contact in the rendered contacts list alongside caretakers and property managers.
+5. IF the contacts fetch fails, THEN THE Home_Screen SHALL display an empty-state message in the contacts section and SHALL NOT crash or propagate an unhandled error.
 
 ---
 
@@ -75,11 +77,11 @@ The mobile home screen (`mobile/app/(tabs)/home.tsx`) currently has five data ac
 
 #### Acceptance Criteria
 
-1. WHEN the Home_Screen displays the Occupancy stat card and the tenant has an active Lease, THE Home_Screen SHALL calculate Occupancy_Duration as the number of complete months between `Lease.startDate` and the current date.
-2. THE Home_Screen SHALL display Occupancy_Duration in a human-readable format: years and months where applicable (e.g., `"1 yr 3 mo"`) or months only for durations under one year (e.g., `"8 mo"`).
-3. WHEN Occupancy_Duration is less than one month, THE Home_Screen SHALL display `"< 1 mo"` as the occupancy value.
-4. IF no active Lease is found, THEN THE Home_Screen SHALL display `"—"` as the occupancy value.
-5. THE Home_Screen SHALL derive the occupancy change label dynamically: `"↑ Loyal"` for durations of exactly 12 months or more, `"↑ Active"` for durations of 1 month or more but under 12 months, and `"New"` for durations under 1 month.
+1. WHEN the Home_Screen displays the Occupancy stat card and the tenant has a Lease with `status = "active"`, THE Home_Screen SHALL calculate Occupancy_Duration as the number of complete calendar months elapsed from `Lease.startDate` to the current date, using the earliest `startDate` in the renewal chain (following `renewedFromId` links) to reflect continuous tenancy.
+2. WHEN Occupancy_Duration is 12 months or more, THE Home_Screen SHALL display the duration in years and remaining months format (e.g., `"1 yr 3 mo"`). WHEN Occupancy_Duration is between 1 and 11 months inclusive, THE Home_Screen SHALL display the duration in months only (e.g., `"8 mo"`).
+3. WHEN Occupancy_Duration is less than 1 complete calendar month, THE Home_Screen SHALL display `"< 1 mo"` as the occupancy value.
+4. IF no Lease with `status = "active"` is found for the tenant, THEN THE Home_Screen SHALL display `"—"` as the occupancy value.
+5. THE Home_Screen SHALL derive the occupancy change label as follows: `"↑ Loyal"` when Occupancy_Duration is 12 months or more; `"↑ Active"` when Occupancy_Duration is 1 month or more but less than 12 months; `"New"` when Occupancy_Duration is less than 1 month.
 
 ---
 
@@ -89,10 +91,11 @@ The mobile home screen (`mobile/app/(tabs)/home.tsx`) currently has five data ac
 
 #### Acceptance Criteria
 
-1. WHEN the Home_Screen fetches payment schedules and the tenant has no Rent_Schedule entries with a status other than `"scheduled"`, THE Home_Screen SHALL display `"100%"` as the On-Time Payment Rate.
-2. WHEN the Home_Screen has Rent_Schedule data, THE Home_Screen SHALL calculate On_Time_Rate as `(count of schedules with status "paid") / (count of schedules with status "paid" OR status "overdue") * 100`, rounded to one decimal place.
-3. WHEN On_Time_Rate is 100%, THE Home_Screen SHALL display the change label as `"↑ Perfect"`.
-4. WHEN On_Time_Rate is 80% or above but below 100%, THE Home_Screen SHALL display the change label as `"↑ Great"`.
-5. WHEN On_Time_Rate is below 80%, THE Home_Screen SHALL display the change label as `"↓ Improve"`.
-6. THE Home_Screen SHALL fetch payment schedules from `GET /api/payments/schedules` using the authenticated token and SHALL scope the fetch to the current tenant's records only.
-7. IF the payment schedules fetch fails, THEN THE Home_Screen SHALL display `"100%"` as a safe default for the On-Time Payment Rate AND SHALL log the error to the console; both actions are required together and neither SHALL be performed without the other.
+1. WHEN the Home_Screen fetches payment schedules and all Rent_Schedule entries for the tenant have `status = "scheduled"` (i.e., no entry has `status = "paid"` or `status = "overdue"`), THE Home_Screen SHALL display `"100%"` as the On-Time Payment Rate.
+2. WHEN the Home_Screen has at least one Rent_Schedule entry with `status = "paid"` or `status = "overdue"`, THE Home_Screen SHALL calculate On_Time_Rate as `(count of entries with status "paid") / (count of entries with status "paid" OR status "overdue") * 100`, rounded to one decimal place. IF the denominator is 0, THE Home_Screen SHALL display `"100%"` as the On-Time Payment Rate.
+3. IF On_Time_Rate equals 100%, THEN THE Home_Screen SHALL display the change label as `"↑ Perfect"`.
+4. IF On_Time_Rate is 80% or above but below 100%, THEN THE Home_Screen SHALL display the change label as `"↑ Great"`.
+5. IF On_Time_Rate is below 80%, THEN THE Home_Screen SHALL display the change label as `"↓ Improve"`.
+6. WHEN the Home_Screen comes into focus and the user is authenticated, THE Home_Screen SHALL fetch payment schedule data from `GET /api/payments/schedules` using the authenticated token.
+7. THE Home_Screen SHALL scope the payment schedule fetch to only the records belonging to the currently authenticated tenant.
+8. IF the payment schedules fetch fails, THEN THE Home_Screen SHALL display `"100%"` as the On-Time Payment Rate and SHALL log the error details to the console.

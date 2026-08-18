@@ -305,7 +305,7 @@ router.get('/contacts', requireAuth, async (req: Request, res: Response) => {
         propertyId: { in: propertyIds },
         userId: { not: currentUserId }, // exclude self
         role: {
-          name: { in: ['Caretaker', 'Property Manager'] },
+          name: { notIn: ['Tenant', 'tenant', 'TENANT'] },
         },
       },
       select: {

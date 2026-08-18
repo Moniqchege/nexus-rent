@@ -134,6 +134,36 @@ router.post("/", requireAuth, async (req: Request, res: Response) => {
     }
 });
 
+// GET /api/leases/mine — tenant-scoped lease fetch
+router.get("/mine", requireAuth, async (req: Request, res: Response) => {
+    try {
+        const authReq = req as AuthRequest;
+        const leaseTenants = await db.leaseTenant.findMany({
+            where: { tenantId: authReq.userId },
+            include: {
+                lease: {
+                    select: {
+                        id: true,
+                        rentAmount: true,
+                        startDate: true,
+                        status: true,
+                        billingCycle: true,
+                        renewedFromId: true,
+                        property: { select: { id: true, title: true, location: true } },
+                        tenants: { select: { tenantId: true } },
+                    },
+                },
+            },
+        });
+
+        const leases = leaseTenants.map((lt) => lt.lease);
+        res.json({ leases });
+    } catch (error) {
+        console.error("Failed to fetch tenant leases:", error);
+        res.status(500).json({ error: "Failed to fetch leases" });
+    }
+});
+
 // GET /api/leases/:id
 router.get("/:id", requireAuth, async (req: Request, res: Response) => {
     try {

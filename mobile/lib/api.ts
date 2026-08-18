@@ -276,6 +276,17 @@ const api = {
         return response.json();
     },
 
+    async getMyLeases(token: string): Promise<{ leases: any[] }> {
+        const response = await fetch(`${API_BASE}/api/leases/mine`, {
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+            },
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.json();
+    },
+
     async initiateMpesaSTK(token: string, data: { phone: string; amount: number; propertyId: number; tenantId: number; accountRef: string; description: string }): Promise<PaymentResult> {
         const response = await fetch(`${API_BASE}/api/payments/mpesa`, {
             method: 'POST',
