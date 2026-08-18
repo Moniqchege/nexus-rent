@@ -397,11 +397,20 @@ model Lease {
   endDate           DateTime
   rentAmount        Float
   billingCycle      String   @default("monthly")
-  status            String   @default("active")
+  status            String   @default("pending_signature")   // ← changed default
   creditBalance     Float    @default(0)
   lateFeePercent    Float    @default(0)
   graceDays         Int      @default(0)
   signedDocumentUrl String?
+
+  cancelledAt       DateTime?
+  cancelReason      String?
+
+  // Renewal chain
+  renewedFromId     Int?     @unique
+  renewedFrom       Lease?   @relation("LeaseRenewal", fields: [renewedFromId], references: [id])
+  renewedTo         Lease?   @relation("LeaseRenewal")
+
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 

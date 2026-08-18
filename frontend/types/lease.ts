@@ -1,4 +1,4 @@
-export type LeaseStatus = "active" | "ended" | "suspended";
+export type LeaseStatus = "pending_signature" | "active" | "ended" | "suspended" | "cancelled";
 export type BillingCycle = "monthly" | "weekly";
 
 export interface UnitType {
@@ -39,6 +39,9 @@ export interface Lease {
   unitTypeId?: number | null;
   depositAmount?: number | null;
   unitType?: UnitType | null;
+  renewedFromId?: number | null;
+  cancelledAt?: string | null;
+  cancelReason?: string | null;
   property: {
     id: number;
     title: string;
@@ -46,6 +49,19 @@ export interface Lease {
     unitTypes: UnitType[];
   };
   tenants: LeaseTenant[];
+}
+
+export interface RenewLeaseInput {
+  startDate: string;
+  endDate: string;
+  rentAmount?: number;
+  unitTypeId?: number | null;
+  depositAmount?: number | null;
+  billingCycle?: BillingCycle;
+  lateFeePercent?: number;
+  graceDays?: number;
+  tenantIds?: number[];
+  requiresNewSignature?: boolean;
 }
 
 export interface CreateLeaseInput {

@@ -8,7 +8,7 @@ import { generateScheduleForLease } from "../services/paymentService.js";
 
 const router = Router();
 const VALID_BILLING_CYCLES = ["monthly", "weekly"];
-const VALID_STATUSES = ["active", "ended", "suspended"];
+const VALID_STATUSES = ["pending_signature", "active", "ended", "suspended", "cancelled"];
 
 // Reusable include for all lease queries
 const leaseInclude = {
@@ -52,7 +52,7 @@ router.post("/", requireAuth, async (req: Request, res: Response) => {
         const {
             propertyId, tenantIds, startDate, endDate, rentAmount,
             unitTypeId, depositAmount,
-            billingCycle = "monthly", status = "active",
+            billingCycle = "monthly", status = "pending_signature",
             lateFeePercent = 0, graceDays = 0,
         } = req.body;
 
@@ -73,17 +73,33 @@ router.post("/", requireAuth, async (req: Request, res: Response) => {
         });
         if (!property) return res.status(404).json({ error: "Property not found or access denied" });
 
-        const validTenants = await db.user.findMany({
-            where: {
-                id: { in: tenantIdNums },
-                userProperties: {
-                    some: { propertyId: propertyIdNum, role: { name: "Tenant" } },
-                },
-            },
-        });
-        if (validTenants.length !== tenantIdNums.length) {
-            return res.status(404).json({ error: "One or more tenants not found for this property" });
+        // POST /api/leases  (replace the "validTenants" block)
+        const tenantRole = await db.role.findUnique({ where: { name: "Tenant" } });
+        if (!tenantRole) {
+            return res.status(500).json({ error: "Tenant role not configured" });
         }
+
+        // Ensure each tenant is linked to this property; create the link if missing.
+        const users = await db.user.findMany({ where: { id: { in: tenantIdNums } } });
+        if (users.length !== tenantIdNums.length) {
+            return res.status(404).json({ error: "One or more tenants not found" });
+        }
+
+        await Promise.all(
+            tenantIdNums.map((tenantId) =>
+                db.userProperty.upsert({
+                    where: {
+                        userId_propertyId_roleId: {
+                            userId: tenantId,
+                            propertyId: propertyIdNum,
+                            roleId: tenantRole.id,
+                        },
+                    },
+                    update: {},
+                    create: { userId: tenantId, propertyId: propertyIdNum, roleId: tenantRole.id },
+                })
+            )
+        );
 
         let finalRentAmount = Number(rentAmount);
         if (unitTypeId) {
@@ -102,7 +118,7 @@ router.post("/", requireAuth, async (req: Request, res: Response) => {
                 rentAmount: finalRentAmount,
                 depositAmount: depositAmount != null ? Number(depositAmount) : null,
                 billingCycle: VALID_BILLING_CYCLES.includes(billingCycle) ? billingCycle : "monthly",
-                status: VALID_STATUSES.includes(status) ? status : "active",
+                status: VALID_STATUSES.includes(status) ? status : "pending_signature",
                 lateFeePercent: Number(lateFeePercent) || 0,
                 graceDays: Number(graceDays) || 0,
                 tenants: { create: tenantIdNums.map((tenantId) => ({ tenantId })) },
@@ -187,6 +203,10 @@ router.patch("/:id", requireAuth, async (req: Request, res: Response) => {
             };
         }
 
+        if (updateData.status === "active" && !existing.signedDocumentUrl) {
+            return res.status(400).json({ error: "Lease cannot be activated until the signed document is uploaded" });
+        }
+
         const lease = await db.lease.update({
             where: { id: leaseId },
             data: updateData,
@@ -220,7 +240,7 @@ router.delete("/:id", requireAuth, async (req: Request, res: Response) => {
 });
 
 // POST /api/leases/:id/sign
-router.post("/:id/sign", requireAuth, upload.single("signedDocument"), async (req: Request, res: Response) => {
+router.post("/:id/sign", requireAuth, upload.single("signedDocument"), async (req, res) => {
     try {
         const authReq = req as AuthRequest;
         const leaseId = Number(req.params.id);
@@ -229,17 +249,132 @@ router.post("/:id/sign", requireAuth, upload.single("signedDocument"), async (re
             where: { id: leaseId, property: { landlordId: authReq.userId } },
         });
         if (!existing) return res.status(404).json({ error: "Lease not found or access denied" });
+        if (existing.status === "cancelled") {
+            return res.status(400).json({ error: "Cannot sign a cancelled lease" });
+        }
         if (!req.file) return res.status(400).json({ error: "No file uploaded" });
 
         const lease = await db.lease.update({
             where: { id: leaseId },
-            data: { signedDocumentUrl: `/uploads/leases/${path.basename(req.file.filename)}` },
+            data: {
+                signedDocumentUrl: `/uploads/leases/${path.basename(req.file.filename)}`,
+                status: "active", // ← flips lease live on signature
+            },
             include: leaseInclude,
         });
 
         res.json({ lease });
     } catch (error: any) {
         res.status(500).json({ error: error.message || "Failed to upload signed lease" });
+    }
+});
+
+// POST /api/leases/:id/cancel
+router.post("/:id/cancel", requireAuth, async (req: Request, res: Response) => {
+    try {
+        const authReq = req as AuthRequest;
+        const leaseId = Number(req.params.id);
+        const { reason } = req.body;
+
+        const existing = await db.lease.findFirst({
+            where: { id: leaseId, property: { landlordId: authReq.userId } },
+        });
+        if (!existing) return res.status(404).json({ error: "Lease not found or access denied" });
+        if (existing.status === "cancelled") {
+            return res.status(400).json({ error: "Lease is already cancelled" });
+        }
+
+        const lease = await db.lease.update({
+            where: { id: leaseId },
+            data: { status: "cancelled", cancelledAt: new Date(), cancelReason: reason ?? null },
+            include: leaseInclude,
+        });
+
+        // Optional: clear out future unpaid schedule entries for this lease's tenants/property.
+        // await db.rentSchedule.deleteMany({ where: { ..., status: "pending" } });
+
+        res.json({ lease });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message || "Failed to cancel lease" });
+    }
+});
+
+// POST /api/leases/:id/renew
+router.post("/:id/renew", requireAuth, async (req: Request, res: Response) => {
+    try {
+        const authReq = req as AuthRequest;
+        const leaseId = Number(req.params.id);
+        const {
+            startDate, endDate, rentAmount, unitTypeId, depositAmount,
+            billingCycle, lateFeePercent, graceDays, tenantIds,
+            requiresNewSignature = true,
+        } = req.body;
+
+        const existing = await db.lease.findFirst({
+            where: { id: leaseId, property: { landlordId: authReq.userId } },
+            include: { tenants: true, renewedTo: true },
+        });
+        if (!existing) return res.status(404).json({ error: "Lease not found or access denied" });
+        if (existing.status === "cancelled") {
+            return res.status(400).json({ error: "Cannot renew a cancelled lease" });
+        }
+        if (!startDate || !endDate) {
+            return res.status(400).json({ error: "startDate and endDate are required for renewal" });
+        }
+        if (existing.renewedTo) {
+            return res.status(400).json({ error: "This lease has already been renewed" });
+        }
+
+        // Resolve unit type / rent, same rules as create
+        const finalUnitTypeId = unitTypeId !== undefined ? unitTypeId : existing.unitTypeId;
+        let finalRentAmount = rentAmount != null ? Number(rentAmount) : existing.rentAmount;
+        if (finalUnitTypeId) {
+            const unitType = await db.unitType.findUnique({ where: { id: Number(finalUnitTypeId) } });
+            if (!unitType) return res.status(400).json({ error: "Unit type not found" });
+            if (unitType.propertyId !== existing.propertyId) {
+                return res.status(400).json({ error: "Unit type does not belong to the specified property" });
+            }
+            finalRentAmount = unitType.price;
+        }
+
+        const tenantIdNums: number[] = tenantIds?.length
+            ? tenantIds.map(Number)
+            : existing.tenants.map((t) => t.tenantId);
+
+        const newLease = await db.$transaction(async (tx) => {
+            const created = await tx.lease.create({
+                data: {
+                    propertyId: existing.propertyId,
+                    unitTypeId: finalUnitTypeId ? Number(finalUnitTypeId) : null,
+                    startDate: new Date(startDate),
+                    endDate: new Date(endDate),
+                    rentAmount: finalRentAmount,
+                    depositAmount: depositAmount !== undefined
+                        ? (depositAmount != null ? Number(depositAmount) : null)
+                        : existing.depositAmount,
+                    billingCycle: billingCycle && VALID_BILLING_CYCLES.includes(billingCycle)
+                        ? billingCycle : existing.billingCycle,
+                    lateFeePercent: lateFeePercent != null ? Number(lateFeePercent) : existing.lateFeePercent,
+                    graceDays: graceDays != null ? Number(graceDays) : existing.graceDays,
+                    status: requiresNewSignature ? "pending_signature" : "active",
+                    renewedFromId: existing.id,
+                    tenants: { create: tenantIdNums.map((tenantId) => ({ tenantId })) },
+                },
+                include: leaseInclude,
+            });
+
+            await tx.lease.update({
+                where: { id: existing.id },
+                data: { status: "ended" },
+            });
+
+            return created;
+        });
+
+        await generateScheduleForLease(newLease.id);
+        res.status(201).json({ lease: newLease });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message || "Failed to renew lease" });
     }
 });
 

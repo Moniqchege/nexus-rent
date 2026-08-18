@@ -3,7 +3,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import api from '../lib/api';
-import { Lease, CreateLeaseInput, UpdateLeaseInput } from '../../types/lease';
+import { Lease, CreateLeaseInput, UpdateLeaseInput, RenewLeaseInput } from '../../types/lease';
 
 
 export interface Permission {
@@ -100,6 +100,8 @@ interface AdminState {
   updateLease: (id: number, data: UpdateLeaseInput) => Promise<void>;
   deleteLease: (id: number) => Promise<void>;
   uploadSignedLease: (id: number, formData: FormData) => Promise<void>;
+  renewLease: (id: number, data: RenewLeaseInput) => Promise<Lease>;
+  cancelLease: (id: number, reason?: string) => Promise<void>;
 }
 
 export const useAdminStore = create<AdminState>()(
@@ -374,6 +376,36 @@ export const useAdminStore = create<AdminState>()(
             leases: state.leases.map((l) =>
               l.id === id ? res.data.lease : l
             ),
+            loading: false,
+          }));
+        } catch {
+          set({ loading: false });
+        }
+      },
+
+      renewLease: async (id, data) => {
+        set({ loading: true });
+        try {
+          const res = await api.post(`/api/leases/${id}/renew`, data);
+          set((state) => ({
+            leases: state.leases
+              .map((l) => (l.id === id ? { ...l, status: "ended" as const } : l))
+              .concat(res.data.lease),
+            loading: false,
+          }));
+          return res.data.lease;
+        } catch (e) {
+          set({ loading: false });
+          throw e;
+        }
+      },
+
+      cancelLease: async (id, reason) => {
+        set({ loading: true });
+        try {
+          const res = await api.post(`/api/leases/${id}/cancel`, { reason });
+          set((state) => ({
+            leases: state.leases.map((l) => (l.id === id ? res.data.lease : l)),
             loading: false,
           }));
         } catch {
