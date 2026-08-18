@@ -186,6 +186,38 @@ router.get('/amenities', requireAuth, async (req, res) => {
   }
 });
 
+// GET /api/properties/all — returns all properties (no ownership filter)
+router.get('/all', requireAuth, async (req, res) => {
+  try {
+    const properties = await db.property.findMany({
+      select: {
+        id: true,
+        title: true,
+        location: true,
+        status: true,
+        image: true,
+        amenities: true,
+        floors: true,
+        createdAt: true,
+        unitTypes: {
+          select: {
+            id: true,
+            type: true,
+            baths: true,
+            price: true,
+            totalUnits: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    res.json(properties);
+  } catch (error) {
+    console.error('Failed to fetch all properties:', error);
+    res.status(500).json({ error: 'Failed to fetch properties' });
+  }
+});
+
 // GET /api/properties/:id - Get single property
 router.get('/:id', requireAuth, async (req, res) => {
   try {

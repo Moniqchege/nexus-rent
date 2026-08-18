@@ -33,6 +33,20 @@ const api = {
         return response.json();
     },
 
+    async fetchAllProperties(token: string): Promise<Property[]> {
+        const response = await fetch(`${API_BASE}/api/properties/all`, {
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+            },
+        });
+        if (!response.ok) {
+            if (response.status === 401) throw new Error('Unauthorized');
+            throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+        }
+        return response.json();
+    },
+
     async login(email: string, password: string): Promise<any> {
         console.log("🔥 LOGIN FUNCTION CALLED");
         const response = await fetch(`${API_BASE}/auth/login`, {
