@@ -1,5 +1,5 @@
 import Constants from 'expo-constants';
-import { Property } from '../types/property';
+import { Property, PropertyContact } from '../types/property';
 import { ServiceCategory, ServiceProvider } from '../types/service';
 import { Payment, RentSchedule } from '../types/payment';
 
@@ -45,6 +45,18 @@ const api = {
             throw new Error(`HTTP ${response.status}: ${await response.text()}`);
         }
         return response.json();
+    },
+
+    async fetchPropertyContacts(token: string, propertyId: number): Promise<PropertyContact[]> {
+        const response = await fetch(`${API_BASE}/api/properties/${propertyId}/contacts`, {
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+            },
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+        const data = await response.json();
+        return data.contacts ?? [];
     },
 
     async login(email: string, password: string): Promise<any> {

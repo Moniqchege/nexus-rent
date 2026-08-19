@@ -1,6 +1,7 @@
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import MaskedView from "@react-native-masked-view/masked-view";
+import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useState, useEffect } from "react";
 import { useAuthStore } from "../../store/authStore";
@@ -163,9 +164,9 @@ export default function Payments() {
                 </TouchableOpacity>
               </View>
             ) : (
-              <View style={[styles.payCard, { backgroundColor: "rgba(0,255,255,0.08)", borderColor: "rgba(0,255,255,0.2)" }]}>
+              <View style={[styles.payCard, { backgroundColor: "rgba(0,255,255,0.08)", borderColor: "rgba(0,255,255,0.2)", alignItems: "center" }]}>
                 <Text style={styles.payCardLabel}>ALL CAUGHT UP!</Text>
-                <Text style={[styles.payCardAmount, { color: colorMap.neon }]}>✓</Text>
+                <Ionicons name="checkmark-circle" size={56} color={colorMap.neon} style={{ marginBottom: 8 }} />
                 <Text style={styles.payCardSub}>No pending payments</Text>
               </View>
             )}
@@ -196,19 +197,23 @@ export default function Payments() {
                           : { backgroundColor: "rgba(136,136,136,0.1)", borderColor: "rgba(136,136,136,0.3)" },
                       ]}
                     >
-                      <Text
-                        style={{
-                          color:
-                            t.status === "warn"
-                              ? colorMap.warn
-                              : t.status === "success"
-                              ? colorMap.success
-                              : colorMap.muted,
-                          fontSize: 12,
-                        }}
-                      >
-                        {t.status === "warn" ? "!" : "✓"}
-                      </Text>
+                      <Ionicons
+                        name={
+                          t.status === "warn"
+                            ? "alert-circle"
+                            : t.status === "success"
+                            ? "checkmark-circle"
+                            : "time-outline"
+                        }
+                        size={15}
+                        color={
+                          t.status === "warn"
+                            ? colorMap.warn
+                            : t.status === "success"
+                            ? colorMap.success
+                            : colorMap.muted
+                        }
+                      />
                     </View>
                     <View style={styles.tlBody}>
                       <Text style={styles.tlTitle}>{t.title}</Text>

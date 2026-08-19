@@ -251,9 +251,9 @@ export default function Profile() {
             <View style={styles.activeBadge}>
               <Text style={styles.activeBadgeText}>● ACTIVE LEASE</Text>
             </View>
-            <View style={styles.badge}>
+            {/* <View style={styles.badge}>
               <Text style={styles.badgeText}>AI {aiScore}%</Text>
-            </View>
+            </View> */}
           </View>
         </View>
       </LinearGradient>

@@ -218,6 +218,46 @@ router.get('/all', requireAuth, async (req, res) => {
   }
 });
 
+// GET /api/properties/:id/contacts - Get non-tenant contacts for a property
+router.get('/:id/contacts', requireAuth, async (req, res) => {
+  const idParam = req.params.id;
+  const propertyId = parseInt(Array.isArray(idParam) ? idParam[0] : idParam, 10);
+
+  if (isNaN(propertyId)) {
+    return res.status(400).json({ error: 'Invalid property ID' });
+  }
+
+  try {
+    const property = await db.property.findUnique({ where: { id: propertyId }, select: { id: true } });
+    if (!property) return res.status(404).json({ error: 'Property not found' });
+
+    const userProperties = await db.userProperty.findMany({
+      where: {
+        propertyId,
+        role: { name: { notIn: ['Tenant', 'tenant', 'TENANT'] } },
+      },
+      select: {
+        role: { select: { name: true } },
+        user: { select: { id: true, name: true, phone: true } },
+      },
+    });
+
+    const seen = new Set<number>();
+    const contacts = userProperties
+      .filter(({ user }) => {
+        if (seen.has(user.id)) return false;
+        seen.add(user.id);
+        return true;
+      })
+      .map(({ user, role }) => ({ id: user.id, name: user.name, phone: user.phone, role: role.name }));
+
+    res.json({ contacts });
+  } catch (error) {
+    console.error('Failed to fetch property contacts:', error);
+    res.status(500).json({ error: 'Failed to fetch contacts' });
+  }
+});
+
 // GET /api/properties/:id - Get single property
 router.get('/:id', requireAuth, async (req, res) => {
   try {

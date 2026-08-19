@@ -6,6 +6,13 @@ export interface UnitType {
     totalUnits: number;
 }
 
+export interface PropertyContact {
+    id: number;
+    name: string;
+    phone: string | null;
+    role: string;
+}
+
 export interface Property {
     id: number;
     title: string;

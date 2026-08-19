@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, TextInput, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, RefreshControl } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import MaskedView from "@react-native-masked-view/masked-view";
-import { Property, UnitType } from '../../types/property';
+import { useRouter } from 'expo-router';
+import { Property } from '../../types/property';
 import { useAuthStore } from '../../store/authStore';
 import api from '../../lib/api';
 
@@ -18,6 +19,8 @@ const colorMap: Record<ColorKey, { text: string; bg: string }> = {
 };
 
 interface ListingItem {
+  propertyId: number;
+  unitTypeId: number;
   icon: string;
   price: string;
   area: string;
@@ -47,26 +50,23 @@ const getColorFromScore = (score?: number | null): 'neon' | 'purple' | 'success'
   return 'danger';
 };
 
-// Task 5: pure helper to derive the starting (minimum) price from unitTypes
-const deriveStartingPrice = (unitTypes: UnitType[]): string => {
-  const prices = (unitTypes ?? []).map(u => u.price).filter(p => Number.isFinite(p));
-  if (prices.length === 0) return 'N/A';
-  return `Ksh${Math.round(Math.min(...prices))}`;
-};
-
-// Task 5: rewritten propertyToListing — no longer reads p.price, p.beds, p.baths, p.sqft
-const propertyToListing = (p: Property): ListingItem => ({
-  icon: getIconFromLocation(p.location),
-  price: deriveStartingPrice(p.unitTypes),
-  area: p.location,
-  name: p.title,
-  ai: Math.round(p.score ?? 75),
-  beds: p.unitTypes.length > 0 ? p.unitTypes[0].type : 'N/A',
-  baths: p.unitTypes.length > 0 ? `${p.unitTypes[0].baths} Baths` : 'N/A',
-  size: `${p.unitTypes.length} unit type${p.unitTypes.length !== 1 ? 's' : ''}`,
-  color: getColorFromScore(p.score != null ? p.score : undefined),
-  gradientColors: ['#0f2027', '#203a43'] as [string, string],
-});
+const expandToListingItems = (properties: Property[]): ListingItem[] =>
+  properties.flatMap(p =>
+    p.unitTypes.map(u => ({
+      propertyId: p.id,
+      unitTypeId: u.id,
+      icon: getIconFromLocation(p.location),
+      price: `Ksh${Math.round(u.price).toLocaleString()}`,
+      area: p.location,
+      name: `${p.title} ${u.type}`,
+      ai: Math.round(p.score ?? 75),
+      beds: u.type,
+      baths: `${u.baths} Baths`,
+      size: `${u.totalUnits} units`,
+      color: getColorFromScore(p.score),
+      gradientColors: ['#0f2027', '#203a43'] as [string, string],
+    }))
+  );
 
 function GradientTitle({ text }: { text: string }) {
   return (
@@ -105,6 +105,7 @@ function GradientTitle({ text }: { text: string }) {
 }
 
 export default function Explore() {
+  const router = useRouter();
   // Task 6: state — removed `featured` and `listings`; added `searchQuery` and `selectedArea`
   const [properties, setProperties] = useState<Property[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -257,15 +258,16 @@ export default function Explore() {
         </ScrollView>
 
         {/* Available header */}
-        <View style={styles.availableHeader}>
+        {/* <View style={styles.availableHeader}>
           <Text style={styles.availableText}>12 AVAILABLE NEAR YOU</Text>
           <Text style={styles.mapLink}>Map ›</Text>
-        </View>
+        </View> */}
 
         {/* Featured Horizontal Cards — Task 6: filteredProperties.slice(0,3) */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ paddingLeft: 20, paddingBottom: 16 }}>
-          {filteredProperties.slice(0, 3).map(propertyToListing).map((item, i) => (
-            <View key={i} style={[styles.featuredCard, { borderColor: item.color === "purple" ? "rgba(124,58,237,0.2)" : "rgba(0,240,255,0.2)" }]}>
+        {expandToListingItems(filteredProperties).slice(0, 3).map((item, i) => (
+            <TouchableOpacity key={i} onPress={() => router.push({ pathname: '/properties/[id]', params: { id: String(item.propertyId), unitTypeId: String(item.unitTypeId) } })} activeOpacity={0.85}>
+            <View style={[styles.featuredCard, { borderColor: item.color === "purple" ? "rgba(124,58,237,0.2)" : "rgba(0,240,255,0.2)" }]}>
               <LinearGradient
                 colors={
                   item.color === "purple"
@@ -299,6 +301,7 @@ export default function Explore() {
                 <Text style={styles.featuredLoc}>📍 {item.area}</Text>
               </View>
             </View>
+            </TouchableOpacity>
           ))}
         </ScrollView>
 
@@ -308,15 +311,16 @@ export default function Explore() {
         </View>
 
         {/* Empty state — Task 6: shown when no properties match filters (Req 5.5, 6.7) */}
-        {!loading && filteredProperties.length === 0 && (
+        {!loading && expandToListingItems(filteredProperties).length === 0 && (
           <View style={{ alignItems: 'center', paddingVertical: 40 }}>
             <Text style={{ color: '#888', fontFamily: 'Orbitron', fontSize: 12 }}>No properties found</Text>
           </View>
         )}
 
         <View style={{ paddingHorizontal: 20, paddingBottom: 20 }}>
-          {filteredProperties.map(propertyToListing).map((item, i) => (
-            <View key={i} style={styles.listCard}>
+          {expandToListingItems(filteredProperties).map((item, i) => (
+            <TouchableOpacity key={i} onPress={() => router.push({ pathname: '/properties/[id]', params: { id: String(item.propertyId), unitTypeId: String(item.unitTypeId) } })} activeOpacity={0.85} style={{ marginBottom: 12 }}>
+            <View style={[styles.listCard, { marginBottom: 0 }]}>
               <LinearGradient
                 colors={item.gradientColors as [string, string]}
                 start={{ x: 0, y: 0 }}
@@ -353,6 +357,7 @@ export default function Explore() {
                 </View>
               </View>
             </View>
+            </TouchableOpacity>
           ))}
         </View>
       </ScrollView>
@@ -372,7 +377,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,240,255,0.08)",
   },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, marginBottom: 16 },
-  pageGreeting: { fontSize: 12, color: "#888" },
+  pageGreeting: { fontSize: 11, color: "#888" },
   pageTitle: { fontSize: 24, fontFamily: "Orbitron", color: "#fff" },
   headerIcons: { flexDirection: "row", gap: 8 },
   mapBtn: { width: 42, height: 42, backgroundColor: "#111", borderWidth: 1, borderColor: "#222", borderRadius: 12, alignItems: "center", justifyContent: "center" },
