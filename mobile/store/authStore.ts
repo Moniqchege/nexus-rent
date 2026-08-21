@@ -55,7 +55,7 @@ const normalizeUser = (user: any): User => ({
             amenities: up.property.amenities,
             image: up.property.image,
         },
-        role: up.role, 
+        role: up.role,
         propertyId: up.propertyId,
     })),
 });
@@ -76,6 +76,7 @@ interface AuthState {
     setTempToken: (token: string) => void;
     verifyOtp: (userId: string, code: string) => Promise<void>;
 
+    setUser: (user: User) => void;
     setError: (msg: string | null) => void;
     setLoading: (loading: boolean) => void;
 }
@@ -141,6 +142,7 @@ export const useAuthStore = create<AuthState>()(
 
             logout: () => set({ user: null, token: null, tempToken: null, isFirstLogin: false, needsOtp: false, error: null }),
             setTempToken: (token: string) => set({ tempToken: token, isFirstLogin: true }),
+            setUser: (user) => set({ user }),
             setError: (msg: string | null) => set({ error: msg }),
             setLoading: (loading: boolean) => set({ isLoading: loading }),
         }),

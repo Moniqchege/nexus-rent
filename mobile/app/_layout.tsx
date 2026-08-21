@@ -68,13 +68,14 @@ export default function RootLayout() {
   const isAuditRoute = segments[0] === 'audit-trails';
   const isPayRoute = segments[0] === 'pay';
   const isPropertiesRoute = segments[0] === 'properties';
+  const isModalsRoute = segments[0] === '(modals)';
 
   if (!auth.token && !auth.tempToken && inTabsGroup && !isAuthFlow) {
     router.replace('/login');
     return;
   }
 
-  if ((auth.token || (auth.tempToken && !auth.isFirstLogin)) && !inTabsGroup && !isAuthFlow && !isServicesRoute && !isContactsRoute && !isChatbotRoute && !isAuditRoute && !isPayRoute && !isPropertiesRoute) {
+  if ((auth.token || (auth.tempToken && !auth.isFirstLogin)) && !inTabsGroup && !isAuthFlow && !isServicesRoute && !isContactsRoute && !isChatbotRoute && !isAuditRoute && !isPayRoute && !isPropertiesRoute && !isModalsRoute) {
     router.replace('/(tabs)/home');
   }
 }, [auth.token, auth.tempToken, segments, router, fontsLoaded]);

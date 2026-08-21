@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { db } from "../db/prisma";
 import { requireAuth } from '../middleware/auth';
+import { AuthRequest } from '../middleware/auth-types';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
@@ -361,6 +362,128 @@ router.get('/contacts', requireAuth, async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Failed to fetch contacts:', error);
     res.status(500).json({ error: 'Failed to fetch contacts' });
+  }
+});
+
+// POST /api/users/me/change-password
+router.post('/me/change-password', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const authReq = req as AuthRequest;
+    const userId = authReq.userId!;
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: 'currentPassword and newPassword are required' });
+    }
+
+    const user = await db.user.findUnique({
+      where: { id: userId },
+      select: { password_hash: true },
+    });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const match = await bcrypt.compare(currentPassword, user.password_hash);
+    if (!match) {
+      return res.status(400).json({ error: 'Current password is incorrect' });
+    }
+
+    const newHash = await bcrypt.hash(newPassword, 12);
+    await db.user.update({ where: { id: userId }, data: { password_hash: newHash } });
+
+    return res.status(200).json({ message: 'Password updated' });
+  } catch (error) {
+    console.error('Change password error:', error);
+    res.status(500).json({ error: 'Failed to change password' });
+  }
+});
+
+// GET /api/users/me/profile-stats
+router.get('/me/profile-stats', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as AuthRequest).userId!;
+
+    const [leaseTenants, allSchedules, nextSchedule, userProperty] = await Promise.all([
+      // Query A – lease tenants with nested lease + unitType
+      db.leaseTenant.findMany({
+        where: { tenantId: userId },
+        include: {
+          lease: {
+            select: {
+              id: true,
+              rentAmount: true,
+              startDate: true,
+              endDate: true,
+              status: true,
+              billingCycle: true,
+              unitType: { select: { type: true, baths: true, price: true } },
+            },
+          },
+        },
+      }),
+      // Query B – all rent schedules (partitioned in memory)
+      db.rentSchedule.findMany({
+        where: { tenantId: userId },
+        select: { status: true, dueDate: true },
+      }),
+      // Query C – next upcoming/overdue schedule
+      db.rentSchedule.findFirst({
+        where: { tenantId: userId, status: { in: ['scheduled', 'overdue'] } },
+        orderBy: { dueDate: 'asc' },
+        select: { dueDate: true },
+      }),
+      // Query D – userProperty for floor/unit
+      db.userProperty.findFirst({
+        where: { userId },
+        select: { floor: true, unit: true },
+      }),
+    ]);
+
+    // --- tenancyDuration ---
+    const eligibleLeases = leaseTenants
+      .filter(lt => ['active', 'ended'].includes(lt.lease.status))
+      .map(lt => lt.lease);
+    const earliest = eligibleLeases.sort(
+      (a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+    )[0];
+    const months = earliest
+      ? Math.floor((Date.now() - new Date(earliest.startDate).getTime()) / (1000 * 60 * 60 * 24 * 30.44))
+      : null;
+    const tenancyDuration =
+      months === null ? '—' : months >= 12 ? `${Math.floor(months / 12)} yr(s)` : `${months} mo`;
+
+    // --- onTimeRate ---
+    const now = new Date();
+    const pastDue = allSchedules.filter(s => new Date(s.dueDate) <= now);
+    const paidCount = pastDue.filter(s => s.status === 'paid').length;
+    const pastDueTotal = pastDue.length;
+    const onTimeRate = pastDueTotal === 0
+      ? 100.0
+      : Math.round((paidCount / pastDueTotal) * 1000) / 10;
+
+    // --- score ---
+    const overdueCount = allSchedules.filter(s => s.status === 'overdue').length;
+    const totalScheduleCount = allSchedules.length;
+    const penalty = (overdueCount / Math.max(totalScheduleCount, 1)) * 10;
+    const score = Math.max(0, Math.min(100, Math.floor(onTimeRate - penalty)));
+
+    // --- activeLease ---
+    const activeLease = leaseTenants
+      .map(lt => lt.lease)
+      .filter(l => l.status === 'active')
+      .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())[0] ?? null;
+
+    res.json({
+      tenancyDuration,
+      onTimeRate,
+      score,
+      activeLease,
+      nextDueDate: nextSchedule?.dueDate ?? null,
+      floor: userProperty?.floor ?? null,
+      unit: userProperty?.unit ?? null,
+    });
+  } catch (error) {
+    console.error('Failed to fetch profile stats:', error);
+    res.status(500).json({ error: 'Failed to fetch profile stats' });
   }
 });
 

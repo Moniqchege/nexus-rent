@@ -138,10 +138,10 @@ const styles = StyleSheet.create({
     borderBottomColor: 'rgba(0,255,255,0.3)',
   },
   titleRow: {
-  flexDirection: 'row',
-  alignItems: 'center', 
-  // marginBottom: 6,
-},
+    flexDirection: 'row',
+    alignItems: 'center', 
+    // marginBottom: 6,
+  },
   title: {
     fontSize: 18,
     fontFamily: 'Orbitron',
@@ -155,20 +155,20 @@ const styles = StyleSheet.create({
     // marginTop: 4,
     lineHeight: 22,
   },
-    side: {
-  width: 40, 
-  alignItems: 'center',
-  justifyContent: 'center',
-},
-backIcon: {
-  width: 22,
-  height: 22,
-  tintColor: '#00FFFF', 
-},
+  side: {
+    width: 40, 
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backIcon: {
+    width: 22,
+    height: 22,
+    tintColor: '#00FFFF', 
+  },
   details: {
     padding: 24,
     flex: 1,
-  },
+   },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',

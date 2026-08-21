@@ -14,6 +14,24 @@ export interface CardSessionResult {
     paymentIntentId: string;
 }
 
+export interface TenantProfileStats {
+    tenancyDuration: string;
+    onTimeRate: number;
+    score: number;
+    activeLease: {
+        id: number;
+        rentAmount: number;
+        startDate: string;
+        endDate: string;
+        status: string;
+        billingCycle: string;
+        unitType: { type: string; baths: number; price: number } | null;
+    } | null;
+    nextDueDate: string | null;
+    floor: string | null;
+    unit: string | null;
+}
+
 const api = {
     async fetchProperties(token?: string): Promise<Property[]> {
         const headers: HeadersInit = {
@@ -352,6 +370,43 @@ const api = {
             console.warn('[api] confirmCardPayment non-OK:', response.status);
             return { success: false };
         }
+        return response.json();
+    },
+
+    async getTenantProfileStats(token: string): Promise<TenantProfileStats> {
+        const response = await fetch(`${API_BASE}/api/users/me/profile-stats`, {
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+            },
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+        return response.json();
+    },
+
+    async changePassword(token: string, currentPassword: string, newPassword: string): Promise<{ message: string }> {
+        const response = await fetch(`${API_BASE}/api/users/me/change-password`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ currentPassword, newPassword }),
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+        return response.json();
+    },
+
+    async updateProfile(token: string, userId: number, data: { name?: string; phone?: string }): Promise<any> {
+        const response = await fetch(`${API_BASE}/api/users/${userId}`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(data),
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}: ${await response.text()}`);
         return response.json();
     },
 };

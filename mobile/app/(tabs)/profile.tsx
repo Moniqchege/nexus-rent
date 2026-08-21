@@ -11,14 +11,19 @@ import {
   Platform,
 } from "react-native";
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { useAuthStore } from "../../store/authStore";
-import { API_BASE } from "../../lib/api";
+import api, { API_BASE, TenantProfileStats } from "../../lib/api";
 import { LinearGradient } from "expo-linear-gradient";
 import MaskedView from "@react-native-masked-view/masked-view";
 import { useNavigation } from '@react-navigation/native';
 import { useRouter } from "expo-router";
 import { useNotificationsStore } from "../../store/notificationsStore";
 import { FloatingBotButton } from "../profilebot";
+
+function formatDate(isoString: string): string {
+  return new Date(isoString).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
 
 function GradientTitle({ text }: { text: string }) {
   return (
@@ -45,19 +50,27 @@ export default function Profile() {
   const logout = useAuthStore((state) => state.logout);
   const router = useRouter();
   const navigation = useNavigation<any>();
-  
+
   type Message = {
-  role: "user" | "bot";
-  text: string;
-};
+    role: "user" | "bot";
+    text: string;
+  };
   const [messages, setMessages] = useState<Message[]>([
-  {
-    role: "bot",
-    text: "Hi! 👋 Ask me simple questions about your rent, lease, property, payments, or tenant score.",
-  },
-]);
+    {
+      role: "bot",
+      text: "Hi! 👋 Ask me simple questions about your rent, lease, property, payments, or tenant score.",
+    },
+  ]);
   const [inputText, setInputText] = useState('');
   const flatListRef = useRef<FlatList>(null);
+
+  // Account settings toggle state
+  const [toggles, setToggles] = useState({
+    rentAlerts: true,
+    darkMode: false,
+  });
+  const toggleSetting = (key: keyof typeof toggles) =>
+    setToggles((prev) => ({ ...prev, [key]: !prev[key] }));
 
   const scrollToEnd = useCallback(() => {
     flatListRef.current?.scrollToEnd({ animated: true });
@@ -95,6 +108,32 @@ export default function Profile() {
 
   const token = useAuthStore((state) => state.token);
 
+  const [profileStats, setProfileStats] = useState<TenantProfileStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+
+  const fetchProfileStats = useCallback(async () => {
+    if (!token) return;
+    setStatsLoading(true);
+    try {
+      const stats = await api.getTenantProfileStats(token);
+      setProfileStats(stats);
+    } catch (e) {
+      setProfileStats(null);
+    } finally {
+      setStatsLoading(false);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    fetchProfileStats();
+  }, [fetchProfileStats]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchProfileStats();
+    }, [fetchProfileStats])
+  );
+
   const handleSend = async () => {
     if (!inputText.trim()) return;
 
@@ -129,7 +168,7 @@ export default function Profile() {
 
   const handleSignOut = async () => {
     logout(); // clear user state
-    router.replace('/login'); 
+    router.replace('/login');
   };
 
   const { unreadCount } = useNotificationsStore();
@@ -144,241 +183,314 @@ export default function Profile() {
 
   if (!isHydrated) return null;
   const displayName = user?.name?.trim().split(/\s+/).slice(0, 2).join(" ") || "User";
+
+  // Preferences group: toggle rows (Rent Alerts, Dark Mode) + link rows (Security, Documents)
+  const preferenceItems = [
+    {
+      icon: "🔔",
+      name: "Rent Alerts",
+      color: "#00F0FF",
+      bg: "rgba(0,240,255,0.1)",
+      border: "rgba(0,240,255,0.25)",
+      type: "toggle" as const,
+      key: "rentAlerts" as const,
+      desc: "Manage this preference",
+      onPress: handleRentAlertsPress,
+    },
+    {
+      icon: "🌙",
+      name: "Dark Mode",
+      color: "#7C3AED",
+      bg: "rgba(124,58,237,0.1)",
+      border: "rgba(124,58,237,0.25)",
+      type: "toggle" as const,
+      key: "darkMode" as const,
+      desc: "Switch app appearance",
+    },
+     {
+      icon: "✏️",
+      name: "Edit Profile",
+      color: "#F59E0B",
+      bg: "rgba(245,158,11,0.1)",
+      border: "rgba(245,158,11,0.25)",
+      type: "link" as const,
+      onPress: () => router.push('/(modals)/edit-profile' as any),
+    },
+    {
+      icon: "🔐",
+      name: "Security & Password",
+      color: "#7C3AED",
+      bg: "rgba(124,58,237,0.1)",
+      border: "rgba(124,58,237,0.25)",
+      type: "link" as const,
+      onPress: () => router.push('/(modals)/change-password' as any),
+    },
+  ];
+
   return (
     <View style={styles.container}>
       {/* Ambient */}
       <View style={styles.ambient} />
 
       <FlatList
-      data={[]}
-  keyExtractor={() => "dummy"}
-  renderItem={null}
-   contentContainerStyle={{ paddingBottom: 140, flexGrow: 1 }}
-  ListHeaderComponent={() => (
-    <>
-    {/* Header */}
-    <View style={styles.header}>
-          <View>
-            <Text style={styles.pageGreeting}>ACCOUNT</Text>
-            <GradientTitle text="Profile" />
-          </View>
+        data={[]}
+        keyExtractor={() => "dummy"}
+        renderItem={null}
+        contentContainerStyle={{ paddingBottom: 140, flexGrow: 1 }}
+        ListHeaderComponent={() => (
+          <>
+            {/* Header */}
+            <View style={styles.header}>
+              <View>
+                <Text style={styles.pageGreeting}>ACCOUNT</Text>
+                <GradientTitle text="Profile" />
+              </View>
 
-          <View style={styles.settingsBtn}>
-            <Text style={{ color: "#fff" }}>⚙</Text>
-          </View>
-        </View>
-
-         {/* Profile Hero */}
-        <View style={styles.profileCard}>
-          <Image
-              source={require("../../assets/profile.png")} 
-              style={{ width: 92, height: 92, borderRadius: 16 }}
-              resizeMode="contain"
-            />
-
-          <Text style={styles.name}>{displayName}</Text>
-          <Text style={styles.email}>{user?.email || "No email"}</Text>
-
-          <View style={styles.verifiedTag}>
-            <Text style={styles.icon}>◈</Text>
-            <View style={{ width: 6 }} />
-            <Text style={styles.verifiedText}>  VERIFIED TENANT</Text>
-          </View>
-
-          {/* Stats */}
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <Text style={[styles.statValue, { color: "#00FFFF" }]}>
-                3 yrs
-              </Text>
-              <Text style={styles.statLabel}>Tenancy</Text>
+              <View style={styles.settingsBtn}>
+                <Text style={{ color: "#fff" }}>⚙</Text>
+              </View>
             </View>
 
-             <View style={styles.statDivider} />
+            {/* Profile Hero */}
+            <View style={styles.profileCard}>
+              <Image
+                source={require("../../assets/profile.png")}
+                style={{ width: 92, height: 92, borderRadius: 16 }}
+                resizeMode="contain"
+              />
 
-            <View style={styles.statItem}>
-              <Text style={[styles.statValue, { color: "#00FFA3" }]}>
-                98.4%
-              </Text>
-              <Text style={styles.statLabel}>On-Time</Text>
+              <Text style={styles.name}>{displayName}</Text>
+              <Text style={styles.email}>{user?.email || "No email"}</Text>
+
+              <View style={styles.verifiedTag}>
+                <Text style={styles.icon}>◈</Text>
+                <View style={{ width: 6 }} />
+                <Text style={styles.verifiedText}>  VERIFIED TENANT</Text>
+              </View>
+
+              {/* Stats */}
+              <View style={styles.statsRow}>
+                <View style={styles.statItem}>
+                  <Text style={[styles.statValue, { color: "#00FFFF" }]}>
+                    {statsLoading ? "—" : (profileStats?.tenancyDuration ?? "—")}
+                  </Text>
+                  <Text style={styles.statLabel}>Tenancy</Text>
+                </View>
+
+                <View style={styles.statDivider} />
+
+                <View style={styles.statItem}>
+                  <Text style={[styles.statValue, { color: "#00FFA3" }]}>
+                    {statsLoading ? "—" : (profileStats ? `${profileStats.onTimeRate}%` : "—")}
+                  </Text>
+                  <Text style={styles.statLabel}>On-Time</Text>
+                </View>
+
+                <View style={styles.statDivider} />
+
+                <View style={styles.statItem}>
+                  <Text style={[styles.statValue, { color: "#7C3AED" }]}>
+                    {statsLoading ? "—" : (profileStats ? profileStats.score.toString() : "—")}
+                  </Text>
+                  <Text style={styles.statLabel}>Score</Text>
+                </View>
+              </View>
             </View>
 
-             <View style={styles.statDivider} />
+            {/* MY PROPERTY */}
+            <Text style={styles.sectionTitle}>MY PROPERTY</Text>
 
-            <View style={styles.statItem}>
-              <Text style={[styles.statValue, { color: "#7C3AED" }]}>
-                94
-              </Text>
-              <Text style={styles.statLabel}>Score</Text>
+            {user?.userProperties?.length ? (() => {
+              const propertyItem = user.userProperties[0]?.property;
+              if (!propertyItem) return null;
+
+              const name = propertyItem.title ?? "Untitled Property";
+              const activeLease = profileStats?.activeLease ?? null;
+              const price = activeLease?.rentAmount
+                ? `Ksh${activeLease.rentAmount.toLocaleString()}/mo`
+                : propertyItem.price
+                ? `Ksh${propertyItem.price.toLocaleString()}/mo`
+                : "N/A";
+              const location = propertyItem.location ?? "Unknown Location";
+
+              const specs = [
+                { icon: "⊞", label: statsLoading ? "—" : (activeLease?.unitType?.type ?? "—") },
+                { icon: "◎", label: statsLoading ? "—" : (activeLease?.unitType ? `${activeLease.unitType.baths} Baths` : "—") },
+                // { icon: "📅", label: statsLoading ? "—" : (profileStats?.nextDueDate ? formatDate(profileStats.nextDueDate) : "—") },
+              ];
+
+              return (
+                <View style={styles.propertyCard}>
+                  {/* Image Strip */}
+                  <LinearGradient
+                    colors={["#0f2027", "#203a43", "#2c5364"]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.propertyImageStrip}
+                  >
+                    <Text style={styles.propertyEmoji}>🏙</Text>
+
+                    {/* Bottom overlay with badges */}
+                    <View style={styles.propertyOverlay}>
+                      <View style={styles.badgeRow}>
+                        <View style={styles.activeBadge}>
+                          <Text style={styles.activeBadgeText}>{`● ${activeLease?.status?.toUpperCase() ?? "NO LEASE"}`}</Text>
+                        </View>
+                        {/* <View style={styles.badge}>
+                          <Text style={styles.badgeText}>AI {aiScore}%</Text>
+                        </View> */}
+                      </View>
+                    </View>
+                  </LinearGradient>
+
+                  {/* Body */}
+                  <View style={styles.propertyBody}>
+                    <View style={styles.propertyTopRow}>
+                      <Text style={styles.propertyName}>{name}</Text>
+                      <Text style={styles.propertyPrice}>{price}</Text>
+                    </View>
+
+                    <Text style={styles.propertyLocation}>📍 {location} </Text>
+
+                    {(profileStats?.floor || profileStats?.unit) && (
+                      <Text style={[styles.propertyLocation, { marginBottom: 4 }]}>
+                        {[profileStats.floor && `Floor ${profileStats.floor}`, profileStats.unit && `Unit ${profileStats.unit}`].filter(Boolean).join(' · ')}
+                      </Text>
+                    )}
+
+                    <View style={styles.specRow}>
+                      {specs.map((s, i) => (
+                        <View key={i} style={styles.spec}>
+                          <Text style={styles.specIcon}>{s.icon}</Text>
+                          <Text style={styles.specText}>{s.label}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                </View>
+              );
+            })() : (
+              <Text style={{ marginHorizontal: 20, color: "#888", fontSize: 12 }}>No properties available.</Text>
+            )}
+
+            {/* SETTINGS */}
+            <Text style={styles.sectionTitle}>ACCOUNT SETTINGS</Text>
+
+            <View style={styles.group}>
+              <Text style={styles.groupTitle}>Preferences</Text>
+              <View style={styles.preferencesDivider} />
+
+              {preferenceItems.map((item, i, arr) => (
+                <View key={i}>
+                  <TouchableOpacity
+                    style={styles.row}
+                    activeOpacity={0.7}
+                    onPress={() => {
+                      if (item.type === "toggle") {
+                        toggleSetting(item.key);
+                        item.onPress?.();
+                      } else if (item.type === "link") {
+                        item.onPress?.();
+                      }
+                    }}
+                  >
+                    <View
+                      style={[
+                        styles.rowIcon,
+                        { backgroundColor: item.bg, borderWidth: 1, borderColor: item.border },
+                      ]}
+                    >
+                      <Text>{item.icon}</Text>
+                    </View>
+
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.rowTitle}>{item.name}</Text>
+                      {item.type === "toggle" && (
+                        <Text style={styles.rowDesc}>{item.desc}</Text>
+                      )}
+                    </View>
+
+                    {item.type === "toggle" ? (
+                      <View
+                        style={[
+                          styles.toggleTrack,
+                          toggles[item.key] && styles.toggleTrackOn,
+                        ]}
+                      >
+                        <View
+                          style={[
+                            styles.toggleThumb,
+                            toggles[item.key] && styles.toggleThumbOn,
+                          ]}
+                        />
+                      </View>
+                    ) : (
+                      <Text style={styles.arrow}>›</Text>
+                    )}
+                  </TouchableOpacity>
+
+                  {i < arr.length - 1 && <View style={styles.rowDivider} />}
+                </View>
+              ))}
             </View>
-          </View>
-        </View>
 
-         {/* MY PROPERTY */}
-<Text style={styles.sectionTitle}>MY PROPERTY</Text>
+            {/* <View style={styles.group}>
+              <Text style={styles.groupTitle}>Account</Text>
+              <View style={styles.preferencesDivider} />
 
-{user?.userProperties?.length ? (() => {
-  const propertyItem = user.userProperties[0]?.property;
-  if (!propertyItem) return null;
+              <TouchableOpacity style={styles.row} activeOpacity={0.7}>
+                <View
+                  style={[
+                    styles.rowIcon,
+                    { backgroundColor: "rgba(0,240,255,0.1)", borderWidth: 1, borderColor: "rgba(0,240,255,0.25)" },
+                  ]}
+                >
+                  <Text>✏️</Text>
+                </View>
 
-  const name = propertyItem.title ?? "Untitled Property";
-  const price = propertyItem.price ? `Ksh${propertyItem.price.toLocaleString()}/mo` : "N/A";
-  const location = propertyItem.location ?? "Unknown Location";
+                <Text style={styles.rowTitle}>Edit Profile</Text>
 
-  const specs = [
-    { icon: "⊞", label: `${propertyItem.beds ?? 0} Beds` },
-    { icon: "◎", label: `${propertyItem.baths ?? 0} Baths` },
-    { icon: "▣", label: `${propertyItem.sqft ?? "N/A"} sqft` },
-    { icon: "📅", label: "Jul 15" }, // hardcoded nextDue
-  ];
-
-  const aiScore = 94; 
-
-  return (
-    <View style={styles.propertyCard}>
-      {/* Image Strip */}
-      <LinearGradient
-        colors={["#0f2027", "#203a43", "#2c5364"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.propertyImageStrip}
-      >
-        <Text style={styles.propertyEmoji}>🏙</Text>
-
-        {/* Bottom overlay with badges */}
-        <View style={styles.propertyOverlay}>
-          <View style={styles.badgeRow}>
-            <View style={styles.activeBadge}>
-              <Text style={styles.activeBadgeText}>● ACTIVE LEASE</Text>
-            </View>
-            {/* <View style={styles.badge}>
-              <Text style={styles.badgeText}>AI {aiScore}%</Text>
+                <Text style={styles.arrow}>›</Text>
+              </TouchableOpacity>
             </View> */}
-          </View>
-        </View>
-      </LinearGradient>
+          </>
+        )}
+        ListFooterComponent={() => (
+          <>
+            {/* Logout */}
+            <View style={styles.group}>
+              <TouchableOpacity
+                onPress={handleSignOut}
+                activeOpacity={0.7}
+                style={{ flexDirection: "row", alignItems: "center", paddingVertical: 10, paddingHorizontal: 10 }}
+              >
+                <View style={[styles.rowIcon, { backgroundColor: "rgba(255,59,129,0.15)" }]}>
+                  <Text style={{ color: "#FF3B81" }}>⎋</Text>
+                </View>
 
-      {/* Body */}
-      <View style={styles.propertyBody}>
-        <View style={styles.propertyTopRow}>
-          <Text style={styles.propertyName}>{name}</Text>
-          <Text style={styles.propertyPrice}>{price}</Text>
-        </View>
+                <Text style={[styles.rowTitle, { color: "#FF3B81", marginLeft: 10 }]}>
+                  Sign Out
+                </Text>
 
-        <Text style={styles.propertyLocation}>📍 {location} </Text>
-
-        <View style={styles.specRow}>
-          {specs.map((s, i) => (
-            <View key={i} style={styles.spec}>
-              <Text style={styles.specIcon}>{s.icon}</Text>
-              <Text style={styles.specText}>{s.label}</Text>
+                <Text style={[styles.arrow, { color: "#FF3B81", marginLeft: "auto" }]}>›</Text>
+              </TouchableOpacity>
             </View>
-          ))}
-        </View>
+
+            {/* Footer */}
+            <View style={styles.footer}>
+              <GradientTitle text="NEXUS RENT" />
+              <Text style={styles.version}>
+                v2.4.1 · Rental Platform
+              </Text>
+            </View>
+          </>
+        )}
+      />
+
+      {/* Floating Bot Button */}
+      <View style={styles.floatingBotWrapper}>
+        <FloatingBotButton />
       </View>
-    </View>
-  );
-})() : (
-  <Text style={{ marginHorizontal: 20, color: "#888", fontSize: 12 }}>No properties available.</Text>
-)}
-
-{/* SETTINGS */}
-        <Text style={styles.sectionTitle}>ACCOUNT SETTINGS</Text>
-
-        <View style={styles.group}>
-          <Text style={styles.groupTitle}>Preferences</Text>
-          <View style={styles.preferencesDivider} />
-
-        {[
-{ icon: "🔔", name: "Rent Alerts", color: "#00F0FF", bg: "rgba(0,240,255,0.1)", border: "rgba(0,240,255,0.25)", on: true, onPress: handleRentAlertsPress },
-  { icon: "📊", name: "Market Reports", color: "#7C3AED", bg: "rgba(124,58,237,0.1)", border: "rgba(124,58,237,0.25)", on: true },
-  { icon: "💳", name: "Auto-Pay", color: "#00FFA3", bg: "rgba(0,255,163,0.1)", border: "rgba(0,255,163,0.25)", on: false },
-].map((item, i, arr) => (
-  <View key={i}>
-    <View style={styles.row}>
-      <View style={[styles.rowIcon, { backgroundColor: item.bg, borderWidth: 1, borderColor: item.border }]}>
-        <Text>{item.icon}</Text>
-      </View>
-
-      <View style={{ flex: 1 }}>
-        <Text style={styles.rowTitle}>{item.name}</Text>
-        <Text style={styles.rowDesc}>Manage this preference</Text>
-      </View>
-
-      {/* Toggle */}
-      <View style={[styles.toggleTrack, item.on && styles.toggleTrackOn]}>
-        <View style={[styles.toggleThumb, item.on && styles.toggleThumbOn]} />
-      </View>
-    </View>
-
-    {i < arr.length - 1 && <View style={styles.rowDivider} />}
-  </View>
-))}
-        </View>
-        <View style={styles.group}>
-  <Text style={styles.groupTitle}>Account</Text>
-  <View style={styles.preferencesDivider} />
-
-  {[
-    { icon: "✏️", name: "Edit Profile", color: "#00F0FF", bg: "rgba(0,240,255,0.1)", border: "rgba(0,240,255,0.25)" },
-    { icon: "🔐", name: "Security & Password", color: "#7C3AED", bg: "rgba(124,58,237,0.1)", border: "rgba(124,58,237,0.25)" },
-    { icon: "📁", name: "My Documents", color: "#F59E0B", bg: "rgba(245,158,11,0.1)", border: "rgba(245,158,11,0.25)" },
-  ].map((item, i, arr) => (
-    <View key={i}>
-      <View style={styles.row}>
-        <View style={[styles.rowIcon, { backgroundColor: item.bg, borderWidth: 1, borderColor: item.border }]}>
-          <Text>{item.icon}</Text>
-        </View>
-
-        <Text style={styles.rowTitle}>{item.name}</Text>
-
-        <Text style={styles.arrow}>›</Text>
-      </View>
-
-      {i < arr.length - 1 && <View style={styles.rowDivider} />}
-    </View>
-  ))}
-</View>
-        </>
-  )}
-   ListFooterComponent={() => (
-    <>
-                      {/* Logout */}
-    <View style={styles.group}>
-  <TouchableOpacity
-    onPress={handleSignOut}
-    activeOpacity={0.7}
-    style={{ flexDirection: "row", alignItems: "center", paddingVertical: 10, paddingHorizontal: 10 }}
-  >
-    <View style={[styles.rowIcon, { backgroundColor: "rgba(255,59,129,0.15)" }]}>
-      <Text style={{ color: "#FF3B81" }}>⎋</Text>
-    </View>
-
-    <Text style={[styles.rowTitle, { color: "#FF3B81", marginLeft: 10 }]}>
-      Sign Out
-    </Text>
-
-    <Text style={[styles.arrow, { color: "#FF3B81", marginLeft: "auto" }]}>›</Text>
-  </TouchableOpacity>
-</View>
-
-         {/* Footer */}
-        <View style={styles.footer}>
-          <GradientTitle text="NEXUS RENT" />
-          <Text style={styles.version}>
-            v2.4.1 · Rental Platform
-          </Text>
-        </View>
-    </>
-   )}
-       />
-
-       {/* Floating Bot Button */}
-  <View style={styles.floatingBotWrapper}>
-    <FloatingBotButton />
-  </View>
-
- 
     </View>
   );
 }
@@ -422,36 +534,36 @@ const styles = StyleSheet.create({
     padding: 20,
   },
 
- avatar: {
-  width: 80,
-  height: 80,
-  borderRadius: 40,
-  alignItems: "center",
-  justifyContent: "center",
-  marginBottom: 10,
-},
+  avatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 10,
+  },
 
   name: { color: "#fff", fontSize: 30, fontWeight: "600" },
   email: { color: "#888", fontSize: 15, marginBottom: 8 },
 
-verifiedTag: {
-  flexDirection: 'row',
-   alignItems: 'center',
-  backgroundColor: "rgba(0,255,255,0.15)",
-  borderWidth: 1,
-  borderColor: "rgba(0,255,255,0.3)",
-  paddingHorizontal: 25,
-  paddingVertical: 4,
-  borderRadius: 14,
-  marginBottom: 12,
-},
+  verifiedTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: "rgba(0,255,255,0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(0,255,255,0.3)",
+    paddingHorizontal: 25,
+    paddingVertical: 4,
+    borderRadius: 14,
+    marginBottom: 12,
+  },
 
-icon: {
-  fontSize: 14,
-  color: "#00FFFF",
-  textAlign: 'center',
-  fontWeight: 'bold',
-},
+  icon: {
+    fontSize: 14,
+    color: "#00FFFF",
+    textAlign: 'center',
+    fontWeight: 'bold',
+  },
 
   verifiedText: {
     fontSize: 12,
@@ -460,15 +572,15 @@ icon: {
   },
 
   statsRow: {
-  flexDirection: "row",
-  width: "100%",
-  backgroundColor: "#111827",
-  borderWidth: 1,
-  borderColor: "#1F2937",
-  borderRadius: 18,
-  overflow: "hidden",
-  padding: 20,
-},
+    flexDirection: "row",
+    width: "100%",
+    backgroundColor: "#111827",
+    borderWidth: 1,
+    borderColor: "#1F2937",
+    borderRadius: 18,
+    overflow: "hidden",
+    padding: 20,
+  },
   statItem: { flex: 1, alignItems: "center" },
   statDivider: { width: 1, backgroundColor: "#1F2937", marginVertical: 4 },
 
@@ -484,26 +596,26 @@ icon: {
     fontFamily: "Orbitron",
   },
 
- propertyCard: {
-  marginHorizontal: 20,
-  marginBottom: 24,
-  backgroundColor: "#111827",
-  borderWidth: 1,
-  borderColor: "rgba(0,240,255,0.2)",
-  borderRadius: 20,
-  overflow: "hidden",
-},
+  propertyCard: {
+    marginHorizontal: 20,
+    marginBottom: 24,
+    backgroundColor: "#111827",
+    borderWidth: 1,
+    borderColor: "rgba(0,240,255,0.2)",
+    borderRadius: 20,
+    overflow: "hidden",
+  },
 
-propertyImageStrip: {
-  height: 160,
-  alignItems: "center",
-  justifyContent: "center",
-},
+  propertyImageStrip: {
+    height: 160,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 
-propertyEmoji: {
-  fontSize: 60,
-  opacity: 0.15,
-},
+  propertyEmoji: {
+    fontSize: 60,
+    opacity: 0.15,
+  },
   propertyImage: {
     height: 120,
     alignItems: "center",
@@ -511,25 +623,25 @@ propertyEmoji: {
   },
 
   propertyOverlay: {
-  position: "absolute",
-  bottom: 12,
-  left: 14,
-  right: 14,
-},
+    position: "absolute",
+    bottom: 12,
+    left: 14,
+    right: 14,
+  },
 
- badgeRow: {
-  flexDirection: "row",
-  gap: 6,
-},
+  badgeRow: {
+    flexDirection: "row",
+    gap: 6,
+  },
 
-activeBadge: {
-  backgroundColor: "rgba(0,255,163,0.15)",
-  borderWidth: 1,
-  borderColor: "rgba(0,255,163,0.3)",
-  paddingHorizontal: 8,
-  paddingVertical: 3,
-  borderRadius: 8,
-},
+  activeBadge: {
+    backgroundColor: "rgba(0,255,163,0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(0,255,163,0.3)",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
 
   badge: {
     backgroundColor: "rgba(0, 240, 255, 0.15)",
@@ -541,72 +653,72 @@ activeBadge: {
   },
 
   activeBadgeText: {
-  fontSize: 9,
-  fontFamily: "Orbitron",
-  color: "#00FFA3",
-  letterSpacing: 1,
-},
+    fontSize: 9,
+    fontFamily: "Orbitron",
+    color: "#00FFA3",
+    letterSpacing: 1,
+  },
 
-badgeText: {
-  fontSize: 9,
-  fontFamily: "Orbitron",
-  color: "#00F0FF",
-  letterSpacing: 1,
-},
+  badgeText: {
+    fontSize: 9,
+    fontFamily: "Orbitron",
+    color: "#00F0FF",
+    letterSpacing: 1,
+  },
 
-propertyBody: {
-  padding: 16,
-},
+  propertyBody: {
+    padding: 16,
+  },
 
-propertyTopRow: {
-  flexDirection: "row",
-  justifyContent: "space-between",
-  alignItems: "flex-start",
-  marginBottom: 4,
-},
+  propertyTopRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 4,
+  },
 
-propertyName: {
-  fontSize: 16,
-  fontWeight: "700",
-  color: "#fff",
-},
+  propertyName: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#fff",
+  },
 
   propertyPrice: {
-  fontSize: 15,
-  fontFamily: "JetBrains Mono",
-  fontWeight: "600",
-  color: "#00F0FF",
-},
+    fontSize: 15,
+    fontFamily: "JetBrains Mono",
+    fontWeight: "600",
+    color: "#00F0FF",
+  },
 
-propertyLocation: {
-  fontSize: 12,
-  color: "#888",
-  marginBottom: 14,
-},
+  propertyLocation: {
+    fontSize: 12,
+    color: "#888",
+    marginBottom: 14,
+  },
 
-specRow: {
-  flexDirection: "row",
-  gap: 10,
-  paddingTop: 12,
-  borderTopWidth: 1,
-  borderTopColor: "#1F2937",
-},
+  specRow: {
+    flexDirection: "row",
+    gap: 10,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#1F2937",
+  },
 
-spec: {
-  flexDirection: "row",
-  alignItems: "center",
-  gap: 4,
-},
+  spec: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
 
-specIcon: {
-  fontSize: 13,
-  color: "#7C3AED",
-},
+  specIcon: {
+    fontSize: 13,
+    color: "#7C3AED",
+  },
 
   specText: {
-  fontSize: 11,
-  color: "#888",
-},
+    fontSize: 11,
+    color: "#888",
+  },
 
   group: {
     marginHorizontal: 20,
@@ -642,44 +754,44 @@ specIcon: {
   rowDesc: { fontSize: 10, color: "#888" },
 
   rowDivider: {
-  height: 1,
-  backgroundColor: "#1F2937",
-},
+    height: 1,
+    backgroundColor: "#1F2937",
+  },
 
-toggleTrack: {
-  width: 40,
-  height: 22,
-  borderRadius: 11,
-  backgroundColor: "#1F2937",
-  borderWidth: 1,
-  borderColor: "#2D3748",
-  justifyContent: "center",
-  paddingHorizontal: 2,
-},
-toggleTrackOn: {
-  backgroundColor: "rgba(0,255,163,0.15)",
-  borderColor: "rgba(0,255,163,0.4)",
-},
-toggleThumb: {
-  width: 16,
-  height: 16,
-  borderRadius: 8,
-  backgroundColor: "#444",
-  alignSelf: "flex-start",
-},
-toggleThumbOn: {
-  backgroundColor: "#00FFA3",
-  alignSelf: "flex-end",
-  shadowColor: "#00FFA3",
-  shadowOffset: { width: 0, height: 0 },
-  shadowOpacity: 0.6,
-  shadowRadius: 6,
-},
+  toggleTrack: {
+    width: 40,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: "#1F2937",
+    borderWidth: 1,
+    borderColor: "#2D3748",
+    justifyContent: "center",
+    paddingHorizontal: 2,
+  },
+  toggleTrackOn: {
+    backgroundColor: "rgba(0,255,163,0.15)",
+    borderColor: "rgba(0,255,163,0.4)",
+  },
+  toggleThumb: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: "#444",
+    alignSelf: "flex-start",
+  },
+  toggleThumbOn: {
+    backgroundColor: "#00FFA3",
+    alignSelf: "flex-end",
+    shadowColor: "#00FFA3",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: 6,
+  },
 
-preferencesDivider: {
-  height: 1,
-  backgroundColor: "#1F2937",
-},
+  preferencesDivider: {
+    height: 1,
+    backgroundColor: "#1F2937",
+  },
 
   arrow: { color: "#888", marginLeft: "auto" },
 
@@ -701,114 +813,114 @@ preferencesDivider: {
     marginTop: 4,
   },
   messageContainer: {
-  maxWidth: "80%",
-  paddingVertical: 10,
-  paddingHorizontal: 12,
-  borderRadius: 14,
-  marginVertical: 4,
-},
+    maxWidth: "80%",
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 14,
+    marginVertical: 4,
+  },
 
-botMessage: {
-  alignSelf: "flex-start",
-  backgroundColor: "#111827",
-  borderWidth: 1,
-  borderColor: "#1F2937",
-  borderTopLeftRadius: 4,
-},
+  botMessage: {
+    alignSelf: "flex-start",
+    backgroundColor: "#111827",
+    borderWidth: 1,
+    borderColor: "#1F2937",
+    borderTopLeftRadius: 4,
+  },
 
-userMessage: {
-  alignSelf: "flex-end",
-  backgroundColor: "rgba(0,240,255,0.12)",
-  borderWidth: 1,
-  borderColor: "rgba(0,240,255,0.25)",
-  borderTopRightRadius: 4,
-},
+  userMessage: {
+    alignSelf: "flex-end",
+    backgroundColor: "rgba(0,240,255,0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(0,240,255,0.25)",
+    borderTopRightRadius: 4,
+  },
 
-messageText: {
-  fontSize: 12,
-  lineHeight: 18,
-},
+  messageText: {
+    fontSize: 12,
+    lineHeight: 18,
+  },
 
-botText: {
-  color: "#E5E7EB",
-},
+  botText: {
+    color: "#E5E7EB",
+  },
 
-userText: {
-  color: "#00F0FF",
-  fontWeight: "500",
-},
+  userText: {
+    color: "#00F0FF",
+    fontWeight: "500",
+  },
 
-chatList: {
-  maxHeight: 260,
-  backgroundColor: "#0B1220",
-},
+  chatList: {
+    maxHeight: 260,
+    backgroundColor: "#0B1220",
+  },
 
-chatContent: {
-  padding: 12,
-  paddingBottom: 20,
-},
+  chatContent: {
+    padding: 12,
+    paddingBottom: 20,
+  },
 
-inputContainer: {
-  position: "relative",
-  borderTopWidth: 1,
-  borderTopColor: "#1F2937",
-  paddingVertical: 10,
-  paddingHorizontal: 5,
-  backgroundColor: "#0B1220",
-},
+  inputContainer: {
+    position: "relative",
+    borderTopWidth: 1,
+    borderTopColor: "#1F2937",
+    paddingVertical: 10,
+    paddingHorizontal: 5,
+    backgroundColor: "#0B1220",
+  },
 
-input: {
-  flex: 1,
-  minHeight: 40,
-  maxHeight: 100,
-  paddingHorizontal: 12,
-  paddingRight: 48,        
-  paddingVertical: 8,
-  borderRadius: 12,
-  backgroundColor: "#111827",
-  color: "#fff",
-  fontSize: 12,
-  borderWidth: 1,
-  borderColor: "#1F2937",
-},
+  input: {
+    flex: 1,
+    minHeight: 40,
+    maxHeight: 100,
+    paddingHorizontal: 12,
+    paddingRight: 48,
+    paddingVertical: 8,
+    borderRadius: 12,
+    backgroundColor: "#111827",
+    color: "#fff",
+    fontSize: 12,
+    borderWidth: 1,
+    borderColor: "#1F2937",
+  },
 
-sendIconContainer: {
-  position: "absolute",
-  right: 18,               
-  bottom: 18,              
-  justifyContent: "center",
-  alignItems: "center",
-},
+  sendIconContainer: {
+    position: "absolute",
+    right: 18,
+    bottom: 18,
+    justifyContent: "center",
+    alignItems: "center",
+  },
 
-sendIcon: {
-  width: 24,
-  height: 24,
-  tintColor: "#00F0FF",
-},
+  sendIcon: {
+    width: 24,
+    height: 24,
+    tintColor: "#00F0FF",
+  },
 
-sendButton: {
-  marginLeft: 8,
-  paddingHorizontal: 14,
-  paddingVertical: 10,
-  borderRadius: 12,
-  backgroundColor: "rgba(0,240,255,0.15)",
-  borderWidth: 1,
-  borderColor: "rgba(0,240,255,0.35)",
-  justifyContent: "center",
-  alignItems: "center",
-},
+  sendButton: {
+    marginLeft: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: "rgba(0,240,255,0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(0,240,255,0.35)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
 
-sendText: {
-  color: "#00F0FF",
-  fontSize: 12,
-  fontWeight: "600",
-  letterSpacing: 0.5,
-},
-floatingBotWrapper: {
-  position: "absolute",
-  bottom: 65,
-  right: 10,
-  zIndex: 999,
-  elevation: 10,
-},
+  sendText: {
+    color: "#00F0FF",
+    fontSize: 12,
+    fontWeight: "600",
+    letterSpacing: 0.5,
+  },
+  floatingBotWrapper: {
+    position: "absolute",
+    bottom: 65,
+    right: 10,
+    zIndex: 999,
+    elevation: 10,
+  },
 });
