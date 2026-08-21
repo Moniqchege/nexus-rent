@@ -16,6 +16,7 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuthStore } from "../../store/authStore";
 import api from "../../lib/api";
+import { useTheme } from '../../lib/theme';
 
 // --- Password strength helper -------------------------------------------------
 
@@ -80,6 +81,7 @@ function isPasswordStrongEnough(checks: StrengthResult["checks"]) {
 // --------------------------------------------------------------------------
 
 export default function ChangePassword() {
+  const { theme, isDark } = useTheme();
   const router = useRouter();
   const token = useAuthStore((state) => state.token);
 
@@ -134,7 +136,7 @@ export default function ChangePassword() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.bg }]}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <ScrollView
@@ -146,35 +148,35 @@ export default function ChangePassword() {
           <Pressable onPress={() => router.back()} style={styles.side}>
             <Image
               source={require("../../assets/back_icon.png")}
-              style={styles.backIcon}
+              style={[styles.backIcon, { tintColor: theme.accent }]}
             />
           </Pressable>
 
-          <Text style={styles.title}>Security & Password</Text>
+          <Text style={[styles.title, { color: theme.accent }]}>Security & Password</Text>
         </View>
 
         {/* Form — vertically centered in the remaining scroll space */}
         <View style={styles.centerWrap}>
           {/* Hero graphic — fills the space above the form so it doesn't look empty */}
           <View style={styles.hero}>
-            <View style={styles.heroIconCircle}>
-              <Ionicons name="shield-checkmark-outline" size={64} color="#00FFFF" />
+            <View style={[styles.heroIconCircle, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
+              <Ionicons name="shield-checkmark-outline" size={64} color={theme.accent} />
             </View>
-            <Text style={styles.heroTitle}>Update Your Password</Text>
-            <Text style={styles.heroSubtitle}>
+            <Text style={[styles.heroTitle, { color: theme.text }]}>Update Your Password</Text>
+            <Text style={[styles.heroSubtitle, { color: theme.textMuted }]}>
               Choose a strong password to keep your account secure.
             </Text>
           </View>
 
           <View style={styles.form}>
-            <Text style={styles.label}>Current Password</Text>
-            <View style={styles.inputRow}>
+            <Text style={[styles.label, { color: theme.textMuted }]}>Current Password</Text>
+            <View style={[styles.inputRow, { backgroundColor: theme.bgInput, borderColor: theme.border }]}>
               <TextInput
-                style={styles.inputField}
+                style={[styles.inputField, { color: theme.text, backgroundColor: "transparent" }]}
                 value={currentPassword}
                 onChangeText={setCurrentPassword}
                 placeholder="Enter current password"
-                placeholderTextColor="#555"
+                placeholderTextColor={theme.textDim}
                 secureTextEntry={!showCurrent}
                 autoCapitalize="none"
               />
@@ -186,19 +188,19 @@ export default function ChangePassword() {
                 <Ionicons
                   name={showCurrent ? "eye-off-outline" : "eye-outline"}
                   size={20}
-                  color="#00F0FF"
+                  color={theme.accent}
                 />
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.label}>New Password</Text>
-            <View style={styles.inputRow}>
+            <Text style={[styles.label, { color: theme.textMuted }]}>New Password</Text>
+            <View style={[styles.inputRow, { backgroundColor: theme.bgInput, borderColor: theme.border }]}>
               <TextInput
-                style={styles.inputField}
+                style={[styles.inputField, { color: theme.text, backgroundColor: "transparent" }]}
                 value={newPassword}
                 onChangeText={setNewPassword}
                 placeholder="Enter new password"
-                placeholderTextColor="#555"
+                placeholderTextColor={theme.textDim}
                 secureTextEntry={!showNew}
                 autoCapitalize="none"
               />
@@ -210,7 +212,7 @@ export default function ChangePassword() {
                 <Ionicons
                   name={showNew ? "eye-off-outline" : "eye-outline"}
                   size={20}
-                  color="#00F0FF"
+                  color={theme.accent}
                 />
               </TouchableOpacity>
             </View>
@@ -226,7 +228,7 @@ export default function ChangePassword() {
                         styles.strengthSegment,
                         {
                           backgroundColor:
-                            i <= strength.score ? strength.color : "#1F2937",
+                            i <= strength.score ? strength.color : theme.border,
                         },
                       ]}
                     />
@@ -237,26 +239,27 @@ export default function ChangePassword() {
                 </Text>
 
                 <View style={styles.requirementsList}>
-                  <RequirementRow met={strength.checks.length} text="At least 8 characters" />
-                  <RequirementRow met={strength.checks.uppercase} text="One uppercase letter" />
-                  <RequirementRow met={strength.checks.lowercase} text="One lowercase letter" />
-                  <RequirementRow met={strength.checks.number} text="One number" />
+                  <RequirementRow met={strength.checks.length} text="At least 8 characters" theme={theme} />
+                  <RequirementRow met={strength.checks.uppercase} text="One uppercase letter" theme={theme} />
+                  <RequirementRow met={strength.checks.lowercase} text="One lowercase letter" theme={theme} />
+                  <RequirementRow met={strength.checks.number} text="One number" theme={theme} />
                   <RequirementRow
                     met={strength.checks.symbol}
                     text="One symbol (recommended)"
+                    theme={theme}
                   />
                 </View>
               </View>
             )}
 
-            <Text style={styles.label}>Confirm New Password</Text>
-            <View style={styles.inputRow}>
+            <Text style={[styles.label, { color: theme.textMuted }]}>Confirm New Password</Text>
+            <View style={[styles.inputRow, { backgroundColor: theme.bgInput, borderColor: theme.border }]}>
               <TextInput
-                style={styles.inputField}
+                style={[styles.inputField, { color: theme.text, backgroundColor: "transparent" }]}
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
                 placeholder="Confirm new password"
-                placeholderTextColor="#555"
+                placeholderTextColor={theme.textDim}
                 secureTextEntry={!showConfirm}
                 autoCapitalize="none"
               />
@@ -268,19 +271,20 @@ export default function ChangePassword() {
                 <Ionicons
                   name={showConfirm ? "eye-off-outline" : "eye-outline"}
                   size={20}
-                  color="#00F0FF"
+                  color={theme.accent}
                 />
               </TouchableOpacity>
             </View>
 
-            {error && <Text style={styles.error}>{error}</Text>}
+            {error && <Text style={[styles.error, { color: theme.accentRed }]}>{error}</Text>}
             {success && (
-              <Text style={styles.successText}>✓ Password updated successfully!</Text>
+              <Text style={[styles.successText, { color: theme.accentGreen }]}>✓ Password updated successfully!</Text>
             )}
 
             <TouchableOpacity
               style={[
                 styles.submitBtn,
+                { borderColor: theme.borderAccent },
                 (loading || (newPassword.length > 0 && !strongEnough)) &&
                   styles.submitBtnDisabled,
               ]}
@@ -289,9 +293,9 @@ export default function ChangePassword() {
               activeOpacity={0.8}
             >
               {loading ? (
-                <ActivityIndicator color="#fff" size="small" />
+                <ActivityIndicator color={theme.accent} size="small" />
               ) : (
-                <Text style={styles.submitBtnText}>Update Password</Text>
+                <Text style={[styles.submitBtnText, { color: theme.accent }]}>Update Password</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -301,13 +305,13 @@ export default function ChangePassword() {
   );
 }
 
-function RequirementRow({ met, text }: { met: boolean; text: string }) {
+function RequirementRow({ met, text, theme }: { met: boolean; text: string; theme: import('../../lib/theme').Theme }) {
   return (
     <View style={styles.requirementRow}>
-      <Text style={[styles.requirementBullet, { color: met ? "#00FFA3" : "#555" }]}>
+      <Text style={[styles.requirementBullet, { color: met ? theme.accentGreen : theme.textDim }]}>
         {met ? "✓" : "○"}
       </Text>
-      <Text style={[styles.requirementText, { color: met ? "#ccc" : "#666" }]}>
+      <Text style={[styles.requirementText, { color: met ? theme.textSub : theme.textMuted }]}>
         {text}
       </Text>
     </View>

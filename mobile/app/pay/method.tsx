@@ -2,6 +2,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Pressable 
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { CreditCard, Smartphone, Building2, ArrowLeft } from "lucide-react-native";
+import { useTheme } from "../../lib/theme";
 
 const colorMap = {
   neon: "#00FFFF",
@@ -13,6 +14,7 @@ const colorMap = {
 };
 
 export default function PaymentMethodPage() {
+  const { theme } = useTheme();
   const router = useRouter();
   const params = useLocalSearchParams();
   
@@ -74,22 +76,19 @@ export default function PaymentMethodPage() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.bg }]}>
       {/* Ambient Glow */}
-      <View style={styles.ambientGlow} />
+      <View style={[styles.ambientGlow, { backgroundColor: `rgba(124,58,237,${theme.ambientOpacity})` }]} />
 
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         {/* Header */}
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} style={styles.side}>
-            <Image
-             source={require('../../assets/back_icon.png')}
-             style={styles.backIcon}
-            />
+            <Image source={require('../../assets/back_icon.png')} style={[styles.backIcon, { tintColor: theme.accent }]} />
           </Pressable>
           <View style={{ flex: 1, alignItems: "center" }}>
-            <Text style={styles.headerLabel}>SELECT PAYMENT METHOD</Text>
-            <Text style={styles.headerTitle}>Choose How to Pay</Text>
+            <Text style={[styles.headerLabel, { color: theme.text }]}>SELECT PAYMENT METHOD</Text>
+            <Text style={[styles.headerTitle, { color: theme.textMuted }]}>Choose How to Pay</Text>
           </View>
           <View style={{ width: 40 }} />
         </View>
@@ -120,13 +119,13 @@ export default function PaymentMethodPage() {
                   end={{ x: 1, y: 1 }}
                   style={styles.methodGradientBorder}
                 >
-                  <View style={styles.methodInner}>
+                  <View style={[styles.methodInner, { backgroundColor: theme.bgCard }]}>
                     <View style={styles.methodIconContainer}>
                       <Icon size={28} color={method.gradient[0]} />
                     </View>
                     <View style={styles.methodContent}>
-                      <Text style={styles.methodTitle}>{method.title}</Text>
-                      <Text style={styles.methodSubtitle}>{method.subtitle}</Text>
+                      <Text style={[styles.methodTitle, { color: theme.text }]}>{method.title}</Text>
+                      <Text style={[styles.methodSubtitle, { color: theme.textMuted }]}>{method.subtitle}</Text>
                     </View>
                     <Text style={[styles.methodArrow, { color: method.gradient[0] }]}>›</Text>
                   </View>

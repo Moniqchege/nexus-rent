@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { Pressable } from 'react-native';
 import { useAuthStore } from "../../store/authStore";
 import { API_BASE } from "../../lib/api";
+import { useTheme } from '../../lib/theme';
 import * as Linking from 'expo-linking';
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useState } from 'react';
@@ -65,6 +66,7 @@ const quickActions: { icon: string; label: string; color: ColorKey }[] = [
 ];
 
 export default function Home() {
+  const { theme, isDark } = useTheme();
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const token = useAuthStore((state) => state.token);
@@ -187,16 +189,16 @@ export default function Home() {
   ];
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.bg }]}>
       {/* Ambient Glow */}
-      <View style={styles.ambientPurple} />
-      <View style={styles.ambientNeon} />
+      <View style={[styles.ambientPurple, { backgroundColor: `rgba(124,58,237,${theme.ambientOpacity})` }]} />
+      <View style={[styles.ambientNeon, { backgroundColor: `rgba(0,255,255,${theme.ambientOpacity})` }]} />
 
       <ScrollView contentContainerStyle={{ paddingTop: 20, paddingBottom: 100 }}>
         {/* Header */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.textMuted}>
+            <Text style={[styles.textMuted, { color: theme.textMuted }]}>
                {getGreeting()},
             </Text>
             <MaskedView
@@ -224,7 +226,7 @@ export default function Home() {
           {user?.image ? (
             <Image
               source={{ uri: `${API_BASE}${user.image}` }}
-              style={{ width: 42, height: 42, borderRadius: 21, borderWidth: 1.5, borderColor: "rgba(0,255,255,0.4)" }}
+              style={{ width: 42, height: 42, borderRadius: 21, borderWidth: 1.5, borderColor: theme.borderAccent }}
               resizeMode="cover"
             />
           ) : (
@@ -268,11 +270,11 @@ export default function Home() {
           const statusColor: ColorKey = "success";
 
           return (
-            <LinearGradient colors={["rgba(0,240,255,0.08)", "rgba(124,58,237,0.12)"]} style={styles.heroCard}>
-              <Text style={styles.heroLabel}>CURRENT MONTHLY RENT</Text>
-              <Text style={[styles.heroValue, colorMap.neon.text]}>{rentDisplay}</Text>
+            <LinearGradient colors={["rgba(0,240,255,0.08)", "rgba(124,58,237,0.12)"]} style={[styles.heroCard, { borderColor: theme.borderAccent }]}>
+              <Text style={[styles.heroLabel, { color: theme.textMuted }]}>CURRENT MONTHLY RENT</Text>
+              <Text style={[styles.heroValue, colorMap.neon.text, { color: theme.accent }]}>{rentDisplay}</Text>
               {activeLease && (
-                <Text style={styles.textMutedSmall}>{heroTitle} · {heroLocation}</Text>
+                <Text style={[styles.textMutedSmall, { color: theme.textMuted }]}>{heroTitle} · {heroLocation}</Text>
               )}
 
               <View style={{ flexDirection: "row", gap: 8 }}>
@@ -281,7 +283,7 @@ export default function Home() {
                   { label: "NEXT DUE", value: nextDueFormatted, color: "warn" as ColorKey },
                 ].map((item, i) => (
                   <View key={i} style={styles.heroStatBox}>
-                    <Text style={styles.textMutedSmall}>{item.label}</Text>
+                    <Text style={[styles.textMutedSmall, { color: theme.textMuted }]}>{item.label}</Text>
                     <Text style={[{ fontFamily: "monospace" }, colorMap[item.color].text]}>
                       {item.value}
                     </Text>
@@ -293,7 +295,7 @@ export default function Home() {
         })() : null}
 
         {/* Quick Actions — Task 9 wires Pay Rent */}
-        <Text style={styles.sectionTitle}>QUICK ACTIONS</Text>
+        <Text style={[styles.sectionTitle, { color: theme.textMuted }]}>QUICK ACTIONS</Text>
         <View style={styles.quickActions}>
           {quickActions.map((item, i) => (
             <Pressable
@@ -358,7 +360,7 @@ export default function Home() {
               <View style={[{ width: 56, height: 56, borderRadius: 16, alignItems: "center", justifyContent: "center" }, colorMap[item.color].box]}> 
                 <Text>{item.icon}</Text>
               </View>
-              <Text style={styles.textTiny}>{item.label}</Text>
+              <Text style={[styles.textTiny, { color: theme.textMuted }]}>{item.label}</Text>
             </Pressable>
           ))}
         </View>
@@ -366,14 +368,14 @@ export default function Home() {
         {/* Stats — Task 11 + 12: dynamic values */}
         <View style={styles.statsRow}>
           {dynamicStats.map((item, i) => (
-            <View key={i} style={styles.statBox}>
+            <View key={i} style={[styles.statBox, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
               {/* Glowing top bar */}
               <View style={[styles.statTopBar, colorMap[item.color].bar,
                 { shadowColor: colorMap[item.color].text.color, shadowOpacity: 0.8, shadowRadius: 6, elevation: 4 }
               ]} />
 
               {/* Label */}
-              <Text style={styles.statLabel}>{item.label}</Text>
+              <Text style={[styles.statLabel, { color: theme.textSub }]}>{item.label}</Text>
 
               {/* Value */}
               <Text style={[styles.statValue, colorMap[item.color].text]}>
@@ -402,7 +404,7 @@ export default function Home() {
               <View key={contact.id} style={[styles.contactCard, colorMap.purple.box]}>
                 <Text style={[styles.contactName, colorMap.purple.text]}>{contact.name}</Text>
                 <Text style={styles.textTiny}>{contact.role?.name ?? contact.role}</Text>
-                <Text style={[styles.textTiny, colorMap.neon.text]}>{contact.phone || 'No phone'}</Text>
+                <Text style={[styles.textTiny, { color: theme.accent }]}>{contact.phone || 'No phone'}</Text>
               </View>
             ))}
           </ScrollView>
@@ -410,12 +412,12 @@ export default function Home() {
 
         {/* Recent Activity */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>RECENT ACTIVITY</Text>
+          <Text style={[styles.sectionTitle, { color: theme.textMuted }]}>RECENT ACTIVITY</Text>
           <Pressable
-            style={styles.seeAllButton}
+            style={[styles.seeAllButton, { borderColor: theme.borderAccent }]}
             onPress={() => router.push('/audit-trails')}
           >
-            <Text style={styles.seeAllText}>See all</Text>
+            <Text style={[styles.seeAllText, { color: theme.accent }]}>See all</Text>
           </Pressable>
         </View>
         <View style={styles.timeline}>
@@ -425,15 +427,15 @@ export default function Home() {
                 <Text style={[{ fontSize: 14 }, colorMap[item.color]?.text]}>{item.icon}</Text>
               </View>
               <View style={styles.tlBody}>
-                <Text style={styles.tlTitle}>{item.title}</Text>
-                <Text style={styles.tlSub}>{item.subtitle}</Text>
+                <Text style={[styles.tlTitle, { color: theme.text }]}>{item.title}</Text>
+                <Text style={[styles.tlSub, { color: theme.textMuted }]}>{item.subtitle}</Text>
               </View>
               <Text
                 style={[
                   styles.tlAmount,
                   (item.amountColor && item.amountColor !== "muted")
                     ? colorMap[item.amountColor as ColorKey].text
-                    : { color: "#888" },
+                    : { color: theme.textMuted },
                 ]}
               >
                 {item.amount}

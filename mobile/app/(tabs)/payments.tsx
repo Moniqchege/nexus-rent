@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { useAuthStore } from "../../store/authStore";
 import api from "../../lib/api";
 import type { Payment, RentSchedule } from "../../types/payment";
+import { useTheme } from '../../lib/theme';
 
 const colorMap = {
   neon: "#00FFFF",
@@ -36,6 +37,7 @@ function GradientTitle({ text }: { text: string }) {
 }
 
 export default function Payments() {
+  const { theme, isDark } = useTheme();
   const router = useRouter();
   const { token, user } = useAuthStore();
   const [loading, setLoading] = useState(true);
@@ -121,25 +123,25 @@ export default function Payments() {
   const onTimeRate = calculateOnTimeRate();
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.bg }]}>
       {/* Ambient Glow */}
-      <View style={styles.ambientGlow} />
+      <View style={[styles.ambientGlow, { backgroundColor: `rgba(0,255,163,${theme.ambientOpacity})` }]} />
 
       <ScrollView contentContainerStyle={{ paddingTop: 20, paddingBottom: 120 }}>
         {/* Page Header */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.pageGreeting}>BILLING & HISTORY</Text>
+            <Text style={[styles.pageGreeting, { color: theme.textMuted }]}>BILLING & HISTORY</Text>
             <GradientTitle text="Payments" />
           </View>
-          <View style={styles.downloadBtn}>
+          <View style={[styles.downloadBtn, { backgroundColor: "rgba(0,255,163,0.08)", borderColor: "rgba(0,255,163,0.2)" }]}>
             <Text style={{ fontSize: 16, color: colorMap.success }}>⬇</Text>
           </View>
         </View>
 
         {loading ? (
           <View style={{ alignItems: "center", paddingVertical: 40 }}>
-            <ActivityIndicator size="large" color={colorMap.neon} />
+            <ActivityIndicator size="large" color={theme.accent} />
           </View>
         ) : (
           <>
@@ -154,7 +156,7 @@ export default function Payments() {
                 </Text>
                 <TouchableOpacity onPress={handlePayNow} activeOpacity={0.8}>
                   <LinearGradient
-                    colors={[colorMap.success, "#00FFA3"]}
+                    colors={[theme.accentGreen, theme.accentGreen]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
                     style={styles.payNowBtn}
@@ -166,14 +168,14 @@ export default function Payments() {
             ) : (
               <View style={[styles.payCard, { backgroundColor: "rgba(0,255,255,0.08)", borderColor: "rgba(0,255,255,0.2)", alignItems: "center" }]}>
                 <Text style={styles.payCardLabel}>ALL CAUGHT UP!</Text>
-                <Ionicons name="checkmark-circle" size={56} color={colorMap.neon} style={{ marginBottom: 8 }} />
+                <Ionicons name="checkmark-circle" size={56} color={theme.accent} style={{ marginBottom: 8 }} />
                 <Text style={styles.payCardSub}>No pending payments</Text>
               </View>
             )}
 
             {/* Payment History Header */}
             <View style={styles.historyHeader}>
-              <Text style={styles.historyTitle}>PAYMENT HISTORY</Text>
+            <Text style={[styles.historyTitle, { color: theme.textMuted }]}>PAYMENT HISTORY</Text>
               {payments.length > 0 && (
                 <View style={styles.statusPill}>
                   <Text style={styles.statusText}>{onTimeRate}% On-Time</Text>
@@ -182,7 +184,7 @@ export default function Payments() {
             </View>
 
     {/* Transaction History */}
-            <Text style={styles.sectionTitle}>TRANSACTION HISTORY</Text>
+            <Text style={[styles.sectionTitle, { color: theme.textMuted }]}>TRANSACTION HISTORY</Text>
             {timeline.length > 0 ? (
               <View style={{ marginTop: 4 }}>
                 {timeline.map((t, i) => (
@@ -216,8 +218,8 @@ export default function Payments() {
                       />
                     </View>
                     <View style={styles.tlBody}>
-                      <Text style={styles.tlTitle}>{t.title}</Text>
-                      <Text style={styles.tlSub}>{t.sub}</Text>
+                      <Text style={[styles.tlTitle, { color: theme.text }]}>{t.title}</Text>
+                      <Text style={[styles.tlSub, { color: theme.textMuted }]}>{t.sub}</Text>
                     </View>
                     <Text style={[styles.tlAmt, t.status==="warn"?{color: colorMap.warn}:t.status==="success"?{color: colorMap.success}:{color: colorMap.muted}]}>{t.amt}</Text>
                   </View>
@@ -225,7 +227,7 @@ export default function Payments() {
               </View>
             ) : (
               <View style={{ alignItems: "center", paddingVertical: 40 }}>
-                <Text style={{ color: colorMap.muted, fontSize: 14 }}>No payment history yet</Text>
+                <Text style={{ color: theme.textMuted, fontSize: 14 }}>No payment history yet</Text>
               </View>
             )}
           </>

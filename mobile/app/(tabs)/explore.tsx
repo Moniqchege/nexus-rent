@@ -6,17 +6,19 @@ import { useRouter } from 'expo-router';
 import { Property } from '../../types/property';
 import { useAuthStore } from '../../store/authStore';
 import api from '../../lib/api';
+import { useTheme, rgba, type Theme } from '../../lib/theme';
 
 type ColorKey = "neon" | "purple" | "success" | "danger" | "warn";
 
-// Color palette
-const colorMap: Record<ColorKey, { text: string; bg: string }> = {
-  neon: { text: "#00FFFF", bg: "rgba(0,255,255,0.08)" },
-  purple: { text: "#7C3AED", bg: "rgba(124,58,237,0.08)" },
-  success: { text: "#16A34A", bg: "rgba(0,255,163,0.08)" },
-  danger: { text: "#FF3B81", bg: "rgba(255,59,129,0.08)" },
-  warn: { text: "#F59E0B", bg: "rgba(245,158,11,0.08)" },
-};
+function listingColors(theme: Theme): Record<ColorKey, { text: string; bg: string }> {
+  return {
+    neon: { text: theme.accent, bg: rgba(theme.accentRgb, 0.1) },
+    purple: { text: theme.accentPurple, bg: rgba(theme.accentPurpleRgb, 0.1) },
+    success: { text: theme.accentGreen, bg: rgba(theme.accentGreenRgb, 0.1) },
+    danger: { text: theme.accentRed, bg: rgba(theme.accentRedRgb, 0.1) },
+    warn: { text: theme.accentWarn, bg: rgba(theme.accentWarnRgb, 0.1) },
+  };
+}
 
 interface ListingItem {
   propertyId: number;
@@ -105,6 +107,8 @@ function GradientTitle({ text }: { text: string }) {
 }
 
 export default function Explore() {
+  const { theme } = useTheme();
+  const colors = listingColors(theme);
   const router = useRouter();
   // Task 6: state — removed `featured` and `listings`; added `searchQuery` and `selectedArea`
   const [properties, setProperties] = useState<Property[]>([]);
@@ -167,28 +171,28 @@ export default function Explore() {
 
   if (loading) {
     return (
-      <View style={[styles.container, styles.center]}>
-        <ActivityIndicator size="large" color="#00FFFF" />
-        <Text style={styles.loadingText}>Loading properties...</Text>
+      <View style={[styles.container, styles.center, { backgroundColor: theme.bg }]}>
+        <ActivityIndicator size="large" color={theme.accent} />
+        <Text style={[styles.loadingText, { color: theme.textMuted }]}>Loading properties...</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.bg }]}>
       {/* Ambient Glow */}
-      <View style={styles.ambientGlow} />
+      <View style={[styles.ambientGlow, { backgroundColor: rgba(theme.accentRgb, theme.ambientOpacity) }]} />
 
       <ScrollView
         contentContainerStyle={{ paddingTop: 20, paddingBottom: 120 }}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={loadProperties} colors={['#00FFFF']} />
+          <RefreshControl refreshing={refreshing} onRefresh={loadProperties} colors={[theme.accent]} tintColor={theme.accent} />
         }
       >
         {/* Page Header */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.pageGreeting}>FIND YOUR NEXT APARTMENT</Text>
+            <Text style={[styles.pageGreeting, { color: theme.textMuted }]}>FIND YOUR NEXT APARTMENT</Text>
             <MaskedView
               style={{ flexDirection: "row" }}
               maskElement={
@@ -211,24 +215,25 @@ export default function Explore() {
               </LinearGradient>
             </MaskedView>
           </View>
-          <View style={{ width: 42, height: 42, borderRadius: 12, borderWidth: 0.2, borderColor: "#00FFFF", alignItems: "center", justifyContent: "center" }}>
-            <Text style={{ fontSize: 20, color: "#888" }}>⏲</Text>
+          <View style={{ width: 42, height: 42, borderRadius: 12, borderWidth: 1, borderColor: theme.border, alignItems: "center", justifyContent: "center" }}>
+            <Text style={{ fontSize: 20, color: theme.textMuted }}>⏲</Text>
           </View>
         </View>
 
         {/* Search Bar — Task 6: wired value and onChangeText */}
         <View style={{ paddingHorizontal: 13 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: "#1F2937", borderRadius: 10, padding: 8, paddingHorizontal: 12, marginBottom: 12, borderWidth: 0.3, borderColor: "#00f0ff" }}>
-            <Text style={{ fontSize: 16, color: "#00FFFF", marginRight: 8 }}>⌕</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: theme.bgInput, borderRadius: 10, padding: 8, paddingHorizontal: 12, marginBottom: 12, borderWidth: 1, borderColor: theme.border }}>
+            <Text style={{ fontSize: 16, color: theme.accent, marginRight: 8 }}>⌕</Text>
             <TextInput
-              style={{ flex: 1, color: "#fff", paddingVertical: 8 }}
+              style={{ flex: 1, color: theme.text, paddingVertical: 8, backgroundColor: 'transparent' }}
               placeholder="Westlands, Nairobi..."
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={theme.textDim}
               value={searchQuery}
               onChangeText={setSearchQuery}
+              underlineColorAndroid="transparent"
             />
-            <TouchableOpacity style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: "rgba(124,58,237,0.08)", borderRadius: 12 }}>
-              <Text style={{ color: "#fff", fontSize: 12 }}>⊞ Filter</Text>
+            <TouchableOpacity style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: rgba(theme.accentPurpleRgb, 0.1), borderRadius: 12 }}>
+              <Text style={{ color: theme.text, fontSize: 12 }}>⊞ Filter</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -245,13 +250,13 @@ export default function Explore() {
                   paddingHorizontal: 12,
                   paddingVertical: 6,
                   borderRadius: 16,
-                  backgroundColor: isActive ? "rgba(0,240,255,0.2)" : "#1F2937",
-                  borderWidth: isActive ? 0.5 : 0,
-                  borderColor: isActive ? "#00f0ff" : "transparent",
+                  backgroundColor: isActive ? rgba(theme.accentRgb, 0.12) : theme.bgCard,
+                  borderWidth: 1,
+                  borderColor: isActive ? theme.accent : theme.border,
                   marginRight: 8,
                 }}
               >
-                <Text style={{ fontSize: 12, color: isActive ? colorMap.neon.text : "#888" }}>{area}</Text>
+                <Text style={{ fontSize: 12, color: isActive ? theme.accent : theme.textMuted }}>{area}</Text>
               </TouchableOpacity>
             );
           })}
@@ -267,7 +272,7 @@ export default function Explore() {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ paddingLeft: 20, paddingBottom: 16 }}>
         {expandToListingItems(filteredProperties).slice(0, 3).map((item, i) => (
             <TouchableOpacity key={i} onPress={() => router.push({ pathname: '/properties/[id]', params: { id: String(item.propertyId), unitTypeId: String(item.unitTypeId) } })} activeOpacity={0.85}>
-            <View style={[styles.featuredCard, { borderColor: item.color === "purple" ? "rgba(124,58,237,0.2)" : "rgba(0,240,255,0.2)" }]}>
+            <View style={[styles.featuredCard, { backgroundColor: theme.bgCard, borderColor: item.color === "purple" ? rgba(theme.accentPurpleRgb, 0.25) : theme.border }]}>
               <LinearGradient
                 colors={
                   item.color === "purple"
@@ -283,22 +288,22 @@ export default function Explore() {
                   style={[
                     styles.aiBadge,
                     {
-                      backgroundColor: `rgba(0,255,255,0.15)`,
-                      borderColor: `rgba(0,255,255,0.3)`,
+                      backgroundColor: colors[item.color as ColorKey].bg,
+                      borderColor: rgba(theme.accentRgb, 0.3),
                     },
                   ]}
                 >
-                  <Text style={[styles.aiText, { color: colorMap[item.color as ColorKey].text }]}>
+                  <Text style={[styles.aiText, { color: colors[item.color as ColorKey].text }]}>
                     Score {item.ai}%
                   </Text>
                 </View>
               </LinearGradient>
               <View style={styles.featuredBody}>
-                <Text style={[styles.featuredPrice, { color: colorMap[item.color as ColorKey].text }]}>
-                  {item.price}<Text style={styles.priceSuffix}>/mo</Text>
+                <Text style={[styles.featuredPrice, { color: colors[item.color as ColorKey].text }]}>
+                  {item.price}<Text style={[styles.priceSuffix, { color: theme.textMuted }]}>/mo</Text>
                 </Text>
-                <Text style={styles.featuredName}>{item.name}</Text>
-                <Text style={styles.featuredLoc}>📍 {item.area}</Text>
+                <Text style={[styles.featuredName, { color: theme.textMuted }]}>{item.name}</Text>
+                <Text style={[styles.featuredLoc, { color: theme.textMuted }]}>📍 {item.area}</Text>
               </View>
             </View>
             </TouchableOpacity>
@@ -307,20 +312,20 @@ export default function Explore() {
 
         {/* All Listings — Task 6: filteredProperties, with empty state */}
         <View style={styles.availableHeader}>
-          <Text style={styles.availableText}>ALL LISTINGS</Text>
+          <Text style={[styles.availableText, { color: theme.textMuted }]}>ALL LISTINGS</Text>
         </View>
 
         {/* Empty state — Task 6: shown when no properties match filters (Req 5.5, 6.7) */}
         {!loading && expandToListingItems(filteredProperties).length === 0 && (
           <View style={{ alignItems: 'center', paddingVertical: 40 }}>
-            <Text style={{ color: '#888', fontFamily: 'Orbitron', fontSize: 12 }}>No properties found</Text>
+            <Text style={{ color: theme.textMuted, fontFamily: 'Orbitron', fontSize: 12 }}>No properties found</Text>
           </View>
         )}
 
         <View style={{ paddingHorizontal: 20, paddingBottom: 20 }}>
           {expandToListingItems(filteredProperties).map((item, i) => (
             <TouchableOpacity key={i} onPress={() => router.push({ pathname: '/properties/[id]', params: { id: String(item.propertyId), unitTypeId: String(item.unitTypeId) } })} activeOpacity={0.85} style={{ marginBottom: 12 }}>
-            <View style={[styles.listCard, { marginBottom: 0 }]}>
+            <View style={[styles.listCard, { marginBottom: 0, backgroundColor: theme.bgCard, borderColor: theme.border }]}>
               <LinearGradient
                 colors={item.gradientColors as [string, string]}
                 start={{ x: 0, y: 0 }}
@@ -331,27 +336,27 @@ export default function Explore() {
               </LinearGradient>
               <View style={styles.listBody}>
                 <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
-                  <Text style={[styles.listPrice, { color: colorMap[item.color as ColorKey]?.text || "#DC2626" }]}>
-                    {item.price}<Text style={styles.priceSuffix}>/mo</Text>
+                  <Text style={[styles.listPrice, { color: colors[item.color as ColorKey]?.text || theme.accentRed }]}>
+                    {item.price}<Text style={[styles.priceSuffix, { color: theme.textMuted }]}>/mo</Text>
                   </Text>
                   <View style={[styles.listBadge, {
-                    backgroundColor: "rgba(0,240,255,0.08)",
-                    borderColor: "rgba(0,240,255,0.2)",
+                    backgroundColor: colors[item.color as ColorKey]?.bg || rgba(theme.accentRgb, 0.1),
+                    borderColor: theme.border,
                     position: "absolute",
                     right: 0,
                     top: 0,
                   }]}>
-                    <Text style={[styles.aiText, { color: colorMap[item.color as ColorKey]?.text || "#DC2626" }]}>
+                    <Text style={[styles.aiText, { color: colors[item.color as ColorKey]?.text || theme.accentRed }]}>
                       Score {item.ai}%
                     </Text>
                   </View>
                 </View>
-                <Text style={styles.listName}>{item.name}</Text>
-                <Text style={styles.listLoc}>📍 {item.area}</Text>
+                <Text style={[styles.listName, { color: theme.text }]}>{item.name}</Text>
+                <Text style={[styles.listLoc, { color: theme.textMuted }]}>📍 {item.area}</Text>
                 <View style={styles.tagsWrap}>
                   {[item.beds, item.baths, item.size].map((t, idx) => (
-                    <View key={idx} style={styles.tag}>
-                      <Text style={styles.tagText}>{t}</Text>
+                    <View key={idx} style={[styles.tag, { backgroundColor: theme.bgInput, borderColor: theme.border }]}>
+                      <Text style={[styles.tagText, { color: theme.textMuted }]}>{t}</Text>
                     </View>
                   ))}
                 </View>
@@ -404,7 +409,7 @@ const styles = StyleSheet.create({
   priceSuffix: { fontSize: 10, color: "#888", fontFamily: "Sora" },
   featuredName: { fontSize: 12, fontWeight: "600", marginBottom: 2, color: "#888" },
   featuredLoc: { fontSize: 10, color: "#888" },
-  listCard: { flexDirection: "row", marginBottom: 12, backgroundColor: "#111827", borderRadius: 18, overflow: "hidden" },
+  listCard: { flexDirection: "row", marginBottom: 12, backgroundColor: "#111827", borderRadius: 18, overflow: "hidden", borderWidth: 1, borderColor: "#1F2937" },
   listImg: { width: 90, alignSelf: "stretch", alignItems: "center", justifyContent: "center" },
   listBody: { flex: 1, padding: 12 },
   listPrice: { fontSize: 15, fontFamily: "JetBrains Mono", fontWeight: "600" },

@@ -17,8 +17,10 @@ import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useAuthStore } from "../../store/authStore";
 import api, { API_BASE } from "../../lib/api";
+import { useTheme } from "../../lib/theme";
 
 export default function EditProfile() {
+  const { theme, isDark } = useTheme();
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const token = useAuthStore((state) => state.token);
@@ -86,7 +88,7 @@ export default function EditProfile() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.bg }]}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <ScrollView
@@ -98,10 +100,10 @@ export default function EditProfile() {
           <Pressable onPress={() => router.back()} style={styles.side}>
             <Image
               source={require("../../assets/back_icon.png")}
-              style={styles.backIcon}
+              style={[styles.backIcon, { tintColor: theme.accent }]}
             />
           </Pressable>
-          <Text style={styles.title}>Edit Profile</Text>
+          <Text style={[styles.title, { color: theme.accent }]}>Edit Profile</Text>
         </View>
 
         {/* Avatar — WhatsApp-style circular picker */}
@@ -110,13 +112,13 @@ export default function EditProfile() {
             {displayImage ? (
               <Image source={displayImage} style={styles.avatarImage} />
             ) : (
-              <View style={styles.avatarPlaceholder}>
-                <Ionicons name="person-outline" size={44} color="#555" />
+              <View style={[styles.avatarPlaceholder, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
+                <Ionicons name="person-outline" size={44} color={theme.textDim} />
               </View>
             )}
 
             {/* Camera badge */}
-            <View style={styles.cameraBadge}>
+            <View style={[styles.cameraBadge, { borderColor: theme.bg, backgroundColor: theme.accent }]}>
               {avatarLoading ? (
                 <ActivityIndicator size={14} color="#060A14" />
               ) : (
@@ -124,62 +126,65 @@ export default function EditProfile() {
               )}
             </View>
           </Pressable>
-          <Text style={styles.avatarHint}>Tap to change photo</Text>
+          <Text style={[styles.avatarHint, { color: theme.textDim }]}>Tap to change photo</Text>
         </View>
 
         {/* Form */}
         <View style={styles.form}>
-          <Text style={styles.label}>Display Name</Text>
-          <TextInput
-            style={styles.input}
+          <Text style={[styles.label, { color: theme.textMuted }]}>Display Name</Text>
+            <TextInput
+            style={[styles.input, { backgroundColor: theme.bgInput, borderColor: theme.border, color: theme.text }]}
             value={name}
             onChangeText={setName}
             placeholder="Your name"
-            placeholderTextColor="#555"
+            placeholderTextColor={theme.textDim}
+            underlineColorAndroid="transparent"
           />
 
-          <Text style={styles.label}>Username</Text>
-          <View style={styles.usernameRow}>
-            <Text style={styles.usernameAt}>@</Text>
+          <Text style={[styles.label, { color: theme.textMuted }]}>Username</Text>
+          <View style={[styles.usernameRow, { backgroundColor: theme.bgInput, borderColor: theme.border }]}>
+            <Text style={[styles.usernameAt, { color: theme.accent }]}>@</Text>
             <TextInput
-              style={styles.usernameInput}
+              style={[styles.usernameInput, { color: theme.text, backgroundColor: "transparent" }]}
               value={username}
               onChangeText={(t) => setUsername(t.replace(/\s/g, "").toLowerCase())}
               placeholder="username"
-              placeholderTextColor="#555"
+              placeholderTextColor={theme.textDim}
               autoCapitalize="none"
               autoCorrect={false}
+              underlineColorAndroid="transparent"
             />
           </View>
 
-          <Text style={styles.label}>Phone Number</Text>
+          <Text style={[styles.label, { color: theme.textMuted }]}>Phone Number</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { backgroundColor: theme.bgInput, borderColor: theme.border, color: theme.text }]}
             value={phone}
             onChangeText={setPhone}
             placeholder="Phone number"
-            placeholderTextColor="#555"
+            placeholderTextColor={theme.textDim}
             keyboardType="phone-pad"
+            underlineColorAndroid="transparent"
           />
 
-          <Text style={styles.label}>Email</Text>
-          <View style={styles.readOnlyField}>
-            <Text style={styles.readOnlyText}>{user?.email ?? "—"}</Text>
+          <Text style={[styles.label, { color: theme.textMuted }]}>Email</Text>
+          <View style={[styles.readOnlyField, { backgroundColor: theme.bgInputDark, borderColor: theme.border }]}>
+            <Text style={[styles.readOnlyText, { color: theme.textDim }]}>{user?.email ?? "—"}</Text>
           </View>
-          <Text style={styles.hint}>Email cannot be changed</Text>
+          <Text style={[styles.hint, { color: theme.textDim }]}>Email cannot be changed</Text>
 
-          {error && <Text style={styles.error}>{error}</Text>}
+          {error && <Text style={[styles.error, { color: theme.accentRed }]}>{error}</Text>}
 
           <TouchableOpacity
-            style={[styles.saveBtn, loading && styles.saveBtnDisabled]}
+            style={[styles.saveBtn, { borderColor: theme.borderAccent }, loading && styles.saveBtnDisabled]}
             onPress={handleSave}
             disabled={loading}
             activeOpacity={0.8}
           >
             {loading ? (
-              <ActivityIndicator color="#00FFFF" size="small" />
+              <ActivityIndicator color={theme.accent} size="small" />
             ) : (
-              <Text style={styles.saveBtnText}>Save Changes</Text>
+              <Text style={[styles.saveBtnText, { color: theme.accent }]}>Save Changes</Text>
             )}
           </TouchableOpacity>
         </View>

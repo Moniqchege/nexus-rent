@@ -4,6 +4,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { Building2, Copy, CheckCircle2 } from "lucide-react-native";
 import { useState } from "react";
 import * as Clipboard from "expo-clipboard";
+import { useTheme } from "../../lib/theme";
 
 const colorMap = {
   neon: "#00FFFF",
@@ -15,6 +16,7 @@ const colorMap = {
 };
 
 export default function PaymentBankPage() {
+  const { theme } = useTheme();
   const router = useRouter();
   const params = useLocalSearchParams();
 
@@ -53,8 +55,8 @@ export default function PaymentBankPage() {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.ambientGlow} />
+    <View style={[styles.container, { backgroundColor: theme.bg }]}>
+      <View style={[styles.ambientGlow, { backgroundColor: `rgba(255,184,77,${theme.ambientOpacity})` }]} />
 
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         {/* Header */}

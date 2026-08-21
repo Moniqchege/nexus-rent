@@ -15,6 +15,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useAuthStore } from "../store/authStore";
 import api from "../lib/api";
+import { useTheme, rgba } from "../lib/theme";
 
 function GradientText({ text, fontSize = 24 }: { text: string; fontSize?: number }) {
   return (
@@ -53,6 +54,7 @@ function GradientText({ text, fontSize = 24 }: { text: string; fontSize?: number
 }
 
 export default function OtpVerification() {
+  const { theme } = useTheme();
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -119,13 +121,13 @@ export default function OtpVerification() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.bg }]}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       {/* Background Glow */}
-      <View style={styles.glowTopLeft} />
-      <View style={styles.glowBottomRight} />
-      <View style={styles.glowCenter} />
+      <View style={[styles.glowTopLeft, { backgroundColor: `rgba(124,58,237,${theme.ambientOpacity})` }]} />
+      <View style={[styles.glowBottomRight, { backgroundColor: `rgba(0,240,255,${theme.ambientOpacity})` }]} />
+      <View style={[styles.glowCenter, { backgroundColor: `rgba(124,58,237,${theme.ambientOpacity})` }]} />
 
       <ScrollView
         contentContainerStyle={styles.scroll}
@@ -152,10 +154,10 @@ export default function OtpVerification() {
         </View>
 
         {/* Card */}
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
           <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>OTP Verification</Text>
-            <Text style={styles.cardSub}>Code sent to {email}</Text>
+            <Text style={[styles.cardTitle, { color: theme.text }]}>OTP Verification</Text>
+            <Text style={[styles.cardSub, { color: theme.textSub }]}>Code sent to {email}</Text>
           </View>
 
           {error && (
@@ -166,13 +168,14 @@ export default function OtpVerification() {
 
           {/* OTP Input */}
           <View style={styles.fieldGroup}>
-            <Text style={styles.fieldLabel}>OTP CODE</Text>
+            <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>OTP CODE</Text>
 
-            <View style={styles.otpInputWrap}>
+            <View style={[styles.otpInputWrap, { backgroundColor: theme.bgInput, borderColor: theme.borderAccent }]}>
               <TextInput
-                style={styles.otpInput}
+                style={[styles.otpInput, { color: theme.accent, backgroundColor: "transparent" }]}
                 placeholder="000000"
-                placeholderTextColor="#4B5563"
+                placeholderTextColor={theme.textDim}
+                underlineColorAndroid="transparent"
                 keyboardType="number-pad"
                 inputMode="numeric"
                 maxLength={6}
@@ -206,7 +209,7 @@ export default function OtpVerification() {
               style={styles.ctaButton}
             >
               {loading ? (
-                <ActivityIndicator color="#00F0FF" />
+                <ActivityIndicator color={theme.accent} />
               ) : (
                 <>
                   <Text style={styles.ctaText}>VERIFY OTP</Text>

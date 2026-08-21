@@ -4,6 +4,7 @@ import MaskedView from "@react-native-masked-view/masked-view";
 import { useState } from "react";
 import { useNavigation } from "expo-router";
 import api from "../lib/api";
+import { useTheme } from "../lib/theme";
 
 type ColorKey = "neon" | "purple" | "success" | "danger" | "warn";
 
@@ -134,6 +135,7 @@ function GradientText({ text, fontSize = 24 }: { text: string; fontSize?: number
 }
 
 export default function ForgotPassword() {
+  const { theme } = useTheme();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -203,12 +205,12 @@ export default function ForgotPassword() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.bg }]}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <View style={styles.glowTopLeft} />
-      <View style={styles.glowBottomRight} />
-      <View style={styles.glowCenter} />
+      <View style={[styles.glowTopLeft, { backgroundColor: `rgba(124,58,237,${theme.ambientOpacity})` }]} />
+      <View style={[styles.glowBottomRight, { backgroundColor: `rgba(0,240,255,${theme.ambientOpacity})` }]} />
+      <View style={[styles.glowCenter, { backgroundColor: `rgba(124,58,237,${theme.ambientOpacity})` }]} />
 
       <ScrollView
         contentContainerStyle={styles.scroll}
@@ -231,10 +233,10 @@ export default function ForgotPassword() {
           </View>
         </View>
 
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
           <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Reset password</Text>
-            <Text style={styles.cardSub}>Enter your email to receive reset instructions</Text>
+            <Text style={[styles.cardTitle, { color: theme.text }]}>Reset password</Text>
+            <Text style={[styles.cardSub, { color: theme.textSub }]}>Enter your email to receive reset instructions</Text>
           </View>
 
           {error && (
@@ -245,12 +247,13 @@ export default function ForgotPassword() {
 
           <View style={styles.fieldGroup}>
             <Text style={styles.fieldLabel}>EMAIL ADDRESS</Text>
-            <View style={styles.inputWrap}>
+            <View style={[styles.inputWrap, { backgroundColor: theme.bgInput, borderColor: theme.border }]}>
               <Icon type="email" size={18} />
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: theme.text, backgroundColor: "transparent" }]}
                 placeholder="you@email.com"
-                placeholderTextColor="#4B5563"
+                placeholderTextColor={theme.textDim}
+                underlineColorAndroid="transparent"
                 keyboardType="email-address"
                 autoCapitalize="none"
                 value={email}
@@ -267,7 +270,7 @@ export default function ForgotPassword() {
               style={styles.ctaButton}
             >
               {loading ? (
-                <ActivityIndicator color="#00F0FF" />
+                <ActivityIndicator color={theme.accent} />
               ) : (
                 <>
                   <Text style={styles.ctaText}>SEND RESET LINK</Text>

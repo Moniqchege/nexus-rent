@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useRouter, useSegments } from 'expo-router';
 import { View, Image } from 'react-native';
 import { useNotificationsStore } from '../../store/notificationsStore';
+import { useTheme } from '../../lib/theme';
 
 function TabIcon({ source }: { source: any }) {
   return (
@@ -21,6 +22,7 @@ function TabIcon({ source }: { source: any }) {
 }
 
 function AlertsTabIcon({ source }: { source: any }) {
+  const { theme } = useTheme();
   const computedUnreadCount = useNotificationsStore(
     state => state.notifications.filter(n => !n.isRead).length
   );
@@ -40,8 +42,8 @@ function AlertsTabIcon({ source }: { source: any }) {
           width: 10,
           height: 10,
           borderRadius: 5,
-          backgroundColor: "#00F0FF",
-          shadowColor: "#FF3B81",
+          backgroundColor: theme.accent,
+          shadowColor: theme.accentRed,
           shadowOffset: { width: 0, height: 0 },
           shadowOpacity: 0.8,
           shadowRadius: 3,
@@ -52,6 +54,7 @@ function AlertsTabIcon({ source }: { source: any }) {
 }
 
 export default function TabLayout() {
+  const { theme, isDark } = useTheme();
   const { user } = useAuthStore();
   const segments = useSegments();
   const router = useRouter();
@@ -74,16 +77,16 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: "rgba(6,10,20,0.98)",
-          borderTopColor: "rgba(0,240,255,0.15)",
+          backgroundColor: theme.tabBar,
+          borderTopColor: theme.tabBarBorder,
           borderTopWidth: 1,
           height: 84,
           paddingBottom: 16,
           paddingTop: 10,
           position: "absolute",
         },
-        tabBarActiveTintColor: "#00F0FF",
-        tabBarInactiveTintColor: "rgba(0,240,255,0.4)",
+        tabBarActiveTintColor: theme.accent,
+        tabBarInactiveTintColor: isDark ? 'rgba(0,240,255,0.4)' : 'rgba(8,145,178,0.4)',
         tabBarLabelStyle: {
           fontSize: 9,
           fontFamily: 'Orbitron_600SemiBold',

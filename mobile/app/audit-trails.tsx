@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuditTrailsStore } from "../store/auditTrailsStore";
 import { useAuthStore } from "../store/authStore";
 import { Image } from "react-native";
+import { useTheme } from "../lib/theme";
 
 type ColorKey = "neon" | "purple" | "success" | "danger" | "warn";
 
@@ -17,6 +18,7 @@ const colorMap = {
 } as Record<ColorKey, any>;
 
 const AuditTrailsPage = () => {
+  const { theme, isDark } = useTheme();
   const router = useRouter();
   const token = useAuthStore((state) => state.token);
   const { auditTrails, fetchAuditTrails, loading } = useAuditTrailsStore();
@@ -50,30 +52,27 @@ const AuditTrailsPage = () => {
 
   if (loading) {
     return (
-      <View style={styles.center}>
-        <Text>Loading activity...</Text>
+      <View style={[styles.center, { backgroundColor: theme.bg }]}>
+        <Text style={{ color: theme.textMuted }}>Loading activity...</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
+    <View style={[styles.container, { backgroundColor: theme.bg }]}>
+      <View style={[styles.header, { borderBottomColor: theme.border }]}>
         <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <Image
-                  source={require('../assets/back_icon.png')}
-                  style={styles.backIcon}
-                />
+          <Image source={require('../assets/back_icon.png')} style={[styles.backIcon, { tintColor: theme.accent }]} />
         </Pressable>
-        <Text style={styles.headerTitle}>Activity History</Text>
+        <Text style={[styles.headerTitle, { color: theme.accent }]}>Activity History</Text>
         <View style={styles.placeholder} />
       </View>
 
       {auditTrails.length === 0 ? (
         <View style={styles.empty}>
-          <Ionicons name="time-outline" size={64} color="#888" />
-          <Text style={styles.emptyTitle}>No activity yet</Text>
-          <Text style={styles.emptySubtitle}>Your recent actions will appear here</Text>
+          <Ionicons name="time-outline" size={64} color={theme.textMuted} />
+          <Text style={[styles.emptyTitle, { color: theme.text }]}>No activity yet</Text>
+          <Text style={[styles.emptySubtitle, { color: theme.textMuted }]}>Your recent actions will appear here</Text>
         </View>
       ) : (
         <FlatList

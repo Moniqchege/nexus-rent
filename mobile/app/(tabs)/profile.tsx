@@ -14,6 +14,8 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAuthStore } from "../../store/authStore";
 import api, { API_BASE, TenantProfileStats } from "../../lib/api";
+import { useTheme, rgba } from '../../lib/theme';
+import { useThemeStore } from '../../store/themeStore';
 import { LinearGradient } from "expo-linear-gradient";
 import MaskedView from "@react-native-masked-view/masked-view";
 import { useNavigation } from '@react-navigation/native';
@@ -46,6 +48,8 @@ function GradientTitle({ text }: { text: string }) {
 }
 
 export default function Profile() {
+  const { theme, isDark } = useTheme();
+  const toggleTheme = useThemeStore((state) => state.toggleTheme);
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   const router = useRouter();
@@ -65,11 +69,8 @@ export default function Profile() {
   const flatListRef = useRef<FlatList>(null);
 
   // Account settings toggle state
-  const [toggles, setToggles] = useState({
-    rentAlerts: true,
-    darkMode: false,
-  });
-  const toggleSetting = (key: keyof typeof toggles) =>
+  const [toggles, setToggles] = useState({ rentAlerts: true });
+  const toggleSetting = (key: 'rentAlerts') =>
     setToggles((prev) => ({ ...prev, [key]: !prev[key] }));
 
   const scrollToEnd = useCallback(() => {
@@ -189,9 +190,9 @@ export default function Profile() {
     {
       icon: "🔔",
       name: "Rent Alerts",
-      color: "#00F0FF",
-      bg: "rgba(0,240,255,0.1)",
-      border: "rgba(0,240,255,0.25)",
+      color: theme.accent,
+      bg: rgba(theme.accentRgb, 0.1),
+      border: rgba(theme.accentRgb, 0.25),
       type: "toggle" as const,
       key: "rentAlerts" as const,
       desc: "Manage this preference",
@@ -200,35 +201,34 @@ export default function Profile() {
     {
       icon: "🌙",
       name: "Dark Mode",
-      color: "#7C3AED",
-      bg: "rgba(124,58,237,0.1)",
-      border: "rgba(124,58,237,0.25)",
-      type: "toggle" as const,
-      key: "darkMode" as const,
+      color: theme.accentPurple,
+      bg: rgba(theme.accentPurpleRgb, 0.1),
+      border: rgba(theme.accentPurpleRgb, 0.25),
+      type: "darkModeToggle" as const,
       desc: "Switch app appearance",
     },
      {
       icon: "✏️",
       name: "Edit Profile",
-      color: "#F59E0B",
-      bg: "rgba(245,158,11,0.1)",
-      border: "rgba(245,158,11,0.25)",
+      color: theme.accentWarn,
+      bg: rgba(theme.accentWarnRgb, 0.1),
+      border: rgba(theme.accentWarnRgb, 0.25),
       type: "link" as const,
       onPress: () => router.push('/(modals)/edit-profile' as any),
     },
     {
       icon: "🔐",
       name: "Security & Password",
-      color: "#7C3AED",
-      bg: "rgba(124,58,237,0.1)",
-      border: "rgba(124,58,237,0.25)",
+      color: theme.accentPurple,
+      bg: rgba(theme.accentPurpleRgb, 0.1),
+      border: rgba(theme.accentPurpleRgb, 0.25),
       type: "link" as const,
       onPress: () => router.push('/(modals)/change-password' as any),
     },
   ];
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.bg }]}>
       {/* Ambient */}
       <View style={styles.ambient} />
 
@@ -242,12 +242,12 @@ export default function Profile() {
             {/* Header */}
             <View style={styles.header}>
               <View>
-                <Text style={styles.pageGreeting}>ACCOUNT</Text>
+                <Text style={[styles.pageGreeting, { color: theme.textMuted }]}>ACCOUNT</Text>
                 <GradientTitle text="Profile" />
               </View>
 
-              <View style={styles.settingsBtn}>
-                <Text style={{ color: "#fff" }}>⚙</Text>
+              <View style={[styles.settingsBtn, { borderColor: theme.border }]}>
+                <Text style={{ color: theme.text }}>⚙</Text>
               </View>
             </View>
 
@@ -256,7 +256,7 @@ export default function Profile() {
               {user?.image ? (
                 <Image
                   source={{ uri: `${API_BASE}${user.image}` }}
-                  style={{ width: 92, height: 92, borderRadius: 46, borderWidth: 2, borderColor: "rgba(0,255,255,0.4)" }}
+                  style={{ width: 92, height: 92, borderRadius: 46, borderWidth: 2, borderColor: theme.borderAccent }}
                   resizeMode="cover"
                 />
               ) : (
@@ -267,46 +267,46 @@ export default function Profile() {
                 />
               )}
 
-              <Text style={styles.name}>{displayName}</Text>
-              <Text style={styles.email}>{user?.email || "No email"}</Text>
+              <Text style={[styles.name, { color: theme.text }]}>{displayName}</Text>
+              <Text style={[styles.email, { color: theme.textMuted }]}>{user?.email || "No email"}</Text>
 
-              <View style={styles.verifiedTag}>
-                <Text style={styles.icon}>◈</Text>
+              <View style={[styles.verifiedTag, { backgroundColor: `rgba(${isDark ? '0,255,255' : '8,145,178'},0.12)`, borderColor: `rgba(${isDark ? '0,255,255' : '8,145,178'},0.3)` }]}>
+                <Text style={[styles.icon, { color: theme.accent }]}>◈</Text>
                 <View style={{ width: 6 }} />
-                <Text style={styles.verifiedText}>  VERIFIED TENANT</Text>
+                <Text style={[styles.verifiedText, { color: theme.accent }]}>  VERIFIED TENANT</Text>
               </View>
 
               {/* Stats */}
-              <View style={styles.statsRow}>
+              <View style={[styles.statsRow, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
                 <View style={styles.statItem}>
-                  <Text style={[styles.statValue, { color: "#00FFFF" }]}>
+                  <Text style={[styles.statValue, { color: theme.accent }]}>
                     {statsLoading ? "—" : (profileStats?.tenancyDuration ?? "—")}
                   </Text>
-                  <Text style={styles.statLabel}>Tenancy</Text>
+                  <Text style={[styles.statLabel, { color: theme.textMuted }]}>Tenancy</Text>
                 </View>
 
-                <View style={styles.statDivider} />
+                <View style={[styles.statDivider, { backgroundColor: theme.border }]} />
 
                 <View style={styles.statItem}>
-                  <Text style={[styles.statValue, { color: "#00FFA3" }]}>
+                  <Text style={[styles.statValue, { color: theme.accentGreen }]}>
                     {statsLoading ? "—" : (profileStats ? `${profileStats.onTimeRate}%` : "—")}
                   </Text>
-                  <Text style={styles.statLabel}>On-Time</Text>
+                  <Text style={[styles.statLabel, { color: theme.textMuted }]}>On-Time</Text>
                 </View>
 
-                <View style={styles.statDivider} />
+                <View style={[styles.statDivider, { backgroundColor: theme.border }]} />
 
                 <View style={styles.statItem}>
-                  <Text style={[styles.statValue, { color: "#7C3AED" }]}>
+                  <Text style={[styles.statValue, { color: theme.accentPurple }]}>
                     {statsLoading ? "—" : (profileStats ? profileStats.score.toString() : "—")}
                   </Text>
-                  <Text style={styles.statLabel}>Score</Text>
+                  <Text style={[styles.statLabel, { color: theme.textMuted }]}>Score</Text>
                 </View>
               </View>
             </View>
 
             {/* MY PROPERTY */}
-            <Text style={styles.sectionTitle}>MY PROPERTY</Text>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>MY PROPERTY</Text>
 
             {user?.userProperties?.length ? (() => {
               const propertyItem = user.userProperties[0]?.property;
@@ -324,11 +324,10 @@ export default function Profile() {
               const specs = [
                 { icon: "⊞", label: statsLoading ? "—" : (activeLease?.unitType?.type ?? "—") },
                 { icon: "◎", label: statsLoading ? "—" : (activeLease?.unitType ? `${activeLease.unitType.baths} Baths` : "—") },
-                // { icon: "📅", label: statsLoading ? "—" : (profileStats?.nextDueDate ? formatDate(profileStats.nextDueDate) : "—") },
               ];
 
               return (
-                <View style={styles.propertyCard}>
+                <View style={[styles.propertyCard, { backgroundColor: theme.bgCard, borderColor: theme.borderAccent }]}>
                   {/* Image Strip */}
                   <LinearGradient
                     colors={["#0f2027", "#203a43", "#2c5364"]}
@@ -344,9 +343,6 @@ export default function Profile() {
                         <View style={styles.activeBadge}>
                           <Text style={styles.activeBadgeText}>{`● ${activeLease?.status?.toUpperCase() ?? "NO LEASE"}`}</Text>
                         </View>
-                        {/* <View style={styles.badge}>
-                          <Text style={styles.badgeText}>AI {aiScore}%</Text>
-                        </View> */}
                       </View>
                     </View>
                   </LinearGradient>
@@ -354,23 +350,23 @@ export default function Profile() {
                   {/* Body */}
                   <View style={styles.propertyBody}>
                     <View style={styles.propertyTopRow}>
-                      <Text style={styles.propertyName}>{name}</Text>
-                      <Text style={styles.propertyPrice}>{price}</Text>
+                      <Text style={[styles.propertyName, { color: theme.text }]}>{name}</Text>
+                      <Text style={[styles.propertyPrice, { color: theme.accent }]}>{price}</Text>
                     </View>
 
-                    <Text style={styles.propertyLocation}>📍 {location} </Text>
+                    <Text style={[styles.propertyLocation, { color: theme.textMuted }]}>📍 {location} </Text>
 
                     {(profileStats?.floor || profileStats?.unit) && (
-                      <Text style={[styles.propertyLocation, { marginBottom: 4 }]}>
+                      <Text style={[styles.propertyLocation, { color: theme.textMuted, marginBottom: 4 }]}>
                         {[profileStats.floor && `Floor ${profileStats.floor}`, profileStats.unit && `Unit ${profileStats.unit}`].filter(Boolean).join(' · ')}
                       </Text>
                     )}
 
-                    <View style={styles.specRow}>
+                    <View style={[styles.specRow, { borderTopColor: theme.border }]}>
                       {specs.map((s, i) => (
                         <View key={i} style={styles.spec}>
-                          <Text style={styles.specIcon}>{s.icon}</Text>
-                          <Text style={styles.specText}>{s.label}</Text>
+                          <Text style={[styles.specIcon, { color: theme.accentPurple }]}>{s.icon}</Text>
+                          <Text style={[styles.specText, { color: theme.textMuted }]}>{s.label}</Text>
                         </View>
                       ))}
                     </View>
@@ -378,116 +374,95 @@ export default function Profile() {
                 </View>
               );
             })() : (
-              <Text style={{ marginHorizontal: 20, color: "#888", fontSize: 12 }}>No properties available.</Text>
+              <Text style={{ marginHorizontal: 20, color: theme.textMuted, fontSize: 12 }}>No properties available.</Text>
             )}
 
             {/* SETTINGS */}
-            <Text style={styles.sectionTitle}>ACCOUNT SETTINGS</Text>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>ACCOUNT SETTINGS</Text>
 
-            <View style={styles.group}>
-              <Text style={styles.groupTitle}>Preferences</Text>
-              <View style={styles.preferencesDivider} />
+            <View style={[styles.group, { backgroundColor: theme.bgCard }]}>
+              <Text style={[styles.groupTitle, { color: theme.textMuted }]}>Preferences</Text>
+              <View style={[styles.preferencesDivider, { backgroundColor: theme.border }]} />
 
-              {preferenceItems.map((item, i, arr) => (
-                <View key={i}>
-                  <TouchableOpacity
-                    style={styles.row}
-                    activeOpacity={0.7}
-                    onPress={() => {
-                      if (item.type === "toggle") {
-                        toggleSetting(item.key);
-                        item.onPress?.();
-                      } else if (item.type === "link") {
-                        item.onPress?.();
-                      }
-                    }}
-                  >
-                    <View
-                      style={[
-                        styles.rowIcon,
-                        { backgroundColor: item.bg, borderWidth: 1, borderColor: item.border },
-                      ]}
+              {preferenceItems.map((item, i, arr) => {
+                const isActive = item.type === "toggle"
+                  ? toggles[item.key as 'rentAlerts']
+                  : item.type === "darkModeToggle"
+                  ? isDark
+                  : false;
+                return (
+                  <View key={i}>
+                    <TouchableOpacity
+                      style={styles.row}
+                      activeOpacity={0.7}
+                      onPress={() => {
+                        if (item.type === "toggle") {
+                          toggleSetting(item.key as 'rentAlerts');
+                          item.onPress?.();
+                        } else if (item.type === "darkModeToggle") {
+                          toggleTheme();
+                        } else if (item.type === "link") {
+                          item.onPress?.();
+                        }
+                      }}
                     >
-                      <Text>{item.icon}</Text>
-                    </View>
-
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.rowTitle}>{item.name}</Text>
-                      {item.type === "toggle" && (
-                        <Text style={styles.rowDesc}>{item.desc}</Text>
-                      )}
-                    </View>
-
-                    {item.type === "toggle" ? (
                       <View
                         style={[
-                          styles.toggleTrack,
-                          toggles[item.key] && styles.toggleTrackOn,
+                          styles.rowIcon,
+                          { backgroundColor: item.bg, borderWidth: 1, borderColor: item.border },
                         ]}
                       >
-                        <View
-                          style={[
-                            styles.toggleThumb,
-                            toggles[item.key] && styles.toggleThumbOn,
-                          ]}
-                        />
+                        <Text>{item.icon}</Text>
                       </View>
-                    ) : (
-                      <Text style={styles.arrow}>›</Text>
-                    )}
-                  </TouchableOpacity>
 
-                  {i < arr.length - 1 && <View style={styles.rowDivider} />}
-                </View>
-              ))}
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.rowTitle, { color: theme.text }]}>{item.name}</Text>
+                        {(item.type === "toggle" || item.type === "darkModeToggle") && (
+                          <Text style={[styles.rowDesc, { color: theme.textMuted }]}>{item.desc}</Text>
+                        )}
+                      </View>
+
+                      {(item.type === "toggle" || item.type === "darkModeToggle") ? (
+                        <View style={[styles.toggleTrack, isActive && styles.toggleTrackOn, { borderColor: theme.border, backgroundColor: isActive ? rgba(theme.accentGreenRgb, 0.15) : theme.bgInput }]}>
+                          <View style={[styles.toggleThumb, isActive && styles.toggleThumbOn, isActive && { backgroundColor: theme.accentGreen, shadowColor: theme.accentGreen }]} />
+                        </View>
+                      ) : (
+                        <Text style={[styles.arrow, { color: theme.textMuted }]}>›</Text>
+                      )}
+                    </TouchableOpacity>
+
+                    {i < arr.length - 1 && <View style={[styles.rowDivider, { backgroundColor: theme.border }]} />}
+                  </View>
+                );
+              })}
             </View>
-
-            {/* <View style={styles.group}>
-              <Text style={styles.groupTitle}>Account</Text>
-              <View style={styles.preferencesDivider} />
-
-              <TouchableOpacity style={styles.row} activeOpacity={0.7}>
-                <View
-                  style={[
-                    styles.rowIcon,
-                    { backgroundColor: "rgba(0,240,255,0.1)", borderWidth: 1, borderColor: "rgba(0,240,255,0.25)" },
-                  ]}
-                >
-                  <Text>✏️</Text>
-                </View>
-
-                <Text style={styles.rowTitle}>Edit Profile</Text>
-
-                <Text style={styles.arrow}>›</Text>
-              </TouchableOpacity>
-            </View> */}
           </>
         )}
         ListFooterComponent={() => (
           <>
             {/* Logout */}
-            <View style={styles.group}>
+            <View style={[styles.group, { backgroundColor: theme.bgCard }]}>
               <TouchableOpacity
                 onPress={handleSignOut}
                 activeOpacity={0.7}
                 style={{ flexDirection: "row", alignItems: "center", paddingVertical: 10, paddingHorizontal: 10 }}
               >
                 <View style={[styles.rowIcon, { backgroundColor: "rgba(255,59,129,0.15)" }]}>
-                  <Text style={{ color: "#FF3B81" }}>⎋</Text>
+                  <Text style={{ color: theme.accentRed }}>⎋</Text>
                 </View>
 
-                <Text style={[styles.rowTitle, { color: "#FF3B81", marginLeft: 10 }]}>
+                <Text style={[styles.rowTitle, { color: theme.accentRed, marginLeft: 10 }]}>
                   Sign Out
                 </Text>
 
-                <Text style={[styles.arrow, { color: "#FF3B81", marginLeft: "auto" }]}>›</Text>
+                <Text style={[styles.arrow, { color: theme.accentRed, marginLeft: "auto" }]}>›</Text>
               </TouchableOpacity>
             </View>
 
             {/* Footer */}
             <View style={styles.footer}>
               <GradientTitle text="NEXUS RENT" />
-              <Text style={styles.version}>
+              <Text style={[styles.version, { color: theme.textMuted }]}>
                 v2.4.1 · Rental Platform
               </Text>
             </View>

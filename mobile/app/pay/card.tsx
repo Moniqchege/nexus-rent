@@ -14,6 +14,7 @@ import {
 } from "@stripe/stripe-react-native";
 import { useAuthStore } from "../../store/authStore";
 import api, { API_BASE } from "../../lib/api";
+import { useTheme } from "../../lib/theme";
 
 
 const log    = (label: string, data?: unknown) =>
@@ -36,6 +37,7 @@ const C = {
 };
 
 export default function PaymentCardPage() {
+  const { theme } = useTheme();
   const router  = useRouter();
   const params  = useLocalSearchParams();
   const { token, user } = useAuthStore();
@@ -217,8 +219,8 @@ export default function PaymentCardPage() {
   };
 
   return (
-    <View style={s.container}>
-      <View style={s.ambientGlow} />
+    <View style={[s.container, { backgroundColor: theme.bg }]}>
+      <View style={[s.ambientGlow, { backgroundColor: `rgba(124,58,237,${theme.ambientOpacity})` }]} />
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
 
         {/* Header */}

@@ -4,6 +4,7 @@ import MaskedView from "@react-native-masked-view/masked-view";
 import { useEffect, useRef, useState } from "react";
 import { useNavigation } from "expo-router";
 import { useAuthStore } from "../store/authStore";
+import { useTheme, rgba } from '../lib/theme';
 
 type ColorKey = "neon" | "purple" | "success" | "danger" | "warn";
 
@@ -142,6 +143,7 @@ function GradientText({ text, fontSize = 24 }: { text: string; fontSize?: number
 }
 
 export default function Login() {
+  const { theme } = useTheme();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordVisible, setPasswordVisible] = useState(false);
@@ -206,13 +208,13 @@ useEffect(() => {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.bg }]}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       {/* Ambient glows */}
-      <View style={styles.glowTopLeft} />
-      <View style={styles.glowBottomRight} />
-      <View style={styles.glowCenter} />
+      <View style={[styles.glowTopLeft, { backgroundColor: `rgba(124,58,237,${theme.ambientOpacity})` }]} />
+      <View style={[styles.glowBottomRight, { backgroundColor: `rgba(0,240,255,${theme.ambientOpacity})` }]} />
+      <View style={[styles.glowCenter, { backgroundColor: `rgba(124,58,237,${theme.ambientOpacity})` }]} />
 
       <ScrollView
         contentContainerStyle={styles.scroll}
@@ -226,7 +228,7 @@ useEffect(() => {
             colors={["rgba(0,240,255,0.12)", "rgba(124,58,237,0.15)"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={styles.logoIcon}
+            style={[styles.logoIcon, { borderColor: theme.borderAccent }]}
           >
             <Text style={styles.logoIconText}>⬡</Text>
           </LinearGradient>
@@ -240,11 +242,11 @@ useEffect(() => {
         </View>
 
         {/* ── Card ── */}
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
           {/* Card header */}
           <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Welcome back</Text>
-            <Text style={styles.cardSub}>Sign in to your account</Text>
+            <Text style={[styles.cardTitle, { color: theme.text }]}>Welcome back</Text>
+            <Text style={[styles.cardSub, { color: theme.textSub }]}>Sign in to your account</Text>
           </View>
 
           {error && (
@@ -255,16 +257,18 @@ useEffect(() => {
 
           {/* ── Email input ── */}
           <View style={styles.fieldGroup}>
-            <Text style={styles.fieldLabel}>EMAIL ADDRESS</Text>
+            <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>EMAIL ADDRESS</Text>
             <View style={[
               styles.inputWrap,
-              focused === "email" && styles.inputFocused,
+              { backgroundColor: theme.bgInput, borderColor: theme.border },
+              focused === "email" && { borderColor: theme.accent, backgroundColor: rgba(theme.accentRgb, 0.06) },
             ]}>
               <Icon type="email" size={18} />
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: theme.text, backgroundColor: "transparent" }]}
                 placeholder="you@email.com"
-                placeholderTextColor="#4B5563"
+                placeholderTextColor={theme.textDim}
+                underlineColorAndroid="transparent"
                 keyboardType="email-address"
                 autoCapitalize="none"
                 value={email}
@@ -277,16 +281,18 @@ useEffect(() => {
 
           {/* ── Password input ── */}
           <View style={styles.fieldGroup}>
-           <Text style={styles.fieldLabel}>PASSWORD</Text>
+           <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>PASSWORD</Text>
             <View style={[
               styles.inputWrap,
-              focused === "password" && styles.inputFocused,
+              { backgroundColor: theme.bgInput, borderColor: theme.border },
+              focused === "password" && { borderColor: theme.accent, backgroundColor: rgba(theme.accentRgb, 0.06) },
             ]}>
               <Icon type="lock" size={18} />
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: theme.text, backgroundColor: "transparent" }]}
                 placeholder="Enter your password"
-                placeholderTextColor="#4B5563"
+                placeholderTextColor={theme.textDim}
+                underlineColorAndroid="transparent"
                 secureTextEntry={!passwordVisible}
                 value={password}
                 onChangeText={(t) => { setPassword(t); setError(null); }}
@@ -308,7 +314,7 @@ useEffect(() => {
             </View>
             <View style={styles.forgotRow}>
   <TouchableOpacity onPress={() => navigation.navigate("ForgotPassword")}>
-    <Text style={styles.forgotLink}>Forgot password?</Text>
+    <Text style={[styles.forgotLink, { color: theme.accent }]}>Forgot password?</Text>
   </TouchableOpacity>
 </View>
           </View>
@@ -330,7 +336,7 @@ useEffect(() => {
               style={styles.ctaButton}
             >
                  {loading ? (
-                <ActivityIndicator color="#00F0FF" />
+                <ActivityIndicator color={theme.accent} />
               ) : (
                 <>
                   <Text style={styles.ctaText}>SIGN IN</Text>

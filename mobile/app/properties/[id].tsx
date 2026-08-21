@@ -9,9 +9,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuthStore } from '../../store/authStore';
 import api from '../../lib/api';
-import { Property, PropertyContact } from '../../types/property';
+import { useTheme, rgba } from '../../lib/theme';
 
 export default function PropertyDetailScreen() {
+  const { theme } = useTheme();
   const { id, unitTypeId } = useLocalSearchParams<{ id: string; unitTypeId: string }>();
   const router = useRouter();
   const { token } = useAuthStore();
@@ -76,8 +77,8 @@ export default function PropertyDetailScreen() {
   // Loading state
   if (loadingProperty) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#00FFFF" />
+      <View style={[styles.center, { backgroundColor: theme.bg }]}>
+        <ActivityIndicator size="large" color={theme.accent} />
       </View>
     );
   }
@@ -85,10 +86,10 @@ export default function PropertyDetailScreen() {
   // Error state (not found)
   if (!property || !unitType) {
     return (
-      <View style={styles.center}>
+      <View style={[styles.center, { backgroundColor: theme.bg }]}>
         <Text style={styles.errorText}>Property or unit type not found.</Text>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Text style={styles.backBtnText}>← Back</Text>
+        <TouchableOpacity onPress={() => router.back()} style={[styles.backBtn, { borderColor: theme.borderAccent }]}>
+          <Text style={[styles.backBtnText, { color: theme.accent }]}>← Back</Text>
         </TouchableOpacity>
       </View>
     );
@@ -96,7 +97,7 @@ export default function PropertyDetailScreen() {
 
   // Main content
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.bg }]}>
       <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
 
          {/* Back button */}
@@ -104,11 +105,11 @@ export default function PropertyDetailScreen() {
             <Pressable onPress={() => router.back()} style={styles.side}>
               <Image
                 source={require('../../assets/back_icon.png')}
-                style={styles.backIcon}
+                style={[styles.backIcon, { tintColor: theme.accent }]}
               />
             </Pressable>
 
-            <Text style={styles.title}>Apartment Details</Text>
+            <Text style={[styles.title, { color: theme.accent }]}>Apartment Details</Text>
           </View>
 
 {/* Property Hero Card */}
@@ -136,7 +137,7 @@ export default function PropertyDetailScreen() {
     <Text style={styles.propertyTitle}>
       {property.title}  {bedroomLabel}
     </Text>
-    <Text style={styles.statValueNeon}>Ksh {unitType.price.toLocaleString()}</Text>
+    <Text style={[styles.statValueNeon, { color: theme.accent }]}>Ksh {unitType.price.toLocaleString()}</Text>
 
     <Text style={styles.locationText}>
       📍 {property.location}
@@ -150,44 +151,44 @@ export default function PropertyDetailScreen() {
             <Text style={styles.statLabel}>PRICE</Text>
             <Text style={styles.statValueNeon}>Ksh {unitType.price.toLocaleString()}/Mo</Text>
           </View> */}
-          <View style={styles.statBox}>
-            <Text style={styles.statLabel}>BATHS</Text>
-            <Text style={styles.statValueMuted}>{unitType.baths} Bath{unitType.baths !== 1 ? 's' : ''}</Text>
+          <View style={[styles.statBox, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
+            <Text style={[styles.statLabel, { color: theme.textMuted }]}>BATHS</Text>
+            <Text style={[styles.statValueMuted, { color: theme.text }]}>{unitType.baths} Bath{unitType.baths !== 1 ? 's' : ''}</Text>
           </View>
-          <View style={styles.statBox}>
-            <Text style={styles.statLabel}>UNITS</Text>
-            <Text style={styles.statValueMuted}>{unitType.totalUnits} available</Text>
+          <View style={[styles.statBox, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
+            <Text style={[styles.statLabel, { color: theme.textMuted }]}>UNITS</Text>
+            <Text style={[styles.statValueMuted, { color: theme.text }]}>{unitType.totalUnits} available</Text>
           </View>
         </View>
 
         {/* Amenities */}
-        <Text style={styles.sectionTitle}>AMENITIES</Text>
+        <Text style={[styles.sectionTitle, { color: theme.textMuted }]}>AMENITIES</Text>
         {(!property.amenities || property.amenities.length === 0) ? (
-          <Text style={styles.mutedText}>No amenities listed</Text>
+          <Text style={[styles.mutedText, { color: theme.textMuted }]}>No amenities listed</Text>
         ) : (
           <View style={styles.amenitiesWrap}>
             {property.amenities.map((a, i) => (
-              <View key={i} style={styles.amenityChip}>
-                <Text style={styles.amenityText}>{a}</Text>
+              <View key={i} style={[styles.amenityChip, { backgroundColor: rgba(theme.accentRgb, 0.08), borderColor: theme.borderAccent }]}>
+                <Text style={[styles.amenityText, { color: theme.accent }]}>{a}</Text>
               </View>
             ))}
           </View>
         )}
 
         {/* Contacts */}
-        <Text style={styles.sectionTitle}>CONTACTS</Text>
+        <Text style={[styles.sectionTitle, { color: theme.textMuted }]}>CONTACTS</Text>
         {loadingContacts ? (
-          <ActivityIndicator color="#00FFFF" style={{ marginVertical: 8 }} />
+          <ActivityIndicator color={theme.accent} style={{ marginVertical: 8 }} />
         ) : contactsError ? (
           <Text style={styles.errorInline}>{contactsError}</Text>
         ) : contacts.length === 0 ? (
-          <Text style={styles.mutedText}>No contact information available</Text>
+          <Text style={[styles.mutedText, { color: theme.textMuted }]}>No contact information available</Text>
         ) : (
           contacts.map((c, i) => (
-            <View key={i} style={styles.contactCard}>
-              <Text style={styles.contactName}>{c.name}</Text>
-              <Text style={styles.contactRole}>{c.role}</Text>
-              <Text style={styles.contactPhone}>{c.phone ?? 'Not available'}</Text>
+            <View key={i} style={[styles.contactCard, { backgroundColor: theme.bgCard, borderColor: theme.border }]}>
+              <Text style={[styles.contactName, { color: theme.accent }]}>{c.name}</Text>
+              <Text style={[styles.contactRole, { color: theme.textMuted }]}>{c.role}</Text>
+              <Text style={[styles.contactPhone, { color: theme.text }]}>{c.phone ?? 'Not available'}</Text>
               {c.phone && (
                 <TouchableOpacity onPress={() => Linking.openURL(`tel:${c.phone}`)} style={styles.callBtn}>
                   <Text style={styles.callBtnText}>📞 Call</Text>
@@ -198,7 +199,7 @@ export default function PropertyDetailScreen() {
         )}
 
         {/* Book Viewing */}
-        <Text style={styles.sectionTitle}>BOOK A VIEWING</Text>
+        <Text style={[styles.sectionTitle, { color: theme.textMuted }]}>BOOK A VIEWING</Text>
 
         {bookingConfirmed ? (
           <View style={styles.confirmBox}>
@@ -206,37 +207,43 @@ export default function PropertyDetailScreen() {
           </View>
         ) : showBookingForm ? (
           <View style={styles.bookingForm}>
-            <Text style={styles.formLabel}>Name</Text>
+            <Text style={[styles.formLabel, { color: theme.textMuted }]}>Name</Text>
             <TextInput
               value={bookingName} onChangeText={setBookingName}
-              style={styles.formInput} placeholderTextColor="#888" placeholder="Your full name"
+              style={[styles.formInput, { backgroundColor: theme.bgInput, color: theme.text, borderColor: theme.border }]}
+              placeholderTextColor={theme.textDim} placeholder="Your full name"
+              underlineColorAndroid="transparent"
             />
             {bookingErrors.name && <Text style={styles.fieldError}>{bookingErrors.name}</Text>}
 
-            <Text style={styles.formLabel}>Phone</Text>
+            <Text style={[styles.formLabel, { color: theme.textMuted }]}>Phone</Text>
             <TextInput
               value={bookingPhone} onChangeText={setBookingPhone}
-              style={styles.formInput} keyboardType="phone-pad" placeholderTextColor="#888" placeholder="+254..."
+              style={[styles.formInput, { backgroundColor: theme.bgInput, color: theme.text, borderColor: theme.border }]}
+              keyboardType="phone-pad" placeholderTextColor={theme.textDim} placeholder="+254..."
+              underlineColorAndroid="transparent"
             />
             {bookingErrors.phone && <Text style={styles.fieldError}>{bookingErrors.phone}</Text>}
 
-            <Text style={styles.formLabel}>Preferred Date (YYYY-MM-DD)</Text>
+            <Text style={[styles.formLabel, { color: theme.textMuted }]}>Preferred Date (YYYY-MM-DD)</Text>
             <TextInput
               value={bookingDate} onChangeText={setBookingDate}
-              style={styles.formInput} placeholderTextColor="#888" placeholder="2026-09-15"
+              style={[styles.formInput, { backgroundColor: theme.bgInput, color: theme.text, borderColor: theme.border }]}
+              placeholderTextColor={theme.textDim} placeholder="2026-09-15"
+              underlineColorAndroid="transparent"
             />
             {bookingErrors.date && <Text style={styles.fieldError}>{bookingErrors.date}</Text>}
 
-            <TouchableOpacity onPress={handleSubmitBooking} style={styles.submitBtn}>
-              <Text style={styles.submitBtnText}>SUBMIT REQUEST</Text>
+            <TouchableOpacity onPress={handleSubmitBooking} style={[styles.submitBtn, { backgroundColor: rgba(theme.accentRgb, 0.12), borderColor: theme.borderAccent }]}>
+              <Text style={[styles.submitBtnText, { color: theme.accent }]}>SUBMIT REQUEST</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => { setShowBookingForm(false); setBookingErrors({}); }} style={styles.cancelBtn}>
-              <Text style={styles.cancelBtnText}>Cancel</Text>
+              <Text style={[styles.cancelBtnText, { color: theme.textMuted }]}>Cancel</Text>
             </TouchableOpacity>
           </View>
         ) : (
-          <TouchableOpacity onPress={() => setShowBookingForm(true)} style={styles.bookBtn}>
-            <Text style={styles.bookBtnText}>BOOK VIEWING</Text>
+          <TouchableOpacity onPress={() => setShowBookingForm(true)} style={[styles.bookBtn, { backgroundColor: rgba(theme.accentRgb, 0.1), borderColor: theme.borderAccent }]}>
+            <Text style={[styles.bookBtnText, { color: theme.accent }]}>BOOK VIEWING</Text>
           </TouchableOpacity>
         )}
 

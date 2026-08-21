@@ -5,6 +5,7 @@ import { Smartphone, CheckCircle2 } from "lucide-react-native";
 import { useState } from "react";
 import api from "../../lib/api";
 import { useAuthStore } from "../../store/authStore";
+import { useTheme } from "../../lib/theme";
 
 const colorMap = {
   neon: "#00FFFF",
@@ -16,6 +17,7 @@ const colorMap = {
 };
 
 export default function PaymentMpesaPage() {
+  const { theme } = useTheme();
   const router = useRouter();
   const params = useLocalSearchParams();
   const { token, user } = useAuthStore();
@@ -150,8 +152,8 @@ export default function PaymentMpesaPage() {
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.ambientGlow} />
+    <View style={[styles.container, { backgroundColor: theme.bg }]}>
+      <View style={[styles.ambientGlow, { backgroundColor: `rgba(0,255,163,${theme.ambientOpacity})` }]} />
 
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         {/* Header */}
@@ -202,12 +204,13 @@ export default function PaymentMpesaPage() {
         {/* Phone Input */}
         <View style={styles.formContainer}>
           <Text style={styles.inputLabel}>M-PESA PHONE NUMBER</Text>
-          <View style={styles.inputWrapper}>
-            <Text style={styles.inputPrefix}>+254</Text>
+          <View style={[styles.inputWrapper, { backgroundColor: theme.bgInput, borderColor: theme.border }]}>
+            <Text style={[styles.inputPrefix, { color: theme.text }]}>+254</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { color: theme.text, backgroundColor: "transparent" }]}
               placeholder="712345678"
-              placeholderTextColor="#444"
+              placeholderTextColor={theme.textDim}
+              underlineColorAndroid="transparent"
               keyboardType="phone-pad"
               value={phone.replace(/^254/, "").replace(/^0/, "")}
               onChangeText={(text) => setPhone(text)}

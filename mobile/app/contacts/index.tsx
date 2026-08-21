@@ -5,8 +5,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import api from '../../lib/api';
 import { Contact } from '../../types/contact';
 import { useAuthStore } from '../../store/authStore';
+import { useTheme } from '../../lib/theme';
 
 export default function ContactsIndex() {
+  const { theme } = useTheme();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const [loading, setLoading] = useState(true);
@@ -68,14 +70,14 @@ export default function ContactsIndex() {
 
   if (loading) {
     return (
-      <View style={styles.center}>
-        <Text>Loading contacts...</Text>
+      <View style={[styles.center, { backgroundColor: theme.bg }]}>
+        <Text style={{ color: theme.textMuted }}>Loading contacts...</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.bg }]}>
       <FlatList
         data={contacts}
         renderItem={renderContact}

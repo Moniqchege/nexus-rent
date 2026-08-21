@@ -4,6 +4,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import MaskedView from "@react-native-masked-view/masked-view";
 import { useAuthStore } from "../../store/authStore";
 import { useNotificationsStore } from "../../store/notificationsStore";
+import { useTheme } from "../../lib/theme";
 
 const colorMap = {
   neon: "#00F0FF",
@@ -59,6 +60,7 @@ function formatNotificationTime(isoString: string) {
 }
 
 export default function Alerts() {
+  const { theme, isDark } = useTheme();
   const token = useAuthStore(state => state.token);
   const {
     notifications,
@@ -89,108 +91,76 @@ export default function Alerts() {
   };
   const computedUnreadCount = notifications.filter(n => !n.isRead).length;
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.bg }]}>
       {/* Ambient Glow */}
-      <View style={styles.ambientGlow} />
+      <View style={[styles.ambientGlow, { backgroundColor: `rgba(255,59,129,${theme.ambientOpacity})` }]} />
 
       <ScrollView contentContainerStyle={{ paddingTop: 20, paddingBottom: 120 }}>
         {/* Page Header */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.pageGreeting}>UPDATES & ALERTS</Text>
+            <Text style={[styles.pageGreeting, { color: theme.textMuted }]}>UPDATES & ALERTS</Text>
             <GradientTitle text="Notifications" />
           </View>
-          <TouchableOpacity style={styles.markAllBtn} onPress={handleMarkAll}>
-            <Text style={styles.markAllText}>Mark All</Text>
+          <TouchableOpacity style={[styles.markAllBtn, { borderColor: "rgba(255,59,129,0.25)" }]} onPress={handleMarkAll}>
+            <Text style={[styles.markAllText, { color: theme.accentRed }]}>Mark All</Text>
           </TouchableOpacity>
         </View>
 
-        {/* New Notifications Badge */}
-<View style={styles.sectionHeader}>
-  <Text style={styles.sectionTitle}>NEW</Text>
-
-  {computedUnreadCount > 0 && (
-    <View style={styles.unreadBadge}>
-      <Text style={styles.unreadBadgeText}>
-        {computedUnreadCount > 99 ? "99+" : computedUnreadCount}
-      </Text>
-    </View>
-  )}
-</View>
+        <View style={styles.sectionHeader}>
+          <Text style={[styles.sectionTitle, { color: theme.textMuted }]}>NEW</Text>
+          {computedUnreadCount > 0 && (
+            <View style={[styles.unreadBadge, { backgroundColor: theme.accentRed }]}>
+              <Text style={styles.unreadBadgeText}>
+                {computedUnreadCount > 99 ? "99+" : computedUnreadCount}
+              </Text>
+            </View>
+          )}
+        </View>
 
         {/* Notification List */}
         <View style={{ marginBottom: 20, paddingHorizontal: 16 }}>
           {notifications.map((t, i) => (
             <TouchableOpacity
-    key={i}
-    activeOpacity={0.8}
-    onPress={() => {
-      if (!t.isRead && token) {
-        markRead(t.id, token);
-      }
-    }}
-  >
-     <View
-  key={i}
-  style={[
-    styles.notifItem,
-    t.status === "danger" && { borderColor: "rgba(255,59,129,0.25)" },
-    t.status === "success" && { borderColor: "rgba(22,163,74,0.25)" },
-    t.status === "warn" && { borderColor: "rgba(245,158,11,0.25)" },
-    t.status === "neutral" && { borderColor: "rgba(232, 232, 232, 0.25)" },
-  ]}
->
-              <View
-                style={[
+              key={i}
+              activeOpacity={0.8}
+              onPress={() => { if (!t.isRead && token) markRead(t.id, token); }}
+            >
+              <View style={[
+                styles.notifItem,
+                { backgroundColor: theme.bgCard, borderColor: theme.border },
+                t.status === "danger" && { borderColor: "rgba(248,113,113,0.25)" },
+                t.status === "success" && { borderColor: "rgba(52,211,153,0.25)" },
+                t.status === "warn" && { borderColor: "rgba(251,191,36,0.25)" },
+              ]}>
+                <View style={[
                   styles.notifIcon,
                   t.status === "danger"
-                    ? { backgroundColor: "rgba(255,59,129,0.1)", borderColor: "rgba(255,59,129,0.25)" }
+                    ? { backgroundColor: "rgba(248,113,113,0.1)", borderColor: "rgba(248,113,113,0.25)" }
                     : t.status === "success"
-                    ? { backgroundColor: "rgba(0,255,163,0.08)", borderColor: "rgba(0,255,163,0.15)" }
+                    ? { backgroundColor: "rgba(52,211,153,0.08)", borderColor: "rgba(52,211,153,0.2)" }
                     : t.status === "warn"
-                    ? { backgroundColor: "rgba(232, 232, 232, 0.08)", borderColor: "rgba(232, 232, 232, 0.25)" }
-                    : t.status === "neutral"
-                    ? { backgroundColor: "rgba(255,184,77,0.08)", borderColor: "rgba(255,184,77,0.15)" }
-                    : { backgroundColor: "rgba(136,136,136,0.08)", borderColor: "rgba(136,136,136,0.15)" },
-                ]}
-              >
-                <Image
-    source={require("../../assets/notifications.png")}
-    style={{ width: 18, height: 18, resizeMode: "contain" }}
-  />
+                    ? { backgroundColor: "rgba(251,191,36,0.08)", borderColor: "rgba(251,191,36,0.2)" }
+                    : { backgroundColor: theme.bgInput, borderColor: theme.border },
+                ]}>
+                  <Image source={require("../../assets/notifications.png")} style={{ width: 18, height: 18, resizeMode: "contain" }} />
+                </View>
+
+                <View style={styles.notifBody}>
+                  <Text style={[styles.notifTitle, t.isRead ? { color: theme.accentGreen } : { color: theme.accentRed }]}>
+                    {t.title?.trim() ? t.title : "New Notification"}
+                  </Text>
+                  <Text style={[styles.notifText, { color: theme.textMuted }]}>{t.message}</Text>
+                  <View style={styles.notifBottomRow}>
+                    <Text style={[styles.notifTime, { color: theme.textMuted }]}>{formatNotificationTime(t.sentAt)}</Text>
+                  </View>
+                </View>
+
+                {!t.isRead && (
+                  <View style={[styles.unreadDot, { backgroundColor: theme.accentRed, shadowColor: theme.accentRed }]} />
+                )}
               </View>
-
-              <View style={styles.notifBody}>
-  <Text
-  style={[
-    styles.notifTitle,
-    t.isRead ? { color: colorMap.success } : { color: colorMap.danger },
-  ]}
->
-  {t.title?.trim() ? t.title : "New Notification"}
-</Text>
-
-  <Text style={styles.notifText}>{t.message}</Text>
-
-  {/* bottom row */}
-  <View style={styles.notifBottomRow}>
-    <Text style={styles.notifTime}>
-      {formatNotificationTime(t.sentAt)}
-    </Text>
-  </View>
-</View>
-
-              {!t.isRead && (
-                <View
-                  style={[
-                    styles.unreadDot,
-                     { backgroundColor: colorMap.danger, shadowColor: colorMap.danger },
-                  ]}
-                />
-              )}
-            </View>
-  </TouchableOpacity>
-          
+            </TouchableOpacity>
           ))}
         </View>
       </ScrollView>

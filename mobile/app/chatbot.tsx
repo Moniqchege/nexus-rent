@@ -14,6 +14,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "expo-router";
 import { useAuthStore } from "../store/authStore";
 import { API_BASE } from "../lib/api";
+import { useTheme } from "../lib/theme";
 
 type Message = {
   role: "user" | "bot";
@@ -65,6 +66,7 @@ const FAQ_CHIPS = [
 
 // ── component ─────────────────────────────────────────────────
 export default function ChatBotScreen() {
+  const { theme, isDark } = useTheme();
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
 
@@ -124,36 +126,22 @@ export default function ChatBotScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.bg }]}>
       {/* ── Header ── */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backBtn}
-          onPress={() => router.back()}
-          activeOpacity={0.7}
-        >
-          <Image
-            source={require('../assets/back_icon.png')}
-            style={styles.backIcon}
-        />
+      <View style={[styles.header, { backgroundColor: theme.bg, borderBottomColor: theme.border }]}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} activeOpacity={0.7}>
+          <Image source={require('../assets/back_icon.png')} style={[styles.backIcon, { tintColor: theme.accent }]} />
         </TouchableOpacity>
-
         <View style={styles.headerCenter}>
-          <Image
-            source={require("../assets/bot_icon.png")}
-            style={styles.headerIcon}
-            resizeMode="contain"
-          />
+          <Image source={require("../assets/bot_icon.png")} style={[styles.headerIcon, { tintColor: theme.accent }]} resizeMode="contain" />
           <View>
-            <Text style={styles.headerTitle}>Nexus Orion</Text>
-            <Text style={styles.headerSubtitle}>Tenant Assistant</Text>
+            <Text style={[styles.headerTitle, { color: theme.text }]}>Nexus Orion</Text>
+            <Text style={[styles.headerSubtitle, { color: theme.textMuted }]}>Tenant Assistant</Text>
           </View>
         </View>
-
-        {/* status pill */}
-        <View style={styles.statusPill}>
-          <View style={styles.statusDot} />
-          <Text style={styles.statusText}>Online</Text>
+        <View style={[styles.statusPill, { backgroundColor: `rgba(52,211,153,0.1)`, borderColor: `rgba(52,211,153,0.25)` }]}>
+          <View style={[styles.statusDot, { backgroundColor: theme.accentGreen }]} />
+          <Text style={[styles.statusText, { color: theme.accentGreen }]}>Online</Text>
         </View>
       </View>
 
@@ -170,27 +158,16 @@ export default function ChatBotScreen() {
           style={styles.list}
           contentContainerStyle={styles.listContent}
           renderItem={({ item }) => (
-            <View
-              style={[
-                styles.bubble,
-                item.role === "user" ? styles.userBubble : styles.botBubble,
-              ]}
-            >
+            <View style={[styles.bubble, item.role === "user" ? styles.userBubble : styles.botBubble]}>
               {item.role === "bot" && (
-                <Image
-                  source={require("../assets/bot_icon.png")}
-                  style={styles.avatarIcon}
-                  resizeMode="contain"
-                />
+                <Image source={require("../assets/bot_icon.png")} style={[styles.avatarIcon, { tintColor: theme.accent }]} resizeMode="contain" />
               )}
-              <Text
-                style={[
-                  styles.bubbleText,
-                  item.role === "user"
-                    ? styles.userText
-                    : styles.botText,
-                ]}
-              >
+              <Text style={[
+                styles.bubbleText,
+                item.role === "user"
+                  ? [styles.userText, { backgroundColor: `rgba(56,189,248,0.12)`, color: theme.accent, borderColor: theme.borderAccent }]
+                  : [styles.botText, { backgroundColor: theme.bgCard, color: theme.text, borderColor: theme.border }],
+              ]}>
                 {item.text}
               </Text>
             </View>
@@ -215,13 +192,14 @@ export default function ChatBotScreen() {
         />
 
         {/* ── Input bar ── */}
-        <View style={styles.inputBar}>
+        <View style={[styles.inputBar, { backgroundColor: theme.bg, borderTopColor: theme.border }]}>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { backgroundColor: theme.bgInput, color: theme.text, borderColor: theme.border }]}
             value={inputText}
             onChangeText={setInputText}
             placeholder="Ask about rent, lease, property…"
-            placeholderTextColor="#555"
+            placeholderTextColor={theme.textDim}
+            underlineColorAndroid="transparent"
             multiline
             returnKeyType="send"
             onSubmitEditing={() => handleSend()}

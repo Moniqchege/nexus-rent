@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useNavigation, useLocalSearchParams } from "expo-router";
 import api from "../lib/api";
 import { useAuthStore } from "../store/authStore";
+import { useTheme, rgba } from "../lib/theme";
 
 function Icon({ type, size = 18 }: { type: "email" | "lock" | "key" | "eye-open" | "eye-closed"; size?: number }) {
   const icons = {
@@ -123,6 +124,7 @@ function GradientText({ text, fontSize = 24 }: { text: string; fontSize?: number
 }
 
 export default function ResetPassword() {
+  const { theme } = useTheme();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordVisible, setPasswordVisible] = useState(false);
@@ -233,12 +235,12 @@ const validatePassword = (pwd: string) => {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.bg }]}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <View style={styles.glowTopLeft} />
-      <View style={styles.glowBottomRight} />
-      <View style={styles.glowCenter} />
+      <View style={[styles.glowTopLeft, { backgroundColor: `rgba(124,58,237,${theme.ambientOpacity})` }]} />
+      <View style={[styles.glowBottomRight, { backgroundColor: `rgba(0,240,255,${theme.ambientOpacity})` }]} />
+      <View style={[styles.glowCenter, { backgroundColor: `rgba(124,58,237,${theme.ambientOpacity})` }]} />
 
       <ScrollView
         contentContainerStyle={styles.scroll}
@@ -276,12 +278,13 @@ const validatePassword = (pwd: string) => {
           {/* New Password */}
           <View style={styles.fieldGroup}>
             <Text style={styles.fieldLabel}>NEW PASSWORD</Text>
-            <View style={[styles.inputWrap, focused === "password" && styles.inputFocused]}>
+            <View style={[styles.inputWrap, { backgroundColor: theme.bgInput, borderColor: theme.border }, focused === "password" && { borderColor: theme.accent, backgroundColor: rgba(theme.accentRgb, 0.06) }]}>
               <Icon type="lock" size={18} />
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: theme.text, backgroundColor: "transparent" }]}
                 placeholder="Create new password"
-                placeholderTextColor="#4B5563"
+                placeholderTextColor={theme.textDim}
+                underlineColorAndroid="transparent"
                 secureTextEntry={!passwordVisible}
                 value={password}
                 onChangeText={(t) => { setPassword(t); validatePassword(t); setError(null); }}
@@ -325,12 +328,13 @@ const validatePassword = (pwd: string) => {
           {/* Confirm Password */}
           <View style={styles.fieldGroup}>
             <Text style={styles.fieldLabel}>CONFIRM PASSWORD</Text>
-            <View style={[styles.inputWrap, focused === "confirm" && styles.inputFocused]}>
+            <View style={[styles.inputWrap, { backgroundColor: theme.bgInput, borderColor: theme.border }, focused === "confirm" && { borderColor: theme.accent, backgroundColor: rgba(theme.accentRgb, 0.06) }]}>
               <Icon type="lock" size={18} />
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: theme.text, backgroundColor: "transparent" }]}
                 placeholder="Confirm new password"
-                placeholderTextColor="#4B5563"
+                placeholderTextColor={theme.textDim}
+                underlineColorAndroid="transparent"
                 secureTextEntry={!confirmVisible}
                 value={confirmPassword}
                 onChangeText={(t) => { setConfirmPassword(t); validatePassword(t); setError(null); }}
@@ -356,7 +360,7 @@ const validatePassword = (pwd: string) => {
               style={styles.ctaButton}
             >
               {loading ? (
-                <ActivityIndicator color="#00F0FF" />
+                <ActivityIndicator color={theme.accent} />
               ) : (
                 <>
                   <Text style={styles.ctaText}>RESET PASSWORD</Text>
