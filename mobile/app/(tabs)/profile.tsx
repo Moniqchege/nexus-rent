@@ -253,11 +253,19 @@ export default function Profile() {
 
             {/* Profile Hero */}
             <View style={styles.profileCard}>
-              <Image
-                source={require("../../assets/profile.png")}
-                style={{ width: 92, height: 92, borderRadius: 16 }}
-                resizeMode="contain"
-              />
+              {user?.image ? (
+                <Image
+                  source={{ uri: `${API_BASE}${user.image}` }}
+                  style={{ width: 92, height: 92, borderRadius: 46, borderWidth: 2, borderColor: "rgba(0,255,255,0.4)" }}
+                  resizeMode="cover"
+                />
+              ) : (
+                <Image
+                  source={require("../../assets/profile.png")}
+                  style={{ width: 92, height: 92, borderRadius: 16 }}
+                  resizeMode="contain"
+                />
+              )}
 
               <Text style={styles.name}>{displayName}</Text>
               <Text style={styles.email}>{user?.email || "No email"}</Text>

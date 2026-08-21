@@ -6,7 +6,7 @@ import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 import { transporter } from '../services/mailer';
-import { upload } from '../middleware/upload';
+import { upload, uploadAvatar } from '../middleware/upload';
 import path from 'path';
 
 const router = Router();
@@ -484,6 +484,31 @@ router.get('/me/profile-stats', requireAuth, async (req: Request, res: Response)
   } catch (error) {
     console.error('Failed to fetch profile stats:', error);
     res.status(500).json({ error: 'Failed to fetch profile stats' });
+  }
+});
+
+// POST /api/users/me/avatar — upload / replace profile picture
+router.post('/me/avatar', requireAuth, uploadAvatar.single('avatar'), async (req: Request, res: Response) => {
+  try {
+    const authReq = req as AuthRequest;
+    const userId = authReq.userId!;
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'No image file provided' });
+    }
+
+    const imageUrl = `/uploads/avatars/${path.basename(req.file.filename)}`;
+
+    const updated = await db.user.update({
+      where: { id: userId },
+      data: { image: imageUrl },
+      select: { id: true, name: true, email: true, username: true, phone: true, plan: true, image: true, leaseDocument: true },
+    });
+
+    res.json({ image: updated.image, user: updated });
+  } catch (error) {
+    console.error('Avatar upload error:', error);
+    res.status(500).json({ error: 'Failed to upload avatar' });
   }
 });
 

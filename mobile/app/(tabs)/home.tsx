@@ -4,6 +4,7 @@ import MaskedView from "@react-native-masked-view/masked-view";
 import { useRouter } from 'expo-router';
 import { Pressable } from 'react-native';
 import { useAuthStore } from "../../store/authStore";
+import { API_BASE } from "../../lib/api";
 import * as Linking from 'expo-linking';
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useState } from 'react';
@@ -220,11 +221,19 @@ export default function Home() {
               </LinearGradient>
             </MaskedView>
           </View>
-          <Image
-            source={require("../../assets/profile.png")} 
-            style={{ width: 42, height: 42, borderRadius: 16 }}
-            resizeMode="contain"
-          />
+          {user?.image ? (
+            <Image
+              source={{ uri: `${API_BASE}${user.image}` }}
+              style={{ width: 42, height: 42, borderRadius: 21, borderWidth: 1.5, borderColor: "rgba(0,255,255,0.4)" }}
+              resizeMode="cover"
+            />
+          ) : (
+            <Image
+              source={require("../../assets/profile.png")}
+              style={{ width: 42, height: 42, borderRadius: 16 }}
+              resizeMode="contain"
+            />
+          )}
         </View>
 
         {/* Hero Card — Task 8 */}

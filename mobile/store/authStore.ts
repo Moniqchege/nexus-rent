@@ -10,6 +10,7 @@ interface User {
     username?: string;
     phone?: string;
     plan?: string;
+    image?: string;
     leaseDocument?: string;
     userProperties: UserProperty[];
 }

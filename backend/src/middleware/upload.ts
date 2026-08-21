@@ -9,6 +9,7 @@ const __dirname = path.dirname(__filename);
 
 const uploadDir = path.resolve(__dirname, "../../uploads/leases");
 const receiptDir = path.resolve(__dirname, "../../uploads/receipts");
+const avatarDir = path.resolve(__dirname, "../../uploads/avatars");
 
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
@@ -16,6 +17,10 @@ if (!fs.existsSync(uploadDir)) {
 
 if (!fs.existsSync(receiptDir)) {
   fs.mkdirSync(receiptDir, { recursive: true });
+}
+
+if (!fs.existsSync(avatarDir)) {
+  fs.mkdirSync(avatarDir, { recursive: true });
 }
 
 console.log("upload.ts uploadDir:", uploadDir);
@@ -83,3 +88,25 @@ const fileFilter = (_req: Request, file: Express.Multer.File, cb: FileFilterCall
 };
 
 export const upload = multer({ storage, fileFilter });
+
+const avatarStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => {
+    cb(null, avatarDir);
+  },
+  filename: (_req, file, cb) => {
+    cb(null, `${Date.now()}-${path.basename(file.originalname)}`);
+  },
+});
+
+export const uploadAvatar = multer({
+  storage: avatarStorage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowed = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
+    if (allowed.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only PNG, JPG or WEBP images allowed"));
+    }
+  },
+});

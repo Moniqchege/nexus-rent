@@ -397,7 +397,7 @@ const api = {
         return response.json();
     },
 
-    async updateProfile(token: string, userId: number, data: { name?: string; phone?: string }): Promise<any> {
+    async updateProfile(token: string, userId: number, data: { name?: string; phone?: string; username?: string }): Promise<any> {
         const response = await fetch(`${API_BASE}/api/users/${userId}`, {
             method: 'PATCH',
             headers: {
@@ -405,6 +405,22 @@ const api = {
                 Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify(data),
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+        return response.json();
+    },
+
+    async uploadAvatar(token: string, imageUri: string): Promise<{ image: string }> {
+        const formData = new FormData();
+        const filename = imageUri.split('/').pop() ?? 'avatar.jpg';
+        const match = /\.(\w+)$/.exec(filename);
+        const type = match ? `image/${match[1]}` : 'image/jpeg';
+        formData.append('avatar', { uri: imageUri, name: filename, type } as any);
+
+        const response = await fetch(`${API_BASE}/api/users/me/avatar`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}` },
+            body: formData,
         });
         if (!response.ok) throw new Error(`HTTP ${response.status}: ${await response.text()}`);
         return response.json();
